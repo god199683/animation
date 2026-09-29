@@ -1,5 +1,8 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 internal static class CreatureAnimationStudio
@@ -55,6 +58,7 @@ internal static class CreatureAnimationStudio
             right.Controls.Add(LabelOf("배경음 · 효과음 프롬프트"), 0, 2); right.Controls.Add(audio, 0, 3); right.Controls.Add(copyAudio, 0, 3);
             video.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right; audio.Anchor = video.Anchor; video.Margin = new Padding(3, 30, 3, 3); audio.Margin = new Padding(3, 30, 3, 3); OutputStyle(video); OutputStyle(audio);
             layout.Controls.Add(left, 0, 0); layout.Controls.Add(right, 1, 0); Controls.Add(layout); Controls.Add(description); Controls.Add(title); Generate();
+            Shown += (s, e) => CheckForUpdate();
         }
         Label LabelOf(string text) { return new Label { Text = text, ForeColor = Color.FromArgb(243, 247, 255), AutoSize = false, Height = 28, Width = 500, Font = new Font("Malgun Gothic", 9, FontStyle.Bold) }; }
         void Style(Control c) { c.BackColor = Color.FromArgb(9, 17, 36); c.ForeColor = Color.White; }
@@ -66,6 +70,29 @@ internal static class CreatureAnimationStudio
             var tone = mood.SelectedIndex == 1 ? "dreamy and softly magical" : mood.SelectedIndex == 2 ? "refined and cinematic" : "playful and adorable";
             video.Text = "Create a fully 3D animated vertical 9:16 short-form video based on: “" + idea + ". ”\r\n\r\nFeature " + Pick(Creatures) + ", selected to suit the theme. Give it expressive eyes, believable 3D weight, and tactile material detail. The character interacts with " + Pick(Food) + ". As the moment unfolds, " + Pick(Changes) + ".\r\n\r\nThe reaction is " + tone + ". Premium 3D character animation, macro cinematic close-up, physically based materials, shallow depth of field, soft volumetric lighting, detailed miniature set, smooth animation. One continuous " + duration.Text + " shot. No dialogue, no on-screen text, no watermark, no 2D illustration, no horror.";
             audio.Text = "Create an audio bed for a " + duration.Text + " vertical 3D animated short based on: “" + idea + ". ”\r\n\r\nBackground music: " + Pick(Music) + ", light and unobtrusive, timed to the character’s reactions. Sound effects: " + Pick(Effects) + ". Add gentle spatial ambience and clean, satisfying ASMR detail. No vocals, no spoken words, no abrupt loud sounds, no copyright-identifiable melody.";
+        }
+        void CheckForUpdate()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    client.Headers.Add("User-Agent", "Creature-Animation-Studio");
+                    var json = client.DownloadString("https://api.github.com/repos/god199683/animation/releases/latest");
+                    var found = Regex.Match(json, "\\\"browser_download_url\\\":\\\"([^\\\"]*CreatureAnimationStudio\\.exe)\\\"");
+                    if (!found.Success) return;
+                    var temporary = Path.Combine(Path.GetTempPath(), "CreatureAnimationStudio-update.exe");
+                    client.DownloadFile(found.Groups[1].Value.Replace("\\/", "/"), temporary);
+                    var current = Application.ExecutablePath;
+                    if (new FileInfo(temporary).Length == new FileInfo(current).Length) { File.Delete(temporary); return; }
+                    if (MessageBox.Show("새 버전이 있습니다. 지금 업데이트할까요?", "업데이트", MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes) { File.Delete(temporary); return; }
+                    var script = Path.Combine(Path.GetTempPath(), "CreatureAnimationStudio-update.cmd");
+                    File.WriteAllText(script, "@echo off\r\ntimeout /t 2 /nobreak >nul\r\ncopy /y \"" + temporary + "\" \"" + current + "\"\r\nstart \"\" \"" + current + "\"\r\ndel \"%~f0\"");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(script) { UseShellExecute = true, WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden });
+                    Close();
+                }
+            }
+            catch { }
         }
     }
 }
