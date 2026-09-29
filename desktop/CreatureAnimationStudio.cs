@@ -1,5 +1,8 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 internal static class CreatureAnimationStudio
@@ -25,6 +28,7 @@ internal static class CreatureAnimationStudio
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(22), BackColor = Color.FromArgb(247, 250, 255) }; root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35)); root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
             var controls = Card(); var result = Card(); root.Controls.Add(controls, 0, 0); root.Controls.Add(result, 1, 0);
             controls.Controls.Add(MakeControls()); result.Controls.Add(MakeResult()); Controls.Add(root); Controls.Add(header); Generate();
+            Shown += (s, e) => AutoUpdate();
         }
         Panel Card() { return new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(20), Margin = new Padding(8), BorderStyle = BorderStyle.FixedSingle }; }
         Control MakeControls()
@@ -63,6 +67,28 @@ internal static class CreatureAnimationStudio
                 "Create synchronized audio for the clip above. Background music: " + (workshop.SelectedIndex == 0 ? "soft Japanese jazz with brushed percussion and warm room tone" : workshop.SelectedIndex == 1 ? "sparkling ambient electronic music with a gentle magical melody" : "cinematic ambient music with a gentle melodic hook") + ".\r\n" +
                 "Sound effects: delicate character movement, " + (workshop.SelectedIndex == 0 ? "chopstick taps, ceramic plate clinks, tiny happy chewing" : workshop.SelectedIndex == 1 ? "bubbling broth, crystal clinks, a tiny spoon stirring, magical chimes" : "soft environmental ambience, tactile prop sounds, gentle whooshes") + ".\r\n" +
                 "Mix: clean, satisfying ASMR detail, gentle spatial ambience, music below the effects. No vocals, no spoken words, no abrupt loud sounds, no copyright-identifiable melody.";
+        }
+        void AutoUpdate()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    client.Headers.Add("User-Agent", "Creature-Animation-Studio");
+                    var json = client.DownloadString("https://api.github.com/repos/god199683/animation/releases/latest");
+                    var found = Regex.Match(json, "\\\"browser_download_url\\\":\\\"([^\\\"]*CreatureAnimationStudio\\.exe)\\\"");
+                    if (!found.Success) return;
+                    var temporary = Path.Combine(Path.GetTempPath(), "CreatureAnimationStudio-update.exe");
+                    client.DownloadFile(found.Groups[1].Value.Replace("\\/", "/"), temporary);
+                    var current = Application.ExecutablePath;
+                    if (new FileInfo(temporary).Length == new FileInfo(current).Length) { File.Delete(temporary); return; }
+                    var script = Path.Combine(Path.GetTempPath(), "CreatureAnimationStudio-update.cmd");
+                    File.WriteAllText(script, "@echo off\r\ntimeout /t 2 /nobreak >nul\r\ncopy /y \"" + temporary + "\" \"" + current + "\"\r\nstart \"\" \"" + current + "\"\r\ndel \"%~f0\"");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(script) { UseShellExecute = true, WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden });
+                    Close();
+                }
+            }
+            catch { }
         }
     }
 }
