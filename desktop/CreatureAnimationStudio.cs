@@ -11,7 +11,7 @@ internal static class CreatureAnimationStudio
     [STAThread] static void Main() { Application.EnableVisualStyles(); Application.Run(new Studio()); }
 
     sealed class Room { public string Id, Name, CharacterPath, Theme; }
-    sealed class ArchiveItem { public string Title, Signature, Prompt; }
+    sealed class ArchiveItem { public string Title, Signature, Prompt; public override string ToString() { return Title; } }
 
     sealed class Studio : Form
     {
