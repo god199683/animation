@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="VEO 3.1-LIGHT용 4장면 TikTok 프롬프트 생성기" />
+  <meta name="description" content="OMNI용 연속 숏폼·스토리보드 프롬프트 생성기" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%237c3aed'/%3E%3Cpath d='M16 44c12-25 22-27 32-24-4 13-13 25-32 24Z' fill='%23fbbf24'/%3E%3C/svg%3E" />
-  <title>Tailframe · VEO Prompt Studio</title>
+  <title>Tailframe · OMNI Prompt Studio</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main>
     <header class="topbar">
-      <div><p class="eyebrow">VEO 3.1-LIGHT · 9:16 SHORTFORM</p><h1>TAILFRAME</h1></div>
-      <div class="sync"><span id="sync-dot"></span><span id="sync-status">보관함 연결 준비 중</span></div>
+      <div><p class="eyebrow">OMNI · 9:16 CONTINUOUS SHORTFORM</p><h1>TAILFRAME</h1></div>
+      <div class="top-actions"><div class="sync"><span id="sync-dot"></span><span id="sync-status">ID 로그인 준비 중</span></div><button id="check-update">업데이트 확인</button><button id="sync-local" hidden>PC 보관함 업로드</button><a href="archive.html" class="archive-link">보관함 열기</a><button id="sign-in-open">로그인</button><button id="sign-out" hidden>로그아웃</button></div>
     </header>
 
-    <section class="workspace">
+    <section id="workspace" class="workspace">
       <aside class="control-panel">
         <div class="panel-heading"><p class="eyebrow">NEW PROMPT</p><h2>다음 변신을 설계하세요</h2><p>비워두면 매번 새로운 조합을 만듭니다.</p></div>
         <label>음식 <input id="food" placeholder="예: 유자 크림 다이후쿠 / 랜덤" /></label>
@@ -27,18 +27,32 @@
       </aside>
 
       <section class="result-panel">
-        <div class="result-head"><div><p class="eyebrow">OUTPUT</p><h2 id="result-title">생성 준비 완료</h2></div><div class="result-actions"><button id="copy" disabled>복사</button><button id="archive" disabled class="accent">보관</button></div></div>
+        <div class="result-head"><div><p class="eyebrow">OUTPUT</p><h2 id="result-title">생성 준비 완료</h2></div><div class="result-actions"><button id="original-prompt" disabled>Gemini OMNI</button><button id="flow-prompt" disabled>Google Flow</button><button id="storyboard" disabled>스토리보드</button><button id="regenerate-storyboard" disabled>스토리보드 재생성</button><button id="copy" disabled>복사</button><button id="archive" disabled class="accent">보관</button></div></div>
         <pre id="output">왼쪽에서 조건을 입력하거나 그대로 “새 프롬프트 생성”을 눌러 시작하세요.</pre>
       </section>
     </section>
 
-    <section class="archive-section">
-      <div class="archive-head"><div><p class="eyebrow">ARCHIVE</p><h2>생성 보관함 <span id="archive-count">0</span></h2></div><button id="refresh">새로 고침</button></div>
-      <div id="archive-list" class="archive-list"><p class="empty">아직 보관한 프롬프트가 없습니다.</p></div>
-    </section>
   </main>
-  <template id="archive-item"><article class="archive-item"><div><p class="archive-meta"></p><h3></h3><p class="archive-summary"></p></div><div class="archive-actions"><button class="view">열기</button><button class="remove">삭제</button></div></article></template>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <section id="auth-gate" class="auth-gate" aria-label="보관함 계정 로그인" hidden>
+    <form id="auth-form" class="auth-card">
+      <p class="eyebrow">YOUR ARCHIVE · ACCOUNT</p><h2>ID로 보관함 연결</h2>
+      <p class="auth-copy">이메일 없이 ID와 비밀번호만 사용합니다. 같은 ID로 로그인하면 언제든 내 보관함을 다시 불러옵니다.</p>
+      <label>아이디 <input id="login-id" autocomplete="username" minlength="3" maxlength="30" placeholder="영문·숫자·._- 3~30자" required /></label>
+      <label>비밀번호 <input id="login-password" type="password" autocomplete="current-password" minlength="8" placeholder="8자 이상" required /></label>
+      <p id="auth-message" class="hint">로그인하거나 새 ID를 만들어 시작하세요.</p>
+      <div class="auth-actions"><button id="sign-in" type="submit" class="primary">로그인</button><button id="sign-up" type="button">새 ID 만들기</button></div>
+    </form>
+  </section>
   <script src="app.js"></script>
+  <script>
+    // Load cloud archive support after the generator is interactive. A slow network must never delay prompt creation.
+    window.addEventListener('load', () => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.async = true;
+      script.onload = () => window.connectSupabase?.();
+      document.head.appendChild(script);
+    });
+  </script>
 </body>
 </html>

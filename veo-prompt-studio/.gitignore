@@ -1,0 +1,4 @@
+node_modules/
+release/
+.crash-check-profile/
+.diagnostic-profile*/

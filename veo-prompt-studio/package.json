@@ -1,0 +1,39 @@
+{
+  "name": "tailframe-veo-prompt-studio",
+  "version": "1.0.3",
+  "description": "OMNI continuous shortform prompt studio with a private archive",
+  "main": "main.js",
+  "author": "Tailframe",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.tailframe.veopromptstudio",
+    "productName": "Tailframe VEO Prompt Studio",
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "archive.html",
+      "archive.js",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "Tailframe-VEO-Prompt-Studio.exe"
+    }
+  },
+  "devDependencies": {
+    "app-builder-bin": "^5.0.0-alpha.12",
+    "electron": "39.2.7",
+    "electron-builder": "26.0.12"
+  }
+}
