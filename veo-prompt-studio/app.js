@@ -56,6 +56,26 @@ async function saveStoryboard(item, storyboard){
   }
 }
 function savedStoryboard(item){ return readStoryboardCache()[storyboardKey(item)] || ''; }
+const EXTEND_MOTION_SUFFIX = 'The final frame must be caught mid-motion, never a held pose. Motion continues visibly through the last frame: ongoing head turn, ear reaction, breathing, tail arc, flowing transformation light, and slow camera drift. Do not pause, settle, freeze, or resolve the action at the end.';
+function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
+function stagePrompt(storyboard, stage){
+  const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
+  const start = storyboard.indexOf(labels[stage]);
+  if (start < 0) return '';
+  const next = stage < 4 ? storyboard.indexOf(labels[stage + 1], start + 1) : storyboard.indexOf('[32초 쇼츠 길이]', start + 1);
+  const section = storyboard.slice(start, next > start ? next : undefined);
+  if (stage === 0) return (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
+  const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
+  return stage >= 2 && prompt ? `${prompt}\n\n${EXTEND_MOTION_SUFFIX}` : prompt;
+}
+async function copyStage(stage){
+  const storyboard = current?.storyboard || savedStoryboard(current);
+  const text = stagePrompt(storyboard, stage);
+  if (!text) return alert('이 단계의 복사할 프롬프트를 찾지 못했습니다. 스토리보드를 다시 생성해 주세요.');
+  await navigator.clipboard.writeText(text);
+  const button = document.querySelector(`#stage-copy-actions [data-stage="${stage}"]`);
+  if (button) { const label = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = label, 1200); }
+}
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 function foodProfile(food){ return foods.find(item => item[0] === food) || [food, `${food} 고유의 질감·향·색감`, '음식 고유 색감']; }
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g,' ');
@@ -218,13 +238,14 @@ async function archiveCurrent(){
   } else { loadLocalArchive(); }
   $('archive').disabled = true; $('archive').textContent = '보관됨';
 }
-$('generate').onclick = () => { current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관'; };
+$('generate').onclick = () => { current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관'; };
 $('storyboard').onclick = async () => {
   if (!current) return;
   const preservedStoryboard = current.storyboard || savedStoryboard(current);
   if (preservedStoryboard?.includes('[Google Flow · Veo 3.1 Lite Extend 단계별 제작 v4 · TikTok 32초]')) {
     $('result-title').textContent = `${current.title} · 저장된 스토리보드`;
     $('output').textContent = preservedStoryboard;
+    setStageCopyActions(true);
     $('regenerate-storyboard').disabled = false;
     $('copy').disabled = false;
     return;
@@ -278,6 +299,7 @@ $('storyboard').onclick = async () => {
   const antiFreezeStoryboard = `${motionSafeStoryboard}\n\n━━━━━━━━━━━━━━━━━━\n\n[최우선: Extend 끝 멈춤 방지 — 모든 단계 프롬프트보다 우선]\n각 8초 영상의 마지막 프레임은 ‘완료된 정지 포즈’가 아니라 다음 움직임으로 이어질 중간 동작이어야 한다. 마지막 1.5초에도 고개 회전·귀의 작은 반응·꼬리의 호·호흡에 따른 가슴 움직임·변신 빛의 미세한 흐름 중 최소 3가지를 동시에 계속 움직인다. 카메라도 아주 느린 동일 방향 이동을 멈추지 않는다.\n\n영어로 모든 Extend 프롬프트 끝에 반드시 추가: “The final frame must be caught mid-motion, never a held pose. Motion continues visibly through the last frame: ongoing head turn, ear reaction, breathing, tail arc, flowing transformation light, and slow camera drift. Do not pause, settle, freeze, or resolve the action at the end.”\n\n재생성 규칙: 마지막 1초가 멈춘 결과는 다음 Extend의 재료로 쓰지 않는다. 바로 이전 단계의 마지막 0.5–1초가 아직 움직이는 버전을 선택해 같은 Extend 프롬프트를 다시 생성한다. 멈춘 영상을 다시 Extend하면 멈춤이 다음 영상에도 이어진다.`;
   $('result-title').textContent = `${current.title} · Google Flow 스토리보드`;
   $('output').textContent = antiFreezeStoryboard;
+  setStageCopyActions(true);
   await saveStoryboard(current, antiFreezeStoryboard);
   $('regenerate-storyboard').disabled = false;
   $('copy').disabled = false;
@@ -296,17 +318,21 @@ $('original-prompt').onclick = () => {
   if (!current?.prompt) return;
   $('result-title').textContent = `${current.title || '보관된 결과'} · Gemini OMNI`;
   $('output').textContent = current.omniPrompt || current.omni_prompt || current.prompt;
+  setStageCopyActions(false);
   $('copy').disabled = false;
 };
 $('flow-prompt').onclick = () => {
   if (!current?.prompt) return;
   $('result-title').textContent = `${current.title || '보관된 결과'} · Google Flow`;
   $('output').textContent = current.flowPrompt || current.flow_prompt || current.prompt;
+  setStageCopyActions(false);
   $('copy').disabled = false;
 };
 $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
+$('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; await navigator.clipboard.writeText(storyboard); const button = $('copy-full-storyboard'); button.textContent = '전체 복사됨'; setTimeout(() => button.textContent = '전체 스토리보드', 1200); };
+document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
     const saved = localStorage.getItem('tailframe-opened-archive');
@@ -320,6 +346,7 @@ function restoreOpenedArchive(){
     const isExtendStoryboard = preservedStoryboard?.includes('[Google Flow · Veo 3.1 Lite Extend 단계별 제작 v4 · TikTok 32초]');
     $('result-title').textContent = isExtendStoryboard ? `${current.title} · 저장된 스토리보드` : (current.title || '보관된 프롬프트');
     $('output').textContent = isExtendStoryboard ? preservedStoryboard : current.omniPrompt;
+    setStageCopyActions(isExtendStoryboard);
     $('original-prompt').disabled = false;
     $('flow-prompt').disabled = false;
     $('storyboard').disabled = false;
