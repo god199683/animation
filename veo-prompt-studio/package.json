@@ -1,6 +1,6 @@
 {
   "name": "tailframe-veo-prompt-studio",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "OMNI continuous shortform prompt studio with a private archive",
   "main": "main.js",
   "author": "Tailframe",
