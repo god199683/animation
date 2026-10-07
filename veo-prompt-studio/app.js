@@ -71,6 +71,12 @@ const FOOD_CONTINUITY_SUFFIXES = [
   'Food continuity lock: no food item exists now because the single original food was fully consumed in the prior clip. Keep only the same empty plate or wrapper and a few matching crumbs in the same position; never restore, regenerate, replace, or introduce food again.',
   'Food continuity lock: no food item exists now because the single original food remains fully consumed. Keep only the same empty plate or wrapper and a few matching crumbs in the same position through the final frame; never restore, regenerate, replace, or introduce food again.'
 ];
+const STORY_COMMON_SUFFIX = `NON-NEGOTIABLE COMMON LOCK FOR THIS CLIP: Use the user's original supplied character image as a Reference/Ingredient whenever Flow provides that option. For clips 2–4, the supplied Start Frame must be the saved final frame of the immediately previous clip; it is not a newly generated reference image. Preserve the exact original character, not a lookalike: small quadruped white nine-tailed fox; oversized round lavender-to-ice-blue eyes with long lashes; tiny pink nose; pale blue-and-lilac flower-shaped forehead marking; white fur with soft blush-pink tail tips; exactly nine large fluffy tails; delicate blue flower necklace and one round aqua pendant. Preserve the reference image's bright ethereal pastel 3D illustration rendering across character and background: soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy spring-fantasy color grading. Never make a cat-like replacement, a different face, different eye color, missing necklace, missing pendant, different forehead marking, fewer or extra tails, photorealistic background, dark realistic background, cel shading, rough game rendering, extra animal, fairy, sprite, ghost, floating creature, winged light being, or companion. Any magical transformation light must remain abstract non-sentient light only.`;
+const TRANSFORMATION_VISIBILITY_SUFFIXES = [
+  '', '', '',
+  'VISIBLE TRANSFORMATION REQUIREMENT FOR CLIP 3: This must look like a real 35–50% physical transformation, not a color filter. Make all four changes visibly readable at once: (1) a clear food-derived texture or patterned sheen across the chest and upper back, (2) the same motif on exactly three to five tail tips, (3) a distinct but unfinished food-derived accent along both ear edges, and (4) a half-formed small ornament beside the existing forehead flower marking. Keep the original white fox identity, face, necklace, pendant, and nine-tail structure. Do not limit the change to tail color alone.',
+  'VISIBLE TRANSFORMATION REQUIREMENT FOR CLIP 4: Make the completed food-derived design plainly visible in the final frame, not merely a lighting change. Show all five matching elements: (1) a refined food-derived fur texture across chest and upper back, (2) coordinated detailing on all nine tail tips, (3) clear matching trim along both ear edges, (4) one fully formed small ornament beside—not over—the original forehead flower marking, and (5) a small matching glow or filigree accent around the existing aqua pendant without removing the necklace. Preserve the white fox body, original face, lavender-blue eyes, blush-pink tail ends, and exactly nine tails. No literal food pieces on the body.'
+];
 function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
 function stagePrompt(storyboard, stage){
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
@@ -78,13 +84,20 @@ function stagePrompt(storyboard, stage){
   if (start < 0) return '';
   const next = stage < 4 ? storyboard.indexOf(labels[stage + 1], start + 1) : storyboard.indexOf('[32초 쇼츠 길이]', start + 1);
   const section = storyboard.slice(start, next > start ? next : undefined);
-  if (stage === 0) return (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
+  if (stage === 0) {
+    const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
+    return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
+  }
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
   const foodLock = FOOD_CONTINUITY_SUFFIXES[stage] || '';
   const motion = stage >= 1 && stage <= 3 ? EXTEND_MOTION_SUFFIX : '';
-  return [prompt, narrative, foodLock, motion].filter(Boolean).join('\n\n');
+  const food = current?.food || current?.title?.split(' · ')[0] || '';
+  const [, feature, colors] = foodProfile(food);
+  const foodDesign = stage >= 3 ? `FOOD-SPECIFIC DESIGN TO APPLY: ${foodTransformationPrompt(food, feature, colors)}` : '';
+  const visibility = TRANSFORMATION_VISIBILITY_SUFFIXES[stage] || '';
+  return [prompt, STORY_COMMON_SUFFIX, narrative, foodLock, foodDesign, visibility, motion].filter(Boolean).join('\n\n');
 }
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
@@ -338,10 +351,10 @@ $('storyboard').onclick = async () => {
     `[이미지 역할 구분 — 가장 중요]\n① 원본 캐릭터 참조 이미지: 사용자가 만든 흰 아홉꼬리 여우 이미지다. 0단계 이미지와 클립 1을 만들 때 Reference/Ingredients로 첨부한다. 캐릭터 외형과 배경 그림체의 기준이다.\n② 다음 클립 Start Frame: 새로 생성하는 이미지가 아니다. 클립 2는 클립 1의 마지막 저장 프레임, 클립 3은 클립 2의 마지막 저장 프레임, 클립 4는 클립 3의 마지막 저장 프레임을 쓴다.\n\n따라서 클립 2에는 ‘클립 1 마지막 프레임’을 Start Frame으로 넣는다. Flow가 Reference/Ingredients를 추가로 받을 수 있으면 원본 캐릭터 참조 이미지도 함께 넣되, 새 기준 이미지는 만들지 않는다. Start Frame은 장면 연결을, 원본 참조 이미지는 캐릭터·그림체 유지를 담당한다.\n\n[음식별 변신 설계 — 그대로 따라야 함]\n${food}의 변화는 다음 설계를 그대로 따른다: ${foodTransformation}\n변화는 3단계에서 35–50%까지만 진행하고, 4단계에서만 완성한다. 원래 흰 털·분홍 꼬리 끝·큰 라벤더/푸른 눈·이마 꽃문양·꽃 목걸이·푸른 펜던트를 절대 교체하지 않는다.\n\n[그림체 잠금]\n배경은 캐릭터와 동일한 밝고 몽환적인 파스텔 3D 일러스트 렌더링으로 만든다: 부드러운 크림색 디테일, 공기감 있는 발광, 파우더 블루·블러시 핑크 하이라이트, 얕고 부드러운 심도, 벚꽃빛 역광, 깨끗한 동화풍 판타지 질감. 사진처럼 사실적인 배경, 어두운 실사 배경, 애니 셀 셰이딩, 거친 3D 게임 질감, 서로 다른 화풍을 금지한다. 장소는 바뀔 수 있어도 그림체·광원·색보정·렌즈 감성은 원본 캐릭터 참조 이미지와 동일하게 유지한다.\n\n[제작 방식]`
   ).replace(
     `Show clear ${foodFeature}-inspired ${foodColors} reflections, subtle new fur texture, and a small unfinished forehead ornament; preserve the original face and body.`,
-    `Follow this exact food-derived design, but leave it only 35–50 percent complete: ${foodTransformation} Preserve the original face and body.`
+    `Follow this exact food-derived design, but leave it only 35–50 percent complete: ${foodTransformation} Make the change clearly visible across the chest and upper back, three to five tail tips, both ear edges, and a half-formed ornament beside the original forehead flower marking. This must be a readable physical design change, not tail color alone. Preserve the original face and body.`
   ).replace(
     `complete the food-inspired fur texture, ${foodColors} reflections, nine tail-tip details, and one small forehead ornament while preserving the original character identity.`,
-    `complete this exact food-derived design: ${foodTransformation} Preserve the original character identity.`
+    `complete this exact food-derived design: ${foodTransformation} Make the final design plainly visible: coordinated texture across chest and upper back, matching details on all nine tail tips and both ear edges, one finished ornament beside the original forehead flower marking, and one subtle matching filigree accent around the existing aqua pendant without removing the necklace. This must be more than a lighting or tail-color change. Preserve the original character identity.`
   ).replace(
     `By the end, only the same empty plate or wrapper and a few matching crumbs remain.`,
     `By the end, only the same empty plate or wrapper and a few matching crumbs remain. Exactly one physical ${food} exists at every instant: never show a second whole food, duplicate half, separate bite piece, or another ${food} on the ground while the original is in the mouth or paw.`
