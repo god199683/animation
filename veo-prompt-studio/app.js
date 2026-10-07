@@ -342,6 +342,12 @@ $('storyboard').onclick = async () => {
   ).replace(
     `complete the food-inspired fur texture, ${foodColors} reflections, nine tail-tip details, and one small forehead ornament while preserving the original character identity.`,
     `complete this exact food-derived design: ${foodTransformation} Preserve the original character identity.`
+  ).replace(
+    `By the end, only the same empty plate or wrapper and a few matching crumbs remain.`,
+    `By the end, only the same empty plate or wrapper and a few matching crumbs remain. Exactly one physical ${food} exists at every instant: never show a second whole food, duplicate half, separate bite piece, or another ${food} on the ground while the original is in the mouth or paw.`
+  ).replace(
+    `Continue the faint existing light from the ear tip or front paw.`,
+    `Continue the faint existing light from the ear tip or front paw. The light is abstract, non-sentient magical illumination only: never create a fairy, sprite, ghost, floating creature, face, eyes, wings, companion, or additional character.`
   );
   $('result-title').textContent = `${current.title} · Google Flow 스토리보드`;
   $('output').textContent = styledManualFrameStoryboard;
