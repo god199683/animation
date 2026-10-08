@@ -77,6 +77,11 @@ const TRANSFORMATION_VISIBILITY_SUFFIXES = [
   'VISIBLE TRANSFORMATION REQUIREMENT FOR CLIP 3: This must look like a real 35–50% physical transformation, not a color filter. Make all four changes visibly readable at once: (1) a clear food-derived texture or patterned sheen across the chest and upper back, (2) the same motif on exactly three to five tail tips, (3) a distinct but unfinished food-derived accent along both ear edges, and (4) a half-formed small ornament beside the existing forehead flower marking. Keep the original white fox identity, face, necklace, pendant, and nine-tail structure. Do not limit the change to tail color alone.',
   'VISIBLE TRANSFORMATION REQUIREMENT FOR CLIP 4: Make the completed food-derived design plainly visible in the final frame, not merely a lighting change. Show all five matching elements: (1) a refined food-derived fur texture across chest and upper back, (2) coordinated detailing on all nine tail tips, (3) clear matching trim along both ear edges, (4) one fully formed small ornament beside—not over—the original forehead flower marking, and (5) a small matching glow or filigree accent around the existing aqua pendant without removing the necklace. Preserve the white fox body, original face, lavender-blue eyes, blush-pink tail ends, and exactly nine tails. No literal food pieces on the body.'
 ];
+const IRREVERSIBLE_TRANSFORMATION_SUFFIXES = [
+  '', '', '',
+  'IRREVERSIBLE TIME RULE FOR CLIP 3: Transformation is cumulative and one-way. Begin from the exact faint ear-tip or paw light already present in the supplied Start Frame. Once any new food-derived pattern, sheen, ear trim, tail-tip detail, or forehead-side ornament becomes visible, it must remain visibly present in every later frame of this clip. Build only forward in layers: seconds 0–2 keep the starting light; seconds 2–4 add chest/upper-back texture and ear trim without removing the light; seconds 4–6 add three to five transformed tail tips without removing prior changes; seconds 6–8 retain every prior change while forming the half ornament. Never flash back to clean original fur, undo a change, dissolve it away, alternate between original and transformed states, or reset the character.',
+  'IRREVERSIBLE TIME RULE FOR CLIP 4: Start by preserving every partial transformation detail already visible in the supplied Start Frame. Transformation is cumulative and one-way: never revert to clean original fur or make any previously changed chest, back, ear, tail tip, or ornament disappear. Add the remaining details in layers while all existing ones stay visible. The final frame must contain all prior clip-3 changes plus the completed chest/back texture, both ear trims, all nine tail-tip details, completed forehead-side ornament, and pendant accent. No flashing back, dissolving, toggling, morph reset, or temporary return to the pre-transformation appearance.'
+];
 function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
 function stagePrompt(storyboard, stage){
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
@@ -98,7 +103,8 @@ function stagePrompt(storyboard, stage){
   const foodDesign = stage >= 3 ? `FOOD-SPECIFIC DESIGN TO APPLY: ${foodTransformationPrompt(food, feature, colors)}` : '';
   const masterContract = masterContinuityContract(food, feature, colors, current?.title?.split(' · ')[1] || 'the same established setting');
   const visibility = TRANSFORMATION_VISIBILITY_SUFFIXES[stage] || '';
-  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, foodDesign, visibility, motion].filter(Boolean).join('\n\n');
+  const irreversible = IRREVERSIBLE_TRANSFORMATION_SUFFIXES[stage] || '';
+  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, foodDesign, visibility, irreversible, motion].filter(Boolean).join('\n\n');
 }
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
@@ -129,8 +135,8 @@ function masterContinuityContract(food, feature, colors, place){
 Use one identical story for every output: the exact supplied white nine-tailed fox reference character in the same ${place}, with the same pastel luminous 3D illustration style, camera world, time of day, and lighting.
 Clip 1: discovery and scent exploration only; exactly one whole ${food}; no bite or transformation.
 Clip 2: natural consumption only; exactly one ${food} is bitten and fully eaten by the end; finish with only the same empty plate or wrapper plus matching crumbs.
-Clip 3: no food returns; start from that exact empty-plate state; show a clearly readable 35–50% transformation across chest, upper back, both ear edges, three to five tail tips, and a half-formed ornament beside the original forehead flower. Derive it from ${feature} and ${colors}; it must never be only a tail-color change.
-Clip 4: no food returns; complete the same design across chest, upper back, both ear edges, all nine tail tips, the small forehead-side ornament, and a subtle accent around the existing aqua pendant. Preserve the original face, eyes, white fur identity, pink tail ends, necklace, pendant, and exactly nine tails. No fairy, sprite, companion, literal food body parts, reset, or new character.`;
+Clip 3: no food returns; start from that exact empty-plate state; show a clearly readable 35–50% transformation across chest, upper back, both ear edges, three to five tail tips, and a half-formed ornament beside the original forehead flower. Derive it from ${feature} and ${colors}; it must never be only a tail-color change. Every change is cumulative: once a transformed detail appears, it stays visible through every remaining frame and can only gain additional layers.
+Clip 4: no food returns; complete the same design across chest, upper back, both ear edges, all nine tail tips, the small forehead-side ornament, and a subtle accent around the existing aqua pendant. Start by preserving every partial clip-3 change, then only add the remaining layers. Never flash back to clean fur, dissolve a transformed part, toggle states, or reset. Preserve the original face, eyes, white fur identity, pink tail ends, necklace, pendant, and exactly nine tails. No fairy, sprite, companion, literal food body parts, reset, or new character.`;
 }
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g,' ');
 const setSync = (text, online = false) => { $('sync-status').textContent = text; document.querySelector('.sync').classList.toggle('online', online); };
