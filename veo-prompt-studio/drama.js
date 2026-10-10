@@ -1,5 +1,5 @@
 const CONFIG = { url: 'https://pxzerharmpbxvmuomsfo.supabase.co', anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJweHplcmhhcm1wYnh2bXVvbXNmbyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzkwODQwLCJleHAiOjIxMDY0MTYyNDh9.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A' };
-CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJweHplcmhhcm1wYnh2bXVvbXNmbyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzkwODQwLCJleHAiOjIxMDY0MTYyNDh9.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
+CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 const $ = id => document.getElementById(id);
 const STORY_MODES = ['비밀을 추적하는 미스터리', '엇갈린 기억의 로맨스', '상처를 회복하는 성장극', '관계를 시험하는 휴먼 드라마', '시간 제한이 있는 스릴러', '현실과 환상이 겹치는 판타지'];
 const CLIP_BEATS = ['강한 도입 이미지와 인물의 즉각적 목표', '작은 단서 또는 관계의 균열', '행동으로 드러나는 갈등', '예상 밖의 정보 또는 감정 전환', '선택을 강요하는 압박', '감정이 꺾이거나 깊어지는 반응', '다음 편을 부르는 결정적 행동', '마지막 1초의 훅'];
