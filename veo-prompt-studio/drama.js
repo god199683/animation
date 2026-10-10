@@ -21,7 +21,7 @@ const STORY_VARIANTS = [
   { id: 'missing-object', premise: '사라진 물건 하나가 키워드와 얽힌 오래된 사건을 깨운다', conflict: '물건을 찾을수록 서로 다른 기억이 충돌한다', twist: '물건은 잃어버린 증거가 아니라 관계를 끊으려 했던 선택의 흔적이다', ending: '물건을 제자리에 두고 두 사람은 다른 길을 함께 걷는다' },
   { id: 'two-versions', premise: '같은 사건을 전혀 다르게 기억하는 두 사람이 마주한다', conflict: '한 사람의 기억을 믿는 순간 다른 한 사람을 배신하게 된다', twist: '두 기억 모두 맞지만, 누군가 중요한 순간을 의도적으로 비워 두었다', ending: '정답 대신 서로의 기억을 받아들이며 관계를 회복한다' }
 ];
-let dbClient = null, userId = null, archive = [], current = null;
+let dbClient = null, userId = null, archive = [], current = null, openedFromArchive = false;
 const normal = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const localKey = () => `tailframe-drama-archive:${userId || 'signed-out'}`;
 const setSync = (text, online = false) => { $('sync-status').textContent = text; $('sync-status').parentElement.classList.toggle('online', online); };
@@ -123,9 +123,29 @@ async function archiveCurrent() {
   if (dbClient && userId) { const payload = { id: current.id, user_id: userId, title: current.title, keywords: current.keywords.join(', '), signature: current.signature, duration_seconds: current.duration_seconds, episode_count: current.episode_count, script: current.script, episodes: current.episodes, summary: current.summary }; const { error } = await dbClient.from('drama_archive').upsert(payload, { onConflict: 'id' }); if (error) { alert(`PC에는 보관했지만 Supabase 저장에 실패했습니다: ${error.message}`); return; } }
   archive = readLocal(); $('archive').disabled = true; $('archive').textContent = '보관됨';
 }
-$('generate-drama').onclick = () => { const keys = splitKeywords($('keywords').value); if (keys.length < 2) return alert('서로 다른 핵심 키워드를 두 개 이상 입력해 주세요.'); const seconds = Number($('episode-duration').value); current = buildDrama(keys, $('tone').value.trim(), seconds); $('result-title').textContent = `${current.title} · ${current.episode_count}부작`; $('output').textContent = current.script; $('copy').disabled = false; $('archive').disabled = archive.some(item => item.signature === current.signature); $('archive').textContent = $('archive').disabled ? '이미 보관됨' : '보관'; renderCopyButtons(); };
+function showCurrent(fromArchive = false) {
+  openedFromArchive = fromArchive;
+  $('result-title').textContent = `${current.title} · ${current.episode_count}부작`;
+  $('output').textContent = current.script;
+  $('copy').disabled = false;
+  $('archive').disabled = fromArchive || archive.some(item => item.signature === current.signature);
+  $('archive').textContent = $('archive').disabled ? '보관됨' : '보관';
+  $('regenerate-latest').hidden = !fromArchive;
+  $('regenerate-latest').disabled = !fromArchive;
+  renderCopyButtons();
+}
+$('generate-drama').onclick = () => { const keys = splitKeywords($('keywords').value); if (keys.length < 2) return alert('서로 다른 핵심 키워드를 두 개 이상 입력해 주세요.'); current = buildDrama(keys, $('tone').value.trim(), Number($('episode-duration').value)); showCurrent(false); };
+$('regenerate-latest').onclick = () => {
+  if (!current) return;
+  const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
+  $('keywords').value = current.keywords.join(', ');
+  $('tone').value = current.tone || '';
+  $('episode-duration').value = String(seconds);
+  current = buildDrama(current.keywords, current.tone || '', seconds);
+  showCurrent(false);
+};
 $('copy').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(current.script); $('copy').textContent = '복사됨'; setTimeout(() => $('copy').textContent = '전체 복사', 1100); };
 $('archive').onclick = archiveCurrent;
 window.connectSupabase = async () => { try { dbClient = window.supabase.createClient(CONFIG.url, CONFIG.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }); const { data: { session } } = await dbClient.auth.getSession(); userId = session?.user?.is_anonymous ? null : session?.user?.id; if (!userId) { setSync('PC 드라마 보관함 사용 중'); return; } const { data, error } = await dbClient.from('drama_archive').select('*').order('created_at', { ascending: false }); if (error) { setSync('PC 드라마 보관함 사용 중'); return; } archive = [...(data || []), ...readLocal().filter(l => !(data || []).some(c => c.signature === l.signature))]; setSync('Supabase 드라마 보관함 연결됨', true); } catch { setSync('PC 드라마 보관함 사용 중'); } };
-if (location.search.includes('opened=archive')) { try { current = JSON.parse(localStorage.getItem('tailframe-opened-drama') || 'null'); if (current) { $('result-title').textContent = `${current.title} · ${current.episode_count}부작`; $('output').textContent = current.script; $('copy').disabled = false; $('archive').disabled = true; $('archive').textContent = '보관됨'; renderCopyButtons(); } } catch {} }
+if (location.search.includes('opened=archive')) { try { current = JSON.parse(localStorage.getItem('tailframe-opened-drama') || 'null'); if (current) showCurrent(true); } catch {} }
 archive = readLocal();
