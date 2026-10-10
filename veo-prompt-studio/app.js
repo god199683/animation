@@ -32,6 +32,13 @@ const sounds = [
   '만족한 순간의 낮은 콧소리와 부드러운 “rru…”',
   '변화를 느낀 순간의 작고 맑은 “nyu?”'
 ];
+const finalPoses = [
+  'settles into a three-quarter seated pose, one front paw lightly lifted, looking back over one shoulder toward the transformed tails',
+  'takes one small diagonal step, then pauses in a gentle standing pose with the chest facing camera and the tail fan curving behind',
+  'lowers into a relaxed sphinx-like pose with both front paws visible, head slightly tilted toward the transformed pendant',
+  'makes one soft half-turn, ending in a calm side-facing stance while glancing back at camera so the chest and tail tips stay visible',
+  'leans forward to inspect one transformed tail tip, then lifts the head into a quiet proud standing pose with ears alert'
+];
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
@@ -83,6 +90,7 @@ const IRREVERSIBLE_TRANSFORMATION_SUFFIXES = [
   'IRREVERSIBLE TIME RULE FOR CLIP 4: Start by preserving every partial transformation detail already visible in the supplied Start Frame. Transformation is cumulative and one-way: never revert to clean original fur or make any previously changed chest, back, ear, tail tip, or ornament disappear. Add the remaining details in layers while all existing ones stay visible. The final frame must contain all prior clip-3 changes plus the completed chest/back texture, both ear trims, all nine tail-tip details, completed forehead-side ornament, and pendant accent. No flashing back, dissolving, toggling, morph reset, or temporary return to the pre-transformation appearance.'
 ];
 const FINAL_FORM_HOLD_SUFFIX = 'FINAL POSE TRANSFORMATION LOCK FOR CLIP 4: During the final 2 seconds, the character may slow its breathing and settle into a natural pose, but the completed transformed design must remain fully visible and unchanged until the final frame. The chest/back texture, both ear trims, all nine transformed tail-tip details, forehead-side ornament, and pendant accent must all be present simultaneously in the final pose. “Preserve original white fox identity” means preserve the face, body silhouette, eyes, necklace, pendant, and nine-tail anatomy; it does NOT mean restoring clean pre-transformation fur, removing the food-derived design, fading effects away, or reducing the change to ordinary pink tail tips.';
+const FINAL_FORM_INVENTORY_SUFFIX = 'FINAL FORM INVENTORY FOR CLIP 4: Treat the completed transformation details as physical, persistent costume-like design elements, not temporary glow. In the final 2 seconds the camera must clearly show all of these at once: (1) the food-derived chest and upper-back pattern, (2) matching trim on both ear edges, (3) visible detailing on all nine tail tips, (4) one distinct food-derived ornament beside the existing forehead flower marking, and (5) a matching filigree or charm around the existing aqua pendant. Do not simplify, hide, shrink, fade, remove, or replace any of these decorations when the character settles into the final pose. Frame a clean three-quarter view with face, forehead, chest, pendant, and the spread tail tips unobscured.';
 const INGESTION_PROGRESS_SUFFIXES = [
   '', '',
   'GRADUAL INGESTION TIMELINE FOR CLIP 2: The single food prop must visibly shrink by physical eating, never vanish, dissolve, jump-cut, or get replaced. Seconds 0–2: keep 85–90% of the original food visible and make one small bite mark. Seconds 2–4: chew while the same prop remains clearly 60–70% of its original volume. Seconds 4–6: take the second small bite and leave 40–50% visibly attached to the same prop. Seconds 6–7: take one final small third bite and leave a clear 20–25% final portion on the same plate or wrapper. Seconds 7–8: do not eat more; keep that remainder visible while a faint first transformation light begins at one ear tip or front paw. Do NOT finish eating in this clip and do NOT reveal an empty plate yet. Keep the food, mouth, paw, and plate in one continuous shot with no camera cut, no occlusion hiding a swap, no duplicate food, no separate bite piece, and no magic disappearance.',
@@ -112,7 +120,8 @@ function stagePrompt(storyboard, stage){
   const irreversible = IRREVERSIBLE_TRANSFORMATION_SUFFIXES[stage] || '';
   const ingestion = INGESTION_PROGRESS_SUFFIXES[stage] || '';
   const finalHold = stage === 4 ? FINAL_FORM_HOLD_SUFFIX : '';
-  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, motion].filter(Boolean).join('\n\n');
+  const finalInventory = stage === 4 ? FINAL_FORM_INVENTORY_SUFFIX : '';
+  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, motion].filter(Boolean).join('\n\n');
 }
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
@@ -324,6 +333,7 @@ $('storyboard').onclick = async () => {
   const [, foodFeature, foodColors] = foodProfile(food);
   const foodTransformation = foodTransformationPrompt(food, foodFeature, foodColors);
   const masterContract = masterContinuityContract(food, foodFeature, foodColors, place);
+  const finalPose = pick(finalPoses);
   const storyboardDirections = [
     '카메라는 낮은 눈높이에서 음식과 얼굴 사이를 부드럽게 반원으로 이동한다.',
     '카메라는 캐릭터의 왼쪽 앞발에서 시작해 꼬리 끝을 따라 천천히 얼굴로 올라간다.',
@@ -391,6 +401,9 @@ $('storyboard').onclick = async () => {
     `Preserve the exact same empty plate or wrapper, crumbs, background, lighting, lens, camera axis, and ongoing forehead-bound light.`,
     `Preserve the exact same 20–25% bitten food remainder, its plate or wrapper, crumbs, background, lighting, lens, camera axis, and ongoing forehead-bound light. Do not eat more or change the food remainder.`
   ).replace(
+    `During the final second, arrive at a believable relaxed final scene with face and exactly nine tails visible; do not force a dramatic pose.`,
+    `During the final 2 seconds, ${finalPose}. Keep the face, forehead, chest, pendant, and all nine transformed tail tips unobscured in a clean three-quarter camera view; do not force a dramatic pose or simplify the transformed design.`
+  ).replace(
     `Continue the faint existing light from the ear tip or front paw.`,
     `Continue the faint existing light from the ear tip or front paw. The light is abstract, non-sentient magical illumination only: never create a fairy, sprite, ghost, floating creature, face, eyes, wings, companion, or additional character.`
   ).replace(
@@ -399,7 +412,7 @@ $('storyboard').onclick = async () => {
   ).replace(
     '2→3: 음식은 섭취 완료 상태이고 최초 빛이 같은 위치에서 이어지는가?',
     '2→3: 음식의 마지막 20–25%가 같은 위치에 남은 채, 클립 3 첫 프레임부터 변화가 시작되는가?'
-  ) + `\n\n━━━━━━━━━━━━━━━━━━\n\n${masterContract}`;
+  ) + `\n\n━━━━━━━━━━━━━━━━━━\n\n${masterContract}\n\n${FINAL_FORM_HOLD_SUFFIX}\n\n${FINAL_FORM_INVENTORY_SUFFIX}`;
   $('result-title').textContent = `${current.title} · Google Flow 스토리보드`;
   $('output').textContent = styledManualFrameStoryboard;
   setStageCopyActions(true);
