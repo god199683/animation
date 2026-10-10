@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Tailframe · Drama Archive</title><link rel="stylesheet" href="styles.css" /></head>
+<body>
+  <main>
+    <header class="topbar"><div><p class="eyebrow">DRAMA · SEPARATE ARCHIVE</p><h1>TAILFRAME</h1></div><div class="top-actions"><div class="sync"><span></span><span id="sync-status">드라마 보관함 연결 준비 중</span></div><a href="drama.html" class="archive-link">드라마 생성기</a><a href="index.html" class="archive-link">영상 생성기</a></div></header>
+    <section class="archive-page"><div class="archive-head"><div><p class="eyebrow">SAVED DRAMAS</p><h2>드라마 보관함 <span id="archive-count">0</span></h2></div><button id="refresh">새로 고침</button></div><div id="archive-list" class="archive-list"><p class="empty">드라마 보관함을 불러오는 중입니다.</p></div></section>
+  </main>
+  <template id="archive-item"><article class="archive-item"><div><p class="archive-meta"></p><h3></h3><p class="archive-summary"></p></div><div class="archive-actions"><button class="view">열기</button><button class="remove">삭제</button></div></article></template>
+  <script src="drama-archive.js"></script>
+  <script>window.addEventListener('load',()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=()=>window.connectSupabase?.();document.head.appendChild(s);});</script>
+</body>
+</html>

@@ -8,6 +8,7 @@
 2. Supabase Dashboard의 **Authentication > Providers > Email**에서 Email provider를 켜고 **Confirm email**을 끕니다. Anonymous sign-ins는 끕니다.
 3. 프로그램을 실행하고, 필요할 때 ID·비밀번호로 로그인합니다. 프롬프트 생성은 로그인 없이도 됩니다.
 4. 조건을 적거나 비워 두고 **새 프롬프트 생성**을 누릅니다. Gemini OMNI와 Google Flow 버전을 각각 확인하고, 마음에 드는 결과만 **보관**합니다.
+5. **드라마 생성기**에서는 키워드 2개 이상을 입력하면, 키워드 관계에 맞춰 자동으로 편수를 정하고 회차별 8초 클립 대본을 만듭니다. 드라마 보관함은 영상 프롬프트 보관함과 별도입니다.
 
 Windows 프로그램으로 빌드할 때는 `npm install` 후 `npm run dist`를 실행합니다. 생성된 `Tailframe-VEO-Prompt-Studio.exe`는 설치 없이 실행되는 포터블 앱입니다.
 
@@ -20,4 +21,6 @@ Windows 프로그램으로 빌드할 때는 `npm install` 후 `npm run dist`를 
 - `styles.css` — 반응형 UI
 - `supabase-setup.sql` — 테이블·RLS·권한 설정
 - `archive.html`, `archive.js` — 별도 보관함 화면
+- `drama.html`, `drama.js` — 키워드 기반 회차형 드라마 생성기
+- `drama-archive.html`, `drama-archive.js` — 드라마 전용 보관함
 - `main.js`, `preload.js` — Windows Electron 실행 파일 구성

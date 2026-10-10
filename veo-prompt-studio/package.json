@@ -18,6 +18,10 @@
       "app.js",
       "archive.html",
       "archive.js",
+      "drama.html",
+      "drama.js",
+      "drama-archive.html",
+      "drama-archive.js",
       "main.js",
       "preload.js",
       "package.json"

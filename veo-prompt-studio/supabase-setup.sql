@@ -24,6 +24,28 @@ create policy "Users manage own VEO archive" on public.veo_prompt_archive
 grant select, insert, update, delete on public.veo_prompt_archive to authenticated;
 create index if not exists veo_prompt_archive_owner_created_idx on public.veo_prompt_archive (user_id, created_at desc);
 
+-- 드라마 생성기 전용 보관함. 기존 영상 프롬프트 보관함과 절대 섞이지 않습니다.
+create table if not exists public.drama_archive (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  keywords text not null,
+  signature text not null,
+  duration_seconds integer not null,
+  episode_count integer not null,
+  script text not null,
+  episodes jsonb not null default '[]'::jsonb,
+  summary text,
+  created_at timestamptz not null default now()
+);
+alter table public.drama_archive enable row level security;
+drop policy if exists "Users manage own drama archive" on public.drama_archive;
+create policy "Users manage own drama archive" on public.drama_archive
+  for all to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+grant select, insert, update, delete on public.drama_archive to authenticated;
+create index if not exists drama_archive_owner_created_idx on public.drama_archive (user_id, created_at desc);
+
 -- Dashboard > Authentication > Providers > Email에서 Email provider를 켜고
 -- Confirm email은 끄세요. 앱은 사용자가 입력한 ID를 내부 전용 식별자로 변환하므로 이메일 입력·발송은 하지 않습니다.
 -- 기존 Anonymous sign-ins는 꺼 두세요.
