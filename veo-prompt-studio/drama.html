@@ -18,15 +18,17 @@
         <div class="panel-heading"><p class="eyebrow">NEW DRAMA</p><h2>키워드로 드라마를 설계하세요</h2><p>키워드 수와 관계를 바탕으로 적정 편수를 자동 결정합니다.</p></div>
         <label>핵심 키워드 <textarea id="keywords" rows="5" placeholder="예: 기억을 잃은 피아니스트, 오래된 카세트테이프, 첫사랑, 겨울 바다"></textarea></label>
         <label>원하는 분위기 <input id="tone" placeholder="예: 미스터리 로맨스 / 따뜻한 성장물" /></label>
+        <label>대본 전개 방식 <select id="script-style"><option value="korean-short" selected>한국형 감정 드라마</option><option value="koreanized-cdrama">중국 숏드라마식 한국화</option></select></label>
         <label>회당 길이 <select id="episode-duration"><option value="60" selected>60초 권장</option><option value="45">45초</option><option value="30">30초</option></select></label>
         <button id="generate-drama" class="primary">드라마 생성</button>
         <p class="hint">기본 60초는 인물 소개·갈등·반전·다음 화 훅을 한 편에 담기 가장 안정적인 길이입니다.</p>
       </aside>
       <section class="result-panel">
-        <div class="result-head"><div><p class="eyebrow">DRAMA PACKAGE</p><h2 id="result-title">생성 준비 완료</h2></div><div class="result-actions"><button id="regenerate-latest" disabled hidden>최신 규칙으로 재생성</button><button id="copy" disabled>전체 복사</button><button id="archive" disabled class="accent">보관</button></div></div>
+        <div class="result-head"><div><p class="eyebrow">DRAMA PACKAGE</p><h2 id="result-title">생성 준비 완료</h2></div><div class="result-actions"><button id="preview-script" disabled>대본 미리보기</button><button id="regenerate-latest" disabled hidden>최신 규칙으로 재생성</button><button id="copy" disabled>전체 복사</button><button id="archive" disabled class="accent">보관</button></div></div>
         <div id="character-copy-actions" class="stage-copy-actions" hidden></div>
         <div id="clip-copy-actions" class="stage-copy-actions" hidden></div>
         <pre id="output">키워드를 입력하고 “드라마 생성”을 누르면, 자동으로 정한 편수만큼 회차별 대본을 만듭니다.</pre>
+        <pre id="script-preview" hidden></pre>
       </section>
     </section>
   </main>
