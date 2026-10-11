@@ -23,7 +23,7 @@ const STORY_VARIANTS = [
 ];
 const SCRIPT_STYLES = {
   'korean-short': { label: '한국형 감정 드라마', rhythm: '인물의 감정과 선택을 충분히 보여 주되, 장면마다 다음 장면으로 이어지는 작은 질문을 남긴다.', instruction: 'Naturalistic Korean short-drama pacing: grounded reactions, emotionally precise dialogue, and restrained but clear turns.' },
-  'koreanized-cdrama': { label: '중국 숏드라마식 한국화', rhythm: '매 클립 첫 1초에 상황을 뒤집는 정보나 압박을 제시하고, 중간에는 억울함·모함·신분의 단서·반격 중 하나를 행동으로 보여 준다. 마지막 1초는 다음 클립을 반드시 보게 하는 결정적 훅으로 끝낸다. 단, 한국 현대극의 자연스러운 대사와 현실적인 감정선을 유지한다.', instruction: 'High-density Korean-localized vertical mini-drama pacing: immediate hook, escalating injustice or suspicion, an earned counterattack, one reveal per beat, and a decisive cliffhanger every clip. Original Korean setting only; do not imitate any named Chinese drama, actor, or existing work.' }
+  'koreanized-cdrama': { label: '중국 숏드라마식 한국화', rhythm: '각 회차 첫 3초 안에 전 회차의 질문을 이어받아 새로운 압박을 보여 주고, 중간에는 억울함·모함·신분의 단서·반격 중 하나를 행동으로 전환한다. 회차 끝은 다음 화에서 답이 필요한 질문 또는 선택으로 끝낸다. 단, 한국 현대극의 자연스러운 대사와 현실적인 감정선을 유지한다.', instruction: 'High-density Korean-localized vertical mini-drama pacing: resolve or complicate the prior cliffhanger in the opening seconds, create one concrete escalation or reversal, and end on a new unanswered stake. Original Korean setting only; use genre conventions without imitating any named Chinese drama, actor, script, or existing work.' }
 };
 let dbClient = null, userId = null, archive = [], current = null, openedFromArchive = false;
 const normal = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -37,7 +37,7 @@ const setSync = (text, online = false) => { $('sync-status').textContent = text;
 const readLocal = () => { try { const data = JSON.parse(localStorage.getItem(localKey()) || '[]'); return Array.isArray(data) ? data : []; } catch { return []; } };
 const writeLocal = items => localStorage.setItem(localKey(), JSON.stringify(items));
 const splitKeywords = text => [...new Set(String(text || '').split(/[\n,/#]+/).map(v => v.trim()).filter(Boolean))];
-const episodeCountFor = keys => Math.max(30, Math.min(50, 28 + Math.ceil(keys.length / 2)));
+const episodeCountFor = keys => Math.max(30, 28 + Math.ceil(keys.length / 2));
 const clipCountFor = seconds => seconds === 30 ? 4 : seconds === 45 ? 6 : 8;
 function makeOriginalName(used = new Set()) { let name = ''; do { name = `${NAME_HEADS[Math.floor(Math.random() * NAME_HEADS.length)]}${NAME_TAILS[Math.floor(Math.random() * NAME_TAILS.length)]}`; } while (used.has(name)); used.add(name); return name; }
 function signatureFor(keys, tone, seconds, mode, cast, style) { return [keys.map(normal).sort().join('|'), normal(tone), seconds, mode, style, cast.lead, cast.counterpart].join('::'); }
@@ -75,8 +75,9 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
     위기: { goal: `${object(focus)} 포기할지, 관계를 지킬지 결정한다`, turn: '가장 가까운 사람이 가장 아픈 진실을 꺼낸다', hook: `결정의 대가가 바로 다음 회차에 닥친다` },
     결말: { goal: `처음의 상처를 외면하지 않고 새로운 선택을 한다`, turn: variant.ending, hook: '두 사람은 잃어버린 답 대신 앞으로의 약속을 고른다' }
   }[phase];
+  const carryOver = number === 1 ? '평범했던 일상에 처음 균열이 생긴다.' : `${number - 1}화 마지막에 남은 질문이 두 사람을 다시 같은 장소로 이끈다.`;
   const actions = [
-    `${topic(cast.lead)} ${withWord(focus)} 연결된 작은 흔적을 발견하고, 아무에게도 말하지 않은 이유를 떠올린다.`,
+    `${carryOver} ${topic(cast.lead)} ${withWord(focus)} 연결된 작은 흔적을 발견하고, 아무에게도 말하지 않은 이유를 떠올린다.`,
     `${topic(cast.counterpart)} 그 흔적을 숨기려 하지만, ${topic(cast.lead)} 이미 달라진 표정을 놓치지 않는다.`,
     `두 사람은 같은 기억을 서로 다르게 말하며, ${subject(pressure)} 사건의 중심에 있음을 깨닫는다.`,
     `${topic(cast.lead)} 피하지 않고 직접 확인하겠다고 말하고, ${topic(cast.counterpart)} 잠시 망설인 뒤 길을 연다.`,
@@ -95,9 +96,22 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
     [`“진실을 택하면 우리 사이도 끝날 수 있어.”`, `“끝나더라도 네가 혼자 남게 두진 않을게.”`],
     [`“이제 선택해. 여기서 멈출지, 끝까지 갈지.”`, `“끝까지 갈게. 이번에는 내 발로.”`]
   ];
+  const leadVariations = [
+    `“${object(focus)} 더는 모른 척하지 않을 거야.”`, `“이번에는 내가 먼저 확인할게.”`, `“네가 숨긴 이유까지 듣고 판단하겠어.”`, `“두려워도 여기서 돌아가진 않아.”`,
+    `“내가 잃은 시간을 되찾겠다는 뜻은 아니야.”`, `“진실이 아프더라도 내 선택은 달라지지 않아.”`, `“네 말보다 네가 망설인 순간을 믿을게.”`, `“이번에는 누구도 혼자 두지 않겠어.”`,
+    `“이 단서가 끝이 아니라 시작이라는 걸 알아.”`, `“나를 위한 거짓말이라도 이제는 필요 없어.”`, `“우리가 다른 기억을 가졌다면, 같이 맞춰 보면 돼.”`, `“끝까지 듣고, 그다음에 떠날지 결정할게.”`
+  ];
+  const counterpartVariations = [
+    `“${object(focus)} 꺼내면 모든 것이 달라질 수 있어.”`, `“내가 침묵한 건 널 속이려는 마음만은 아니었어.”`, `“지금의 널 지키려다 과거의 너를 놓쳤어.”`, `“네가 원한다면 더는 숨기지 않을게.”`,
+    `“그날의 진실은 하나가 아니야.”`, `“네가 나를 미워해도, 이 문은 함께 열어야 해.”`, `“내가 먼저 말하지 못한 건 비겁해서였어.”`, `“이번만큼은 네 선택을 막지 않겠어.”`,
+    `“그 단서는 네가 생각하는 사람을 가리키지 않아.”`, `“나도 답을 찾고 있었어. 혼자였을 뿐이야.”`, `“네가 떠나도 이해해. 그래도 사실은 남길게.”`, `“마지막까지 네 편이 되고 싶어.”`
+  ];
   const beats = Array.from({ length: clipCount }, (_, index) => {
     const source = Math.floor(index * actions.length / clipCount);
-    const [counterpartLine, leadLine] = exchanges[source];
+    const variationIndex = (number * 5 + source) % leadVariations.length;
+    const [baseCounterpart, baseLead] = exchanges[source];
+    const counterpartLine = index % 2 === 0 ? counterpartVariations[variationIndex] : baseCounterpart;
+    const leadLine = index % 2 === 0 ? baseLead : leadVariations[variationIndex];
     return { action: actions[source], counterpartLine: `${counterpartLine} — ${cast.counterpart}`, leadLine: `${leadLine} — ${cast.lead}` };
   });
   return { phase, ...phaseData, beats };
