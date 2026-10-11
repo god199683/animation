@@ -19,6 +19,7 @@ const SCRIPT_STYLES = {
   'korean-short': { label: '한국형 감정 드라마', rhythm: '인물의 감정과 선택을 충분히 보여 주되, 장면마다 다음 장면으로 이어지는 작은 질문을 남긴다.', instruction: 'Naturalistic Korean short-drama pacing: grounded reactions, emotionally precise dialogue, and restrained but clear turns.' },
   'koreanized-cdrama': { label: '중국 숏드라마식 한국화', rhythm: '각 회차 첫 3초 안에 전 회차의 질문을 이어받아 새로운 압박을 보여 주고, 중간에는 억울함·모함·신분의 단서·반격 중 하나를 행동으로 전환한다. 회차 끝은 다음 화에서 답이 필요한 질문 또는 선택으로 끝낸다. 단, 한국 현대극의 자연스러운 대사와 현실적인 감정선을 유지한다.', instruction: 'High-density Korean-localized vertical mini-drama pacing: resolve or complicate the prior cliffhanger in the opening seconds, create one concrete escalation or reversal, and end on a new unanswered stake. Original Korean setting only; use genre conventions without imitating any named Chinese drama, actor, script, or existing work.' }
 };
+const DEFAULT_SCRIPT_STYLE = 'koreanized-cdrama';
 const PRODUCTION_FORMATS = {
   drama: { label: '실사 한국 드라마', visual: 'grounded live-action Korean drama', direction: '현실적인 동선, 절제된 표정 연기, 소품과 침묵으로 감정을 보여 준다', audio: '현장음과 절제된 음악으로 감정의 빈자리를 남긴다' },
   animation: { label: '애니메이션 시리즈', visual: 'original cinematic animation series', direction: '인물의 동작과 상징적인 소품을 명료하게 보여 주되, 기존 애니메이션 작품의 화풍이나 캐릭터를 모방하지 않는다', audio: '행동과 감정을 돕는 절제된 효과음과 연속적인 음악 동기를 사용한다' },
@@ -175,7 +176,7 @@ function makeEpisodeScreenplays(title, episodes, cast, style, format = 'drama') 
     return `[${title} · ${ep.number}화 한국어 대본]\n\n오프닝 훅: ${ep.openingHook || ep.arc}\n이번 회차의 목표: ${ep.goal || ep.arc}\n전환점: ${ep.turn || ep.arc}\n연출 원칙: ${formatProfile.direction}. ${styleNote}\n\n${beats}\n\n(회차 엔딩 훅) ${ep.ending}`;
   });
 }
-function buildDrama(keys, tone, seconds, style = 'korean-short', format = 'drama', attempt = 0) {
+function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 'drama', attempt = 0) {
   const mode = STORY_MODES[attempt % STORY_MODES.length];
   const usedVariants = usedVariantIds(keys, tone, seconds);
   const candidates = STORY_VARIANTS.filter(variant => !usedVariants.has(variant.id));
@@ -195,9 +196,9 @@ function buildDrama(keys, tone, seconds, style = 'korean-short', format = 'drama
   const formatProfile = PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama;
   const header = `[드라마 제작 패키지]\n\n제목: ${title}\n작품 형식: ${formatProfile.label}\n장르: ${mode}\n핵심 키워드: ${keys.join(' · ')}\n톤: ${tone || '감정선이 선명한 시네마틱 드라마'}\n총 ${episodeCount}편 · 회당 약 ${clipCount * 8}초 · 회당 ${clipCount}개 클립(각 8초)\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[오리지널 등장인물]\n- ${cast.lead}: 주인공. ${keys[0]}을(를) 피하려 하지만 결국 그 진실을 스스로 선택해야 하는 인물.\n- ${cast.counterpart}: 상대역. 주인공이 원하는 답을 알고 있으나, 답을 주는 대가를 감추고 있는 인물.\n이름·외형·인물 설정은 이 시리즈를 위해 새로 만들었다. 유명인·실존 인물·기존 작품·프랜차이즈·저작권 캐릭터를 닮게 하거나 사용하지 않는다.\n\n[시리즈 성경]\n${cast.lead}은(는) ${keys[0]}을(를) 피할 수 없고, ${cast.counterpart}와의 관계에서 매 회차마다 신뢰·목표·비밀 중 하나를 얻거나 잃는다. 대사는 설명이 아니라 선택과 감정을 드러내야 하며, 침묵·시선·손의 움직임 같은 행동으로도 감정을 전달한다. ${formatProfile.direction}. 모든 회차는 같은 인물 외형, 핵심 소품, 세계관, 색보정, 사운드 질감을 유지한다. 클립을 연결할 때 다음 클립은 직전 마지막 프레임의 자세·시선·소품·조명·카메라 축에서 시작한다.\n\n[시즌 아크]\n${seasonArc(episodeCount, variant, cast)}\n`;
   const body = episodes.map(ep => `\n━━━━━━━━━━━━━━━━━━\n\n[${ep.number}화 · 약 ${clipCount * 8}초]\n회차 목표: ${ep.arc}\n엔딩 훅: ${ep.ending}\n\n` + ep.clips.map(c => `[클립 ${c.clip} · 8초]\n장면 기능: ${c.beat}\n대본: ${c.direction}\n상대역 대사: ${c.counterpartLine}\n주인공 대사: ${c.line}\n연출/Flow 프롬프트:\n${c.prompt}`).join('\n\n')).join('');
-  const uniqueHeader = header.replace('[오리지널 등장인물]', `[대본 전개 방식]\n${SCRIPT_STYLES[style].label}: ${SCRIPT_STYLES[style].rhythm}\n\n[기획 코드: ${variant.id}]\n\n[오리지널 등장인물]`);
+  const uniqueHeader = header.replace('[오리지널 등장인물]', `[기획 코드: ${variant.id}]\n\n[오리지널 등장인물]`);
   const screenplayEpisodes = makeEpisodeScreenplays(title, episodes, cast, style, format);
-  return { id: crypto.randomUUID(), title, signature, story_variant: variant.id, script_style: style, production_format: format, keywords: keys, tone, cast, duration_seconds: clipCount * 8, episode_count: episodeCount, episodes, screenplayEpisodes, screenplay: screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n'), script: uniqueHeader + body, summary: `${formatProfile.label} · ${SCRIPT_STYLES[style].label} · ${mode} · ${cast.lead}·${cast.counterpart} · ${episodeCount}편 · 회당 ${clipCount * 8}초`, created_at: new Date().toISOString() };
+  return { id: crypto.randomUUID(), title, signature, story_variant: variant.id, script_style: style, production_format: format, keywords: keys, tone, cast, duration_seconds: clipCount * 8, episode_count: episodeCount, episodes, screenplayEpisodes, screenplay: screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n'), script: uniqueHeader + body, summary: `${formatProfile.label} · ${mode} · ${cast.lead}·${cast.counterpart} · ${episodeCount}편 · 회당 ${clipCount * 8}초`, created_at: new Date().toISOString() };
 }
 function renderCopyButtons() {
   const root = $('clip-copy-actions'); root.innerHTML = '';
@@ -214,7 +215,7 @@ async function archiveCurrent() {
 }
 function episodePreviews() {
   if (Array.isArray(current?.screenplayEpisodes) && current.screenplayEpisodes.length) return current.screenplayEpisodes;
-  if (current?.episodes?.length) return makeEpisodeScreenplays(current.title, current.episodes, current.cast || { lead: '주인공', counterpart: '상대역' }, current.script_style || 'korean-short', current.production_format || 'drama');
+  if (current?.episodes?.length) return makeEpisodeScreenplays(current.title, current.episodes, current.cast || { lead: '주인공', counterpart: '상대역' }, current.script_style || DEFAULT_SCRIPT_STYLE, current.production_format || 'drama');
   return [current?.screenplay || '대본을 다시 생성해 주세요.'];
 }
 function showEpisodePreview(index = 0) {
@@ -241,16 +242,15 @@ function showCurrent(fromArchive = false) {
   $('regenerate-latest').disabled = !fromArchive;
   renderCopyButtons();
 }
-$('generate-drama').onclick = () => { const keys = splitKeywords($('keywords').value); if (keys.length < 2) return alert('서로 다른 핵심 키워드를 두 개 이상 입력해 주세요.'); current = buildDrama(keys, $('tone').value.trim(), Number($('episode-duration').value), $('script-style').value, $('production-format').value); showCurrent(false); };
+$('generate-drama').onclick = () => { const keys = splitKeywords($('keywords').value); if (keys.length < 2) return alert('서로 다른 핵심 키워드를 두 개 이상 입력해 주세요.'); current = buildDrama(keys, $('tone').value.trim(), Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, $('production-format').value); showCurrent(false); };
 $('regenerate-latest').onclick = () => {
   if (!current) return;
   const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
   $('keywords').value = current.keywords.join(', ');
   $('tone').value = current.tone || '';
   $('episode-duration').value = String(seconds);
-  $('script-style').value = current.script_style || 'korean-short';
   $('production-format').value = current.production_format || 'drama';
-  current = buildDrama(current.keywords, current.tone || '', seconds, $('script-style').value, $('production-format').value);
+  current = buildDrama(current.keywords, current.tone || '', seconds, DEFAULT_SCRIPT_STYLE, $('production-format').value);
   showCurrent(false);
 };
 $('preview-script').onclick = () => {
