@@ -97,6 +97,13 @@ const INGESTION_PROGRESS_SUFFIXES = [
   '', ''
 ];
 function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
+function thirdKeyframePrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  const design = foodTransformationPrompt(food, feature, colors);
+  return `Create ONE still vertical 9:16 partial-transformation reference image for clip 3. Use the saved final frame of clip 2 as the composition reference and the user's original white nine-tailed fox image as the character reference. Keep the exact same face, lavender-blue eyes, flower forehead marking, flower necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and same 20–25% bitten ${food} remainder on its plate or wrapper.\n\nShow ONE stable 35–50% food-derived physical design, not an animated effect: ${design}\n\nThe chest and upper back, both ear edges, exactly three to five tail tips, and one half-formed ornament beside the forehead flower must be visible together in a medium three-quarter view. Apply one unified ${feature}-inspired material language with ${colors} across every changed area. Keep the original white fox identity; do not restore clean original fur on any changed area. No glow covering details, no food chunks, no extra decoration, no extra character, no fairy, no text, no logo.\n\nUse this resulting image only as an additional Reference/Ingredient for clip 3. Do NOT use it as clip 3 Start Frame; the saved final frame of clip 2 remains the Start Frame to preserve motion continuity.`;
+}
 function compactThirdClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -114,7 +121,7 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
-  if (stage === 3) return compactThirdClipPrompt();
+  if (stage === 3) return `${compactThirdClipPrompt()}\n\nIf the generated “clip 3 partial-transformation reference image” is attached as an additional Ingredient, match its changed materials exactly. Keep the saved final frame of clip 2 as the only Start Frame; do not replace it with the reference image.`;
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
@@ -456,6 +463,7 @@ $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
 $('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; await navigator.clipboard.writeText(storyboard); const button = $('copy-full-storyboard'); button.textContent = '전체 복사됨'; setTimeout(() => button.textContent = '전체 스토리보드', 1200); };
+$('copy-clip3-keyframe').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(thirdKeyframePrompt()); const button = $('copy-clip3-keyframe'); button.textContent = '복사됨'; setTimeout(() => button.textContent = '3 변신 기준 이미지', 1200); };
 document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
