@@ -118,6 +118,18 @@ function compactThirdClipPrompt(){
   const design = foodTransformationPrompt(food, feature, colors);
   return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 2. This saved clip-2 frame is the Start Frame. Keep the user's original white nine-tailed fox reference image only as an additional character Ingredient, never as a replacement Start Frame.\n\nSINGLE PURPOSE: create and hold one stable partial transformation state. Keep the same face, lavender-blue eyes, forehead flower marking, flower necklace, aqua pendant, exactly nine tails, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder on the same plate or wrapper.\n\nSeconds 0–1: continue the existing faint ear-tip or paw light.\nSeconds 1–3: reveal this exact physical 35–50% food-derived design: ${design}\nSeconds 3–8: LOCK that revealed design as the character’s physical appearance. It must remain simultaneously visible without any change: chest and upper-back texture, both ear-edge trims, exactly three to five changed tail tips, and the half-formed ornament beside the original forehead flower. Only breathing, eye movement, one gentle tail arc, and abstract light may move.\n\nUse one stable medium three-quarter shot. Keep chest, forehead ornament, and changed tail tips visible; do not turn them away, cover them with light, or move the camera to hide them. The transformed details are permanent fur and ornament materials, NOT temporary glow. Preserve original character identity does NOT mean restoring clean original fur.\n\nNever revert, reverse-morph, flicker, cross-dissolve, pulse on/off, dissolve, reset, or show a before-and-after state. No food reappearing, no eating, no new character, no fairy, no sprite, no text, no logo, no cut. Final frame: the same locked 35–50% transformed design is still fully visible while the head and one tail are mid-motion.`;
 }
+function simpleThirdClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Preserve the exact original white nine-tailed fox, same face, eyes, flower forehead marking, necklace, aqua pendant, exactly nine tails, same ${place}, camera axis, lighting, and same 20–25% bitten ${food} remainder.\n\nCLIP 3 USES ONE CHANGE ONLY: a single unified ${feature}-inspired fur material with ${colors} reflection. Seconds 0–2: continue the faint light from clip 2. Seconds 2–4: apply the SAME thin physical texture and reflection as one continuous material across the chest, upper back, and the tips of all nine tails. Seconds 4–8: lock that one material unchanged. It is a permanent fur texture, not light, not particles, and not separate decorations.\n\nDo NOT change ears, forehead marking, forehead ornament, necklace, pendant, paws, or any other accessory in clip 3. Do NOT create multiple different motifs. Keep a stable medium three-quarter view with chest and all nine tail tips visible. Only breathing, eye movement, one gentle tail arc, and abstract light may move after the material is locked. Never reset, dissolve, flicker, reverse, hide, or restore the changed fur. No food reappearing, no eating, no new character, no fairy, no text, no logo, no cut. Final frame: the same unified partial fur material remains fully visible while motion continues.`;
+}
+function simpleFourthClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 3. Preserve the exact same character, face, eyes, forehead flower marking, necklace, aqua pendant, nine tails, ${place}, camera axis, lighting, bitten ${food} remainder, and especially the unified ${feature}-inspired ${colors} chest/back and nine-tail-tip fur material already visible in the Start Frame.\n\nCLIP 4 ADDS ONLY TWO SMALL FINAL DETAILS. Seconds 0–2: preserve the locked fur material unchanged. Seconds 2–4: add one small food-inspired ornament beside—not over—the existing forehead flower marking, and one subtle matching filigree accent around the existing aqua pendant. Seconds 4–8: keep the fur material, forehead ornament, and pendant accent all visible together while the character naturally notices the result and finishes one gentle tail movement.\n\nDo NOT alter ears, face, body shape, tail count, necklace, food, or background. Do NOT replace or simplify the clip-3 fur material. No new decorative categories, no glow hiding the details, no reset, no reversion, no food reappearing, no new character, no text, no logo, no fade. Final frame: face, forehead ornament, pendant accent, chest texture, and all nine tail tips are visible together in a relaxed natural pose.`;
+}
 function stagePrompt(storyboard, stage){
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
   const start = storyboard.indexOf(labels[stage]);
@@ -128,7 +140,8 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
-  if (stage === 3) return `${compactThirdClipPrompt()}\n\nIf the generated “clip 3 partial-transformation reference image” is attached as an additional Ingredient, match its changed materials exactly. Keep the saved final frame of clip 2 as the only Start Frame; do not replace it with the reference image.`;
+  if (stage === 3) return simpleThirdClipPrompt();
+  if (stage === 4) return simpleFourthClipPrompt();
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
@@ -471,8 +484,6 @@ $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
 $('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; await navigator.clipboard.writeText(storyboard); const button = $('copy-full-storyboard'); button.textContent = '전체 복사됨'; setTimeout(() => button.textContent = '전체 스토리보드', 1200); };
-$('copy-clip3-keyframe').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(thirdKeyframePrompt()); const button = $('copy-clip3-keyframe'); button.textContent = '복사됨'; setTimeout(() => button.textContent = '3 변신 기준 이미지', 1200); };
-$('copy-clip4-keyframe').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(fourthKeyframePrompt()); const button = $('copy-clip4-keyframe'); button.textContent = '복사됨'; setTimeout(() => button.textContent = '4 완성 기준 이미지', 1200); };
 document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
