@@ -5,12 +5,6 @@ const STORY_MODES = ['비밀을 추적하는 미스터리', '엇갈린 기억의
 const CLIP_BEATS = ['강한 도입 이미지와 인물의 즉각적 목표', '작은 단서 또는 관계의 균열', '행동으로 드러나는 갈등', '예상 밖의 정보 또는 감정 전환', '선택을 강요하는 압박', '감정이 꺾이거나 깊어지는 반응', '다음 편을 부르는 결정적 행동', '마지막 1초의 훅'];
 const NAME_HEADS = ['가온', '노을', '다온', '라온', '루아', '마린', '미온', '보름', '새론', '소담', '시온', '아린', '여울', '유담', '이든', '자온', '채온', '하린'];
 const NAME_TAILS = ['결', '린', '온', '솔', '담', '율', '윤', '람', '빈', '별', '하', '루'];
-const CHARACTER_VISUALS = [
-  { silhouette: 'slender young adult with a calm, intelligent gaze', hair: 'soft black bob with one loose strand', wardrobe: 'charcoal wool coat, ivory knit top, and a small brass-key pendant', palette: 'winter navy, muted ivory, aged brass' },
-  { silhouette: 'warm-eyed young adult with a restrained, observant presence', hair: 'dark chestnut hair tied low', wardrobe: 'deep olive jacket, cream shirt, and a weathered leather watch', palette: 'olive, cream, warm brown' },
-  { silhouette: 'sharp-featured young adult with guarded eyes and a gentle expression underneath', hair: 'short ash-brown hair with a natural side part', wardrobe: 'midnight-blue overshirt, soft gray scarf, and a thin silver ring', palette: 'midnight blue, gray, silver' },
-  { silhouette: 'quiet young adult with luminous eyes and an understated confidence', hair: 'long dark hair loosely braided', wardrobe: 'rust-colored cardigan, black trousers, and a tiny glass charm', palette: 'rust, black, amber' }
-];
 const STORY_VARIANTS = [
   { id: 'hidden-letter', premise: '사라진 편지 한 통이 현재의 관계를 되돌리는 출발점이 된다', conflict: '편지를 먼저 읽은 사람이 진실의 일부를 숨긴다', twist: '편지는 과거의 고백이 아니라 미래를 막으려는 경고였다', ending: '두 사람은 편지를 태우지 않고 함께 마지막 문장을 완성한다' },
   { id: 'borrowed-time', premise: '단 하루만 되돌릴 수 있는 기회가 주어진다', conflict: '시간을 되돌릴수록 두 사람의 공통 기억 하나가 사라진다', twist: '기회를 만든 사람은 상대역이 아니라 주인공 자신이었다', ending: '잃어버린 기억 대신 오늘의 선택을 기록하며 끝낸다' },
@@ -158,7 +152,7 @@ function makeClip(episode, clip, clipCount, keys, tone, mode, cast, style, plan)
   const direction = plannedBeat?.action || sceneDirection(episode, clip, clipCount, keys, cast);
   const line = plannedBeat?.leadLine || dialogueFor(focus, clip, episode, cast);
   const counterpartLine = plannedBeat?.counterpartLine || counterpartDialogueFor(focus, clip, episode, cast);
-  const prompt = `Generate an 8-second vertical 9:16 cinematic Korean short-drama clip, episode ${episode}, clip ${clip} of ${clipCount}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} Use the locked original character designs supplied for ${cast.lead} and ${cast.counterpart}; exact same faces, hair, wardrobe, age range, body proportions, and signature props. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}". Sound: continuous subtle room tone, footsteps/fabric/prop foley synced to movement, restrained score that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
+  const prompt = `Generate an 8-second vertical 9:16 cinematic Korean short-drama clip, episode ${episode}, clip ${clip} of ${clipCount}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} Keep ${cast.lead} and ${cast.counterpart} as consistent original fictional Korean characters across all clips. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}". Sound: continuous subtle room tone, footsteps/fabric/prop foley synced to movement, restrained score that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
   return { clip, beat, focus, direction, line, counterpartLine, prompt };
 }
 function makeEpisodeScreenplays(title, episodes, cast, style) {
@@ -174,13 +168,7 @@ function buildDrama(keys, tone, seconds, style = 'korean-short', attempt = 0) {
   const candidates = STORY_VARIANTS.filter(variant => !usedVariants.has(variant.id));
   const variant = (candidates.length ? candidates : STORY_VARIANTS)[Math.floor(Math.random() * (candidates.length || STORY_VARIANTS.length))];
   const usedNames = new Set();
-  const leadVisual = CHARACTER_VISUALS[Math.floor(Math.random() * CHARACTER_VISUALS.length)];
-  let counterpartVisual = CHARACTER_VISUALS[Math.floor(Math.random() * CHARACTER_VISUALS.length)];
-  if (counterpartVisual === leadVisual) counterpartVisual = CHARACTER_VISUALS[(CHARACTER_VISUALS.indexOf(leadVisual) + 1) % CHARACTER_VISUALS.length];
-  const imagePrompt = (name, role, visual) => `Create a single original character reference portrait for a Korean vertical short drama. Character name: ${name}; role: ${role}. ${visual.silhouette}; ${visual.hair}; wearing ${visual.wardrobe}. Palette: ${visual.palette}. Waist-up, three-quarter view, natural skin texture, cinematic soft key light, simple neutral studio background, 9:16 composition. This is a newly invented fictional character only. Do not depict, imitate, resemble, name, or borrow visual traits from any real person, celebrity, famous fictional character, existing franchise, or copyrighted character. No logos, text, watermark, or recognizable branded clothing.`;
   const cast = { lead: makeOriginalName(usedNames), counterpart: makeOriginalName(usedNames) };
-  cast.leadImagePrompt = imagePrompt(cast.lead, 'lead', leadVisual);
-  cast.counterpartImagePrompt = imagePrompt(cast.counterpart, 'counterpart', counterpartVisual);
   const signature = signatureFor(keys, tone, seconds, mode, cast, style);
   if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, attempt + 1);
   const episodeCount = episodeCountFor(keys), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
@@ -193,19 +181,12 @@ function buildDrama(keys, tone, seconds, style = 'korean-short', attempt = 0) {
   });
   const header = `[드라마 제작 패키지]\n\n제목: ${title}\n장르: ${mode}\n핵심 키워드: ${keys.join(' · ')}\n톤: ${tone || '감정선이 선명한 시네마틱 드라마'}\n총 ${episodeCount}편 · 회당 약 ${clipCount * 8}초 · 회당 ${clipCount}개 클립(각 8초)\n\n[오리지널 등장인물]\n- ${cast.lead}: 주인공. ${keys[0]}을(를) 피하려 하지만 결국 그 진실을 스스로 선택해야 하는 인물.\n- ${cast.counterpart}: 상대역. 주인공이 원하는 답을 알고 있으나, 답을 주는 대가를 감추고 있는 인물.\n이름·외형·인물 설정은 이 시리즈를 위해 새로 만들었다. 유명인·실존 인물·기존 작품·프랜차이즈·저작권 캐릭터를 닮게 하거나 사용하지 않는다.\n\n[캐릭터 기준 이미지 프롬프트]\n아래 두 프롬프트로 먼저 인물 기준 이미지를 각각 만든 뒤, 이후 모든 클립에 해당 이미지를 참조 이미지로 넣으세요.\n\n${cast.lead} 기준 이미지:\n${cast.leadImagePrompt}\n\n${cast.counterpart} 기준 이미지:\n${cast.counterpartImagePrompt}\n\n[시리즈 성경]\n${cast.lead}은(는) ${keys[0]}을(를) 피할 수 없고, ${cast.counterpart}와의 관계에서 매 회차마다 신뢰·목표·비밀 중 하나를 얻거나 잃는다. 대사는 설명이 아니라 선택과 감정을 드러내야 하며, 침묵·시선·손의 움직임 같은 행동으로도 감정을 전달한다. 모든 회차는 같은 인물 외형, 핵심 소품, 세계관, 색보정, 사운드 질감을 유지한다. 클립을 연결할 때 다음 클립은 직전 마지막 프레임의 자세·시선·소품·조명·카메라 축에서 시작한다.\n`;
   const body = episodes.map(ep => `\n━━━━━━━━━━━━━━━━━━\n\n[${ep.number}화 · 약 ${clipCount * 8}초]\n회차 목표: ${ep.arc}\n엔딩 훅: ${ep.ending}\n\n` + ep.clips.map(c => `[클립 ${c.clip} · 8초]\n장면 기능: ${c.beat}\n대본: ${c.direction}\n상대역 대사: ${c.counterpartLine}\n주인공 대사: ${c.line}\n연출/Flow 프롬프트:\n${c.prompt}`).join('\n\n')).join('');
-  const uniqueHeader = header.replace('[오리지널 등장인물]', `[대본 전개 방식]\n${SCRIPT_STYLES[style].label}: ${SCRIPT_STYLES[style].rhythm}\n\n[기획 코드: ${variant.id}]\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[오리지널 등장인물]`);
+  const headerWithoutImagePrompts = header.replace(/\n\n\[캐릭터 기준 이미지 프롬프트\][\s\S]*?\n\n\[시리즈 성경\]/, '\n\n[시리즈 성경]');
+  const uniqueHeader = headerWithoutImagePrompts.replace('[오리지널 등장인물]', `[대본 전개 방식]\n${SCRIPT_STYLES[style].label}: ${SCRIPT_STYLES[style].rhythm}\n\n[기획 코드: ${variant.id}]\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[오리지널 등장인물]`);
   const screenplayEpisodes = makeEpisodeScreenplays(title, episodes, cast, style);
   return { id: crypto.randomUUID(), title, signature, story_variant: variant.id, script_style: style, keywords: keys, tone, cast, duration_seconds: clipCount * 8, episode_count: episodeCount, episodes, screenplayEpisodes, screenplay: screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n'), script: uniqueHeader + body, summary: `${SCRIPT_STYLES[style].label} · ${mode} · ${cast.lead}·${cast.counterpart} · ${episodeCount}편 · 회당 ${clipCount * 8}초`, created_at: new Date().toISOString() };
 }
 function renderCopyButtons() {
-  const characterRoot = $('character-copy-actions'); characterRoot.innerHTML = '';
-  if (current?.cast?.leadImagePrompt) {
-    characterRoot.hidden = false;
-    const label = document.createElement('span'); label.textContent = '캐릭터 기준 이미지 프롬프트'; characterRoot.append(label);
-    [['주인공 이미지', current.cast.leadImagePrompt], ['상대역 이미지', current.cast.counterpartImagePrompt]].forEach(([text, prompt]) => {
-      const button = document.createElement('button'); button.textContent = text; button.onclick = async () => { await navigator.clipboard.writeText(prompt); const old = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = old, 900); }; characterRoot.append(button);
-    });
-  } else characterRoot.hidden = true;
   const root = $('clip-copy-actions'); root.innerHTML = '';
   if (!current) { root.hidden = true; return; }
   root.hidden = false;
