@@ -97,6 +97,13 @@ const INGESTION_PROGRESS_SUFFIXES = [
   '', ''
 ];
 function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
+function compactThirdClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  const design = foodTransformationPrompt(food, feature, colors);
+  return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 2. This saved clip-2 frame is the Start Frame. Keep the user's original white nine-tailed fox reference image only as an additional character Ingredient, never as a replacement Start Frame.\n\nSINGLE PURPOSE: create and hold one stable partial transformation state. Keep the same face, lavender-blue eyes, forehead flower marking, flower necklace, aqua pendant, exactly nine tails, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder on the same plate or wrapper.\n\nSeconds 0–1: continue the existing faint ear-tip or paw light.\nSeconds 1–3: reveal this exact physical 35–50% food-derived design: ${design}\nSeconds 3–8: LOCK that revealed design as the character’s physical appearance. It must remain simultaneously visible without any change: chest and upper-back texture, both ear-edge trims, exactly three to five changed tail tips, and the half-formed ornament beside the original forehead flower. Only breathing, eye movement, one gentle tail arc, and abstract light may move.\n\nUse one stable medium three-quarter shot. Keep chest, forehead ornament, and changed tail tips visible; do not turn them away, cover them with light, or move the camera to hide them. The transformed details are permanent fur and ornament materials, NOT temporary glow. Preserve original character identity does NOT mean restoring clean original fur.\n\nNever revert, reverse-morph, flicker, cross-dissolve, pulse on/off, dissolve, reset, or show a before-and-after state. No food reappearing, no eating, no new character, no fairy, no sprite, no text, no logo, no cut. Final frame: the same locked 35–50% transformed design is still fully visible while the head and one tail are mid-motion.`;
+}
 function stagePrompt(storyboard, stage){
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
   const start = storyboard.indexOf(labels[stage]);
@@ -107,6 +114,7 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
+  if (stage === 3) return compactThirdClipPrompt();
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
