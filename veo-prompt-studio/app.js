@@ -104,6 +104,13 @@ function thirdKeyframePrompt(){
   const design = foodTransformationPrompt(food, feature, colors);
   return `Create ONE still vertical 9:16 partial-transformation reference image for clip 3. Use the saved final frame of clip 2 as the composition reference and the user's original white nine-tailed fox image as the character reference. Keep the exact same face, lavender-blue eyes, flower forehead marking, flower necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and same 20–25% bitten ${food} remainder on its plate or wrapper.\n\nShow ONE stable 35–50% food-derived physical design, not an animated effect: ${design}\n\nThe chest and upper back, both ear edges, exactly three to five tail tips, and one half-formed ornament beside the forehead flower must be visible together in a medium three-quarter view. Apply one unified ${feature}-inspired material language with ${colors} across every changed area. Keep the original white fox identity; do not restore clean original fur on any changed area. No glow covering details, no food chunks, no extra decoration, no extra character, no fairy, no text, no logo.\n\nUse this resulting image only as an additional Reference/Ingredient for clip 3. Do NOT use it as clip 3 Start Frame; the saved final frame of clip 2 remains the Start Frame to preserve motion continuity.`;
 }
+function fourthKeyframePrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  const design = foodTransformationPrompt(food, feature, colors);
+  return `Create ONE still vertical 9:16 final-transformation reference image for clip 4. Use the saved final frame of clip 3 as the composition reference and the user's original white nine-tailed fox image as the identity reference. Keep the same face, lavender-blue eyes, flower forehead marking, flower necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and same bitten ${food} remainder.\n\nComplete this exact food-derived design as permanent physical materials: ${design}\n\nAll completed details must be visible together in one clean medium three-quarter view: refined chest and upper-back texture, both ear trims, matching detail on all nine tail tips, a completed ornament beside the original forehead flower, and one subtle matching filigree accent around the existing aqua pendant. Keep every partial clip-3 change and only add the remaining layers. No clean-fur reset, no glow hiding details, no food chunks, no extra decoration, no extra character, no fairy, no text, no logo.\n\nUse this resulting image only as an additional Reference/Ingredient for clip 4. Do NOT use it as clip 4 Start Frame; the saved final frame of clip 3 remains the Start Frame to preserve continuity.`;
+}
 function compactThirdClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -136,7 +143,8 @@ function stagePrompt(storyboard, stage){
   const ingestion = INGESTION_PROGRESS_SUFFIXES[stage] || '';
   const finalHold = stage === 4 ? FINAL_FORM_HOLD_SUFFIX : '';
   const finalInventory = stage === 4 ? FINAL_FORM_INVENTORY_SUFFIX : '';
-  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, motion].filter(Boolean).join('\n\n');
+  const finalReference = stage === 4 ? 'If a generated “clip 4 final-transformation reference image” is attached as an additional Ingredient, match its completed materials exactly. Keep the saved final frame of clip 3 as the only Start Frame; do not replace it with the reference image. The clip-3 partial reference is not needed for clip 4.' : '';
+  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, motion].filter(Boolean).join('\n\n');
 }
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
@@ -464,6 +472,7 @@ $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
 $('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; await navigator.clipboard.writeText(storyboard); const button = $('copy-full-storyboard'); button.textContent = '전체 복사됨'; setTimeout(() => button.textContent = '전체 스토리보드', 1200); };
 $('copy-clip3-keyframe').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(thirdKeyframePrompt()); const button = $('copy-clip3-keyframe'); button.textContent = '복사됨'; setTimeout(() => button.textContent = '3 변신 기준 이미지', 1200); };
+$('copy-clip4-keyframe').onclick = async () => { if (!current) return; await navigator.clipboard.writeText(fourthKeyframePrompt()); const button = $('copy-clip4-keyframe'); button.textContent = '복사됨'; setTimeout(() => button.textContent = '4 완성 기준 이미지', 1200); };
 document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
