@@ -30,7 +30,7 @@ const SCRIPT_STYLES = {
 };
 const DEFAULT_SCRIPT_STYLE = 'koreanized-cdrama';
 const GEMINI_STORAGE_KEY = 'tailframe-gemini-api-key';
-const GEMINI_MODEL = 'gemini-3.8-flash';
+const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.7-flash'];
 const PRODUCTION_FORMATS = {
   drama: { label: '실사 한국 드라마', visual: 'grounded live-action Korean drama', direction: '현실적인 동선, 절제된 표정 연기, 소품과 침묵으로 감정을 보여 준다', audio: '현장음과 절제된 음악으로 감정의 빈자리를 남긴다' },
   animation: { label: '애니메이션 시리즈', visual: 'original cinematic animation series', direction: '인물의 동작과 상징적인 소품을 명료하게 보여 주되, 기존 애니메이션 작품의 화풍이나 캐릭터를 모방하지 않는다', audio: '행동과 감정을 돕는 절제된 효과음과 연속적인 음악 동기를 사용한다' },
@@ -56,16 +56,22 @@ function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node
 function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
 async function callGeminiJson(instruction, maxOutputTokens = 16000) {
   if (!geminiApiKey) throw new Error('Google AI Studio API 키를 먼저 저장해 주세요.');
-  const delays = [0, 1000, 2500];
+  const attempts = [
+    { model: GEMINI_MODELS[0], delay: 0 },
+    { model: GEMINI_MODELS[1], delay: 1000 },
+    { model: GEMINI_MODELS[0], delay: 2500 }
+  ];
   let lastError = null;
-  for (let attempt = 0; attempt < delays.length; attempt += 1) {
-    if (delays[attempt]) {
-      const lastAttempt = attempt === delays.length - 1;
-      setGeminiStatus(lastAttempt ? 'Gemini 서버가 혼잡합니다. 마지막 재시도를 보내는 중…' : `Gemini 서버가 혼잡합니다. ${delays[attempt] / 1000}초 뒤 다시 시도합니다…`);
-      await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+  for (let attempt = 0; attempt < attempts.length; attempt += 1) {
+    const request = attempts[attempt];
+    if (request.delay) {
+      const switchingModel = request.model !== attempts[attempt - 1].model;
+      const lastAttempt = attempt === attempts.length - 1;
+      setGeminiStatus(switchingModel ? 'Gemini 3.8 서버가 혼잡합니다. 호환 모델로 자동 전환 중…' : lastAttempt ? 'Gemini 서버가 혼잡합니다. 마지막 재시도를 보내는 중…' : `Gemini 서버가 혼잡합니다. ${request.delay / 1000}초 뒤 다시 시도합니다…`);
+      await new Promise(resolve => setTimeout(resolve, request.delay));
     }
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${request.model}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }] }], generationConfig: { responseMimeType: 'application/json', temperature: 1, maxOutputTokens } })
       });
@@ -77,7 +83,7 @@ async function callGeminiJson(instruction, maxOutputTokens = 16000) {
     } catch (error) {
       lastError = error;
       const retriable = error?.status === 429 || error?.status === 500 || error?.status === 503 || /high demand|temporar|overload/i.test(error?.message || '');
-      if (!retriable || attempt === delays.length - 1) break;
+      if (!retriable || attempt === attempts.length - 1) break;
     }
   }
   throw lastError;
