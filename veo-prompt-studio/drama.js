@@ -51,6 +51,7 @@ const writeLocal = items => localStorage.setItem(localKey(), JSON.stringify(item
 const splitKeywords = text => [...new Set(String(text || '').split(/[\n,/#]+/).map(v => v.trim()).filter(Boolean))];
 const randomItem = list => list[Math.floor(Math.random() * list.length)];
 function randomDramaInputs() { return { keys: [...randomItem(RANDOM_KEYWORD_SETS)].sort(() => Math.random() - .5), tone: randomItem(RANDOM_TONES) }; }
+function formatFor(keys) { const source = keys.join(' '); if (/애니|animation|cartoon|만화/i.test(source)) return 'animation'; if (/영화|cinema|시네마/i.test(source)) return 'film'; return 'drama'; }
 function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node.textContent = text; }
 function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
 async function callGeminiJson(instruction, maxOutputTokens = 16000) {
@@ -65,9 +66,13 @@ async function callGeminiJson(instruction, maxOutputTokens = 16000) {
   if (!text) throw new Error('Gemini이 응답 내용을 반환하지 않았습니다. 무료 티어 한도를 확인해 주세요.');
   return extractJson(text);
 }
-function aiSeriesPrompt(keys, tone, seconds, format) {
+function aiSeriesPrompt(keys, tone, seconds, format, episodeCount) {
   const formatName = (PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama).label;
-  return `You are a Korean vertical microdrama showrunner. Create an ORIGINAL ${formatName} series production bible and episode plan in Korean. Do not imitate or reference any existing drama, film, animation, actor, celebrity, franchise, or copyrighted character. The audience is TikTok/Google Flow. Keywords: ${keys.join(', ') || 'random original premise'}. Tone: ${tone || 'high-stakes Korean-localized vertical microdrama'}. Each episode is approximately ${seconds} seconds. Create exactly 30 episodes. Every episode must have a different concrete incident, a changed relationship state, and a non-repeating cliffhanger. Use an ensemble of 6 original characters: two leads, confidant, rival, secret keeper, wildcard. Return JSON only: {"title":"","logline":"","seriesBible":"","characters":[{"name":"","role":"","goal":"","secret":""}],"episodes":[{"number":1,"title":"","openingHook":"","goal":"","incident":"","relationshipTurn":"","endingHook":""}]}.`;
+  return `You are a senior Korean drama, animation, and feature-film showrunner. Create an ORIGINAL ${formatName} vertical series bible and episode plan in polished Korean. Do not imitate or reference any existing drama, film, animation, actor, celebrity, franchise, or copyrighted character. The audience is TikTok/Google Flow. Keywords: ${keys.join(', ') || 'random original premise'}. Tone: ${tone || 'high-stakes Korean-localized vertical microdrama'}. Each episode is approximately ${seconds} seconds. Create exactly ${episodeCount} episodes.
+
+Quality rules: Build one coherent causal story, not a collection of interchangeable twists. First define the protagonist's wound, want, false belief, moral choice, and final change. Give every one of 6 ensemble characters a distinct goal, secret, relationship to the protagonist, and turning point. Divide the season into setup, escalation, midpoint reversal, counterattack, climax, and resolution. Each episode must resolve or worsen the exact prior cliffhanger, introduce one concrete new incident, change at least one relationship or power balance, and end with a different actionable cliffhanger. Do not repeat incidents, dialogue situations, locations, or vague phrases such as “the truth” without naming the specific fact. Keep Korean dialogue natural and emotionally specific.
+
+Return JSON only: {"title":"","logline":"","seriesBible":"setting, visual rules, season arcs, protagonist arc, and continuity rules","characters":[{"name":"","role":"","goal":"","secret":"","relationship":"","turningPoint":""}],"episodes":[{"number":1,"title":"","openingHook":"specific consequence of the prior episode or inciting event","goal":"","incident":"concrete event with named evidence/object/action","relationshipTurn":"","endingHook":"specific next decision or danger"}]}.`;
 }
 function aiEpisodePrompt() {
   const savedEpisode = current?.episodes?.[current.aiEpisodeNumber - 1];
@@ -75,7 +80,7 @@ function aiEpisodePrompt() {
   const cast = current?.aiPlan?.characters || Object.entries(current?.cast || {}).map(([role, name]) => ({ name, role }));
   return `You are a Korean vertical microdrama screenwriter and Google Flow prompt director. Write ONE original episode in Korean from the approved series plan below. Do not copy any existing work. Keep all character names, relationships, continuity, props, setting, and unresolved conflicts consistent. The episode must have natural, specific dialogue that advances this exact incident; do not reuse generic phrases. Return JSON only: {"screenplay":"full Korean screenplay for this episode, with concise action and speaker-labelled dialogue","clips":[{"action":"Korean action and continuity note","leadLine":"speaker — Korean line","counterpartLine":"speaker — Korean line","thirdLine":"optional speaker — Korean line","flowPrompt":"detailed English Google Flow 9:16 video prompt, include exact actions, Korean dialogue, sound, continuity from prior clip and no subtitles"}]}. Series bible: ${current.aiPlan?.seriesBible || current.script || ''}. Cast: ${JSON.stringify(cast)}. Episode outline: ${JSON.stringify(outline)}. Episode length: ${current.duration_seconds} seconds and ${savedEpisode?.clips?.length || 4} clips.`;
 }
-const episodeCountFor = keys => Math.max(30, 28 + Math.ceil(keys.length / 2));
+const episodeCountFor = () => Math.max(30, Number($('episode-count')?.value) || 30);
 const clipCountFor = seconds => seconds === 30 ? 4 : seconds === 45 ? 6 : 8;
 function makeOriginalName(used = new Set()) { let name = ''; do { name = `${NAME_HEADS[Math.floor(Math.random() * NAME_HEADS.length)]}${NAME_TAILS[Math.floor(Math.random() * NAME_TAILS.length)]}`; } while (used.has(name)); used.add(name); return name; }
 function signatureFor(keys, tone, seconds, mode, cast, style, format) { return [keys.map(normal).sort().join('|'), normal(tone), seconds, mode, style, format, cast.lead, cast.counterpart].join('::'); }
@@ -291,7 +296,7 @@ function makeEpisodeScreenplays(title, episodes, cast, style, format = 'drama') 
     return `[${title} · ${ep.number}화 한국어 대본]\n\n오프닝 훅: ${ep.openingHook || ep.arc}\n이번 회차의 목표: ${ep.goal || ep.arc}\n전환점: ${ep.turn || ep.arc}\n연출 원칙: ${formatProfile.direction}. ${styleNote}\n\n${beats}\n\n(회차 엔딩 훅) ${ep.ending}`;
   });
 }
-function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 'drama', attempt = 0) {
+function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 'drama', attempt = 0, episodeCountOverride = null) {
   const mode = STORY_MODES[attempt % STORY_MODES.length];
   const usedVariants = usedVariantIds(keys, tone, seconds);
   const candidates = STORY_VARIANTS.filter(variant => !usedVariants.has(variant.id));
@@ -300,8 +305,8 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
   const cast = { lead: makeOriginalName(usedNames), counterpart: makeOriginalName(usedNames), confidant: makeOriginalName(usedNames), rival: makeOriginalName(usedNames), guardian: makeOriginalName(usedNames), wildcard: makeOriginalName(usedNames) };
   const blueprint = buildMicroDramaBlueprint(keys, cast);
   const signature = signatureFor(keys, tone, seconds, mode, cast, style, format);
-  if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, format, attempt + 1);
-  const episodeCount = episodeCountFor(keys), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
+  if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, format, attempt + 1, episodeCountOverride);
+  const episodeCount = episodeCountOverride || episodeCountFor(), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
   const episodes = Array.from({ length: episodeCount }, (_, offset) => {
     const number = offset + 1, arc = episodeArc(number, episodeCount);
     const plan = makeEpisodePlan(number, episodeCount, keys, variant, cast, clipCount);
@@ -369,7 +374,7 @@ function generateDrama({ forceRandom = false } = {}) {
     $('keywords').value = keys.join(', ');
     $('tone').value = tone;
   }
-  current = buildDrama(keys, tone, Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, $('production-format').value);
+  current = buildDrama(keys, tone, Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, formatFor(keys));
   showCurrent(false);
 }
 function episodeOutlinePreview(title, episode) { return `[${title} · ${episode.number}화 대본 설계]\n\n오프닝 훅: ${episode.openingHook}\n이번 회차의 목표: ${episode.goal}\n고유 사건: ${episode.incident}\n관계 전환: ${episode.relationshipTurn}\n\n엔딩 훅: ${episode.endingHook}\n\n이 회차를 선택한 뒤 “AI로 ${episode.number}화 대본·프롬프트 생성”을 누르면, 이 설계를 바탕으로 실제 한국어 대본과 Google Flow 클립 프롬프트를 작성합니다.`; }
@@ -378,10 +383,10 @@ async function generateAiSeries() {
   if (keys.length < 2) { const random = randomDramaInputs(); keys = random.keys; tone = tone || random.tone; $('keywords').value = keys.join(', '); $('tone').value = tone; }
   const button = $('generate-ai-drama'); button.disabled = true; button.textContent = 'AI 시리즈 기획 생성 중…';
   try {
-    const seconds = Number($('episode-duration').value), format = $('production-format').value;
-    const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format), 24000);
-    if (!Array.isArray(plan.episodes) || plan.episodes.length < 30 || !Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error('AI 기획이 30개 회차 또는 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.');
-    current = buildDrama(keys, tone, seconds, DEFAULT_SCRIPT_STYLE, format);
+    const seconds = Number($('episode-duration').value), format = formatFor(keys), requestedEpisodes = episodeCountFor();
+    const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format, requestedEpisodes), 24000);
+    if (!Array.isArray(plan.episodes) || plan.episodes.length < requestedEpisodes || !Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error(`AI 기획이 요청한 ${requestedEpisodes}개 회차 또는 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.`);
+    current = buildDrama(keys, tone, seconds, DEFAULT_SCRIPT_STYLE, format, 0, requestedEpisodes);
     current.title = plan.title || current.title; current.aiPlan = plan; current.summary = `AI 시리즈 기획 · ${current.summary}`;
     const names = plan.characters.map(person => person.name).filter(Boolean);
     ['lead', 'counterpart', 'confidant', 'rival', 'guardian', 'wildcard'].forEach((role, i) => { if (names[i]) current.cast[role] = names[i]; });
@@ -416,9 +421,9 @@ $('regenerate-latest').onclick = () => {
   const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
   $('keywords').value = current.keywords.join(', ');
   $('tone').value = current.tone || '';
+  $('episode-count').value = String(Math.max(30, current.episode_count || 30));
   $('episode-duration').value = String(seconds);
-  $('production-format').value = current.production_format || 'drama';
-  current = buildDrama(current.keywords, current.tone || '', seconds, DEFAULT_SCRIPT_STYLE, $('production-format').value);
+  current = buildDrama(current.keywords, current.tone || '', seconds, DEFAULT_SCRIPT_STYLE, current.production_format || formatFor(current.keywords));
   showCurrent(false);
 };
 $('preview-script').onclick = () => {
