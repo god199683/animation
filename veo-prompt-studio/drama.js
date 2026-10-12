@@ -5,6 +5,15 @@ const STORY_MODES = ['비밀을 추적하는 미스터리', '엇갈린 기억의
 const CLIP_BEATS = ['강한 도입 이미지와 인물의 즉각적 목표', '작은 단서 또는 관계의 균열', '행동으로 드러나는 갈등', '예상 밖의 정보 또는 감정 전환', '선택을 강요하는 압박', '감정이 꺾이거나 깊어지는 반응', '다음 편을 부르는 결정적 행동', '마지막 1초의 훅'];
 const NAME_HEADS = ['가온', '노을', '다온', '라온', '루아', '마린', '미온', '보름', '새론', '소담', '시온', '아린', '여울', '유담', '이든', '자온', '채온', '하린'];
 const NAME_TAILS = ['결', '린', '온', '솔', '담', '율', '윤', '람', '빈', '별', '하', '루'];
+const RANDOM_KEYWORD_SETS = [
+  ['환생', '쌍둥이 남매', '숨겨진 신분', '궁중 복수', '냉정한 장군'],
+  ['계약결혼', '가짜 신분', '재벌가 상속', '복수', '숨겨진 아이'],
+  ['천재 의사', '가문 몰락', '잃어버린 딸', '첫사랑', '반격'],
+  ['시간 회귀', '무너진 약혼', '가족의 배신', '새로운 동맹', '명예 회복'],
+  ['도망친 신부', '비밀스러운 CEO', '유산', '질투하는 자매', '진실 폭로'],
+  ['마법 능력', '왕실의 비밀', '가짜 후계자', '운명적 동맹', '구원']
+];
+const RANDOM_TONES = ['사이다 복수와 가족 감정이 공존하는 세로형 연속극', '고밀도 로맨스와 신분 반전', '긴장감 있는 궁중 판타지와 감정 드라마', '따뜻한 가족 회복과 통쾌한 반격', '강한 엔딩 훅이 이어지는 현대 멜로 스릴러'];
 const STORY_VARIANTS = [
   { id: 'hidden-letter', premise: '사라진 편지 한 통이 현재의 관계를 되돌리는 출발점이 된다', conflict: '편지를 먼저 읽은 사람이 진실의 일부를 숨긴다', twist: '편지는 과거의 고백이 아니라 미래를 막으려는 경고였다', ending: '두 사람은 편지를 태우지 않고 함께 마지막 문장을 완성한다' },
   { id: 'borrowed-time', premise: '단 하루만 되돌릴 수 있는 기회가 주어진다', conflict: '시간을 되돌릴수록 두 사람의 공통 기억 하나가 사라진다', twist: '기회를 만든 사람은 상대역이 아니라 주인공 자신이었다', ending: '잃어버린 기억 대신 오늘의 선택을 기록하며 끝낸다' },
@@ -37,6 +46,8 @@ const setSync = (text, online = false) => { $('sync-status').textContent = text;
 const readLocal = () => { try { const data = JSON.parse(localStorage.getItem(localKey()) || '[]'); return Array.isArray(data) ? data : []; } catch { return []; } };
 const writeLocal = items => localStorage.setItem(localKey(), JSON.stringify(items));
 const splitKeywords = text => [...new Set(String(text || '').split(/[\n,/#]+/).map(v => v.trim()).filter(Boolean))];
+const randomItem = list => list[Math.floor(Math.random() * list.length)];
+function randomDramaInputs() { return { keys: [...randomItem(RANDOM_KEYWORD_SETS)].sort(() => Math.random() - .5), tone: randomItem(RANDOM_TONES) }; }
 const episodeCountFor = keys => Math.max(30, 28 + Math.ceil(keys.length / 2));
 const clipCountFor = seconds => seconds === 30 ? 4 : seconds === 45 ? 6 : 8;
 function makeOriginalName(used = new Set()) { let name = ''; do { name = `${NAME_HEADS[Math.floor(Math.random() * NAME_HEADS.length)]}${NAME_TAILS[Math.floor(Math.random() * NAME_TAILS.length)]}`; } while (used.has(name)); used.add(name); return name; }
@@ -56,6 +67,24 @@ function titleFor(keys, mode) {
   let retries = 0;
   while (used.has(normal(candidate)) && retries++ < 12) candidate = `${templates[Math.floor(Math.random() * templates.length)]} ${['첫 번째', '낯선', '숨은', '다시 온'][Math.floor(Math.random() * 4)]} 이야기`;
   return candidate;
+}
+function hasKeyword(keys, pattern) { return pattern.test(keys.join(' ')); }
+function buildMicroDramaBlueprint(keys, cast) {
+  const historical = hasKeyword(keys, /궁|왕|황|장군|전생|환생|무림|사극|조선|고려/);
+  const children = hasKeyword(keys, /아이|아기|쌍둥이|딸|아들|육아|가족/);
+  const revenge = hasKeyword(keys, /복수|배신|모함|억울|상속|재벌|신분|가문/);
+  const romance = hasKeyword(keys, /결혼|사랑|연인|약혼|로맨스|남편|아내/);
+  const setting = historical ? '가상의 한국풍 궁중·가문 세계. 계급과 가문은 갈등의 장치이며, 실제 역사 인물·사건을 재현하지 않는다.' : '현대 한국을 배경으로 한 가상의 상류층·직장·가족 세계.';
+  const hooks = [historical ? '숨겨진 출생과 가문의 명분' : '숨겨진 신분과 재산·명예의 충돌', revenge ? '모함을 증거와 행동으로 뒤집는 반격' : '믿었던 관계의 배신과 회복', romance ? '위험한 상황에서 깊어지는 두 주연의 동맹과 감정' : '주연 사이의 신뢰와 의심의 반복', children ? '아이의 시선이 어른들의 거짓말을 드러내는 가족 축' : '조연의 비밀이 주연의 선택을 뒤집는 관계 축'];
+  const roles = {
+    lead: `${revenge ? '모함을 뒤집고 자기 자리를 되찾아야 하는' : '자신의 삶을 다시 선택해야 하는'} 중심 인물`,
+    counterpart: `${historical ? '권력과 책임을 동시에 지닌' : '사회적 영향력과 비밀을 지닌'} 공동 주연`,
+    confidant: children ? '주인공 편에 서지만 어른들의 거짓말을 먼저 알아차리는 가족 조연' : '주인공의 가장 가까운 편이지만 사실과 증거를 먼저 믿는 핵심 조연',
+    rival: `${revenge ? '주인공의 자리와 명예를 빼앗으려는' : '같은 목표를 두고 경쟁하는'} 핵심 대립 조연`,
+    guardian: '과거의 선택과 출생의 비밀을 알고 있는 조연',
+    wildcard: '중반 이후 새로운 증거나 거래를 들고 와 판을 바꾸는 조연'
+  };
+  return { setting, hooks, roles, hookRule: '매 회차는 첫 3초에 직전 훅의 결과를 행동으로 보여 주고, 한 개의 관계 축을 악화 또는 역전시킨 뒤, 마지막 1초에는 다음 회차에서만 답할 수 있는 새로운 선택을 남긴다.' };
 }
 function episodeArc(index, total) {
   if (index === 1) return '세계관과 주인공의 결핍을 보여 주고, 피할 수 없는 사건을 시작한다.';
@@ -174,7 +203,7 @@ function sceneDirection(episode, clip, clipCount, keys, cast) {
   const turns = ['의심을 확신으로 바꾼다', '감춘 상처가 드러난다', '둘 사이의 신뢰가 흔들린다', '이전 장면의 단서가 다른 의미를 얻는다', '피할 수 없던 선택을 받아들인다', '관계의 주도권이 뒤바뀐다', '작지만 돌이킬 수 없는 약속을 한다', '다음 장면을 강하게 요구하는 결정을 내린다'];
   return `${topic(cast.lead)} ${starts[(clip - 1) % starts.length]} “${focus}”의 의미를 좇는다. ${cast.counterpart}의 짧은 반응으로 ${pressure}가 새로운 압박으로 떠오르고, ${topic(cast.lead)} ${turns[(episode + clip - 2) % turns.length]}.`;
 }
-function makeClip(episode, clip, clipCount, keys, tone, mode, cast, style, plan, format = 'drama') {
+function makeClip(episode, clip, clipCount, keys, tone, mode, cast, style, plan, format = 'drama', blueprint = null) {
   const formatProfile = PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama;
   const focus = keys[(episode + clip - 2) % keys.length];
   const next = keys[(episode + clip - 1) % keys.length];
@@ -188,7 +217,8 @@ function makeClip(episode, clip, clipCount, keys, tone, mode, cast, style, plan,
   const guestLine = plannedBeat?.guestLine || '';
   const extraDialogue = thirdLine ? ` / ${thirdLine.split(' — ')[1]}: "${thirdLine.replace(/^“|”\s*—.*$/g, '')}"` : '';
   const guestDialogue = guestLine ? ` / ${guestLine.split(' — ')[1]}: "${guestLine.replace(/^“|”\s*—.*$/g, '')}"` : '';
-  const prompt = `Generate an 8-second vertical 9:16 clip for an original Korean serialized story, episode ${episode}, clip ${clip} of ${clipCount}. Production format: ${formatProfile.visual}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Directing: ${formatProfile.direction}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} Keep ${cast.lead}, ${cast.counterpart}, ${cast.confidant}, ${cast.rival}, ${cast.guardian}, and ${cast.wildcard} as consistent original fictional Korean characters when they appear. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}"${extraDialogue}${guestDialogue}. Sound: ${formatProfile.audio}; continuous subtle room tone, footsteps/fabric/prop foley synced to movement, and a restrained score motif that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
+  const world = blueprint ? `Series world: ${blueprint.setting} Active conflict axes: ${blueprint.hooks.join('; ')}. Episode hook rule: ${blueprint.hookRule}` : '';
+  const prompt = `Generate an 8-second vertical 9:16 clip for an original Korean serialized story, episode ${episode}, clip ${clip} of ${clipCount}. Production format: ${formatProfile.visual}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Directing: ${formatProfile.direction}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} ${world} Keep ${cast.lead}, ${cast.counterpart}, ${cast.confidant}, ${cast.rival}, ${cast.guardian}, and ${cast.wildcard} as consistent original fictional Korean characters when they appear. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}"${extraDialogue}${guestDialogue}. Sound: ${formatProfile.audio}; continuous subtle room tone, footsteps/fabric/prop foley synced to movement, and a restrained score motif that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
   return { clip, beat, focus, direction, line, counterpartLine, thirdLine, guestLine, prompt };
 }
 function makeEpisodeScreenplays(title, episodes, cast, style, format = 'drama') {
@@ -206,20 +236,21 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
   const variant = (candidates.length ? candidates : STORY_VARIANTS)[Math.floor(Math.random() * (candidates.length || STORY_VARIANTS.length))];
   const usedNames = new Set();
   const cast = { lead: makeOriginalName(usedNames), counterpart: makeOriginalName(usedNames), confidant: makeOriginalName(usedNames), rival: makeOriginalName(usedNames), guardian: makeOriginalName(usedNames), wildcard: makeOriginalName(usedNames) };
+  const blueprint = buildMicroDramaBlueprint(keys, cast);
   const signature = signatureFor(keys, tone, seconds, mode, cast, style, format);
   if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, format, attempt + 1);
   const episodeCount = episodeCountFor(keys), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
   const episodes = Array.from({ length: episodeCount }, (_, offset) => {
     const number = offset + 1, arc = episodeArc(number, episodeCount);
     const plan = makeEpisodePlan(number, episodeCount, keys, variant, cast, clipCount);
-    const clips = Array.from({ length: clipCount }, (_, clipOffset) => makeClip(number, clipOffset + 1, clipCount, keys, tone, mode, cast, style, plan, format));
+    const clips = Array.from({ length: clipCount }, (_, clipOffset) => makeClip(number, clipOffset + 1, clipCount, keys, tone, mode, cast, style, plan, format, blueprint));
     const premiseBeat = number === 1 ? variant.premise : number === Math.ceil(episodeCount / 2) ? variant.twist : number === episodeCount ? variant.ending : variant.conflict;
     return { number, phase: plan.phase, goal: plan.goal, turn: plan.turn, openingHook: number === 1 ? variant.premise : `${number - 1}화 마지막 질문을 즉시 행동으로 이어받는다.`, arc: `${arc} 이번 회차 핵심 사건: ${premiseBeat}`, clips, ending: number === episodeCount ? variant.ending : `${keys[(number + 1) % keys.length]}에 대한 답을 미루는 다음 화 훅.` };
   });
   const formatProfile = PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama;
   const header = `[드라마 제작 패키지]\n\n제목: ${title}\n작품 형식: ${formatProfile.label}\n장르: ${mode}\n핵심 키워드: ${keys.join(' · ')}\n톤: ${tone || '감정선이 선명한 시네마틱 드라마'}\n총 ${episodeCount}편 · 회당 약 ${clipCount * 8}초 · 회당 ${clipCount}개 클립(각 8초)\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[앙상블 등장인물]\n- ${cast.lead}: 주연. ${keys[0]}을(를) 피하려 하지만 결국 그 진실을 스스로 선택해야 하는 인물.\n- ${cast.counterpart}: 주연. 주인공이 원하는 답을 알고 있으나, 답을 주는 대가를 감추고 있는 인물.\n- ${cast.confidant}: 핵심 조연. 주인공의 가장 가까운 편이지만, 사실과 증거를 먼저 믿는 인물.\n- ${cast.rival}: 핵심 조연. 주인공과 같은 목표를 두고 맞서며, 자신의 승리를 위해 관계의 약점을 파고드는 인물.\n- ${cast.guardian}: 비밀을 아는 조연. 과거의 선택을 알고 있고, 결정적 순간에 진실의 무게를 드러내는 인물.\n- ${cast.wildcard}: 변수를 만드는 조연. 누구의 편인지 쉽게 드러내지 않으며, 중반 이후의 판을 바꾸는 인물.\n이름·외형·인물 설정은 이 시리즈를 위해 새로 만들었다. 유명인·실존 인물·기존 작품·프랜차이즈·저작권 캐릭터를 닮게 하거나 사용하지 않는다.\n\n[시리즈 성경]\n${cast.lead}과 ${cast.counterpart}의 관계가 이야기의 중심이지만, ${cast.confidant}는 주인공의 선택을 검증하고, ${cast.rival}는 목표를 경쟁으로 바꾸며, ${cast.guardian}은 과거의 진실을, ${cast.wildcard}은 새로운 변수를 가져온다. 각 인물은 자신만의 목표·비밀·대가를 가지고 등장하며, 한 회차에 필요 없는 인물을 억지로 넣지 않는다. 대사는 설명이 아니라 선택과 감정을 드러내야 하며, 침묵·시선·손의 움직임 같은 행동으로도 감정을 전달한다. ${formatProfile.direction}. 모든 회차는 같은 인물 외형, 핵심 소품, 세계관, 색보정, 사운드 질감을 유지한다. 클립을 연결할 때 다음 클립은 직전 마지막 프레임의 자세·시선·소품·조명·카메라 축에서 시작한다.\n\n[시즌 아크]\n${seasonArc(episodeCount, variant, cast)}\n`;
   const body = episodes.map(ep => `\n━━━━━━━━━━━━━━━━━━\n\n[${ep.number}화 · 약 ${clipCount * 8}초]\n회차 목표: ${ep.arc}\n엔딩 훅: ${ep.ending}\n\n` + ep.clips.map(c => `[클립 ${c.clip} · 8초]\n장면 기능: ${c.beat}\n대본: ${c.direction}\n${c.guestLine ? `조연 대사: ${c.guestLine}\n` : ''}${c.thirdLine ? `조연 대사: ${c.thirdLine}\n` : ''}상대역 대사: ${c.counterpartLine}\n주인공 대사: ${c.line}\n연출/Flow 프롬프트:\n${c.prompt}`).join('\n\n')).join('');
-  const uniqueHeader = header.replace('[오리지널 등장인물]', `[기획 코드: ${variant.id}]\n\n[오리지널 등장인물]`);
+  const uniqueHeader = header.replace('[오리지널 등장인물]', `[기획 코드: ${variant.id}]\n\n[세로형 연속 숏드라마 규칙]\n배경: ${blueprint.setting}\n갈등 축: ${blueprint.hooks.join(' · ')}\n${blueprint.hookRule}\n\n[배역 구도]\n- ${cast.lead}: ${blueprint.roles.lead}\n- ${cast.counterpart}: ${blueprint.roles.counterpart}\n- ${cast.confidant}: ${blueprint.roles.confidant}\n- ${cast.rival}: ${blueprint.roles.rival}\n- ${cast.guardian}: ${blueprint.roles.guardian}\n- ${cast.wildcard}: ${blueprint.roles.wildcard}\n\n[오리지널 등장인물]`);
   const screenplayEpisodes = makeEpisodeScreenplays(title, episodes, cast, style, format);
   return { id: crypto.randomUUID(), title, signature, story_variant: variant.id, script_style: style, production_format: format, keywords: keys, tone, cast, duration_seconds: clipCount * 8, episode_count: episodeCount, episodes, screenplayEpisodes, screenplay: screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n'), script: uniqueHeader + body, summary: `${formatProfile.label} · ${mode} · ${cast.lead}·${cast.counterpart} · ${episodeCount}편 · 회당 ${clipCount * 8}초`, created_at: new Date().toISOString() };
 }
@@ -265,7 +296,21 @@ function showCurrent(fromArchive = false) {
   $('regenerate-latest').disabled = !fromArchive;
   renderCopyButtons();
 }
-$('generate-drama').onclick = () => { const keys = splitKeywords($('keywords').value); if (keys.length < 2) return alert('서로 다른 핵심 키워드를 두 개 이상 입력해 주세요.'); current = buildDrama(keys, $('tone').value.trim(), Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, $('production-format').value); showCurrent(false); };
+function generateDrama({ forceRandom = false } = {}) {
+  let keys = splitKeywords($('keywords').value);
+  let tone = $('tone').value.trim();
+  if (forceRandom || keys.length < 2) {
+    const random = randomDramaInputs();
+    keys = random.keys;
+    tone = tone || random.tone;
+    $('keywords').value = keys.join(', ');
+    $('tone').value = tone;
+  }
+  current = buildDrama(keys, tone, Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, $('production-format').value);
+  showCurrent(false);
+}
+$('generate-drama').onclick = () => generateDrama();
+$('generate-random-drama').onclick = () => generateDrama({ forceRandom: true });
 $('regenerate-latest').onclick = () => {
   if (!current) return;
   const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
