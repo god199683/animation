@@ -86,6 +86,41 @@ function buildMicroDramaBlueprint(keys, cast) {
   };
   return { setting, hooks, roles, hookRule: '매 회차는 첫 3초에 직전 훅의 결과를 행동으로 보여 주고, 한 개의 관계 축을 악화 또는 역전시킨 뒤, 마지막 1초에는 다음 회차에서만 답할 수 있는 새로운 선택을 남긴다.' };
 }
+const SERIAL_INCIDENTS = [
+  '봉인된 장부에서 지워진 이름을 발견한다', '공개된 자리에서 뒤바뀐 증언이 나온다', '사라진 물건이 전혀 다른 사람의 손에서 발견된다', '익명의 메시지가 다음 만남의 장소를 지정한다',
+  '가족회의에서 숨겨진 거래가 폭로된다', '오래된 영상과 현재의 기억이 충돌한다', '위조된 문서의 날짜가 사건을 뒤집는다', '누군가가 일부러 끊어 둔 연락 기록이 복원된다',
+  '가장 믿었던 사람이 상대편에 서 있는 장면을 목격한다', '주인공의 이름으로 위험한 약속이 체결돼 있다', '감춰 둔 아이의 그림이 과거의 장소를 가리킨다', '상대역의 방에서 같은 물건의 두 번째 조각을 찾는다',
+  '라이벌이 공개적으로 선택을 강요한다', '비밀을 아는 사람이 입을 열기 직전 사라진다', '회복될 수 없던 관계에 새로운 증인이 나타난다', '가문의 오래된 규칙이 주인공에게만 적용된다',
+  '돌아온 사람이 과거와 전혀 다른 조건을 내건다', '보호하려던 사람이 사실 가장 큰 위험에 놓인다', '결정적인 증거가 거짓처럼 보이도록 조작된다', '마지막 순간, 진짜 목적을 알고 있던 인물이 모습을 드러낸다'
+];
+const DIALOGUE_GOALS = {
+  lead: ['사실을 직접 확인하겠다고 선언한다', '더 이상 희생양이 되지 않겠다고 선을 긋는다', '상대의 침묵에 답을 요구한다', '잃더라도 자기 선택을 하겠다고 말한다', '가장 아픈 기억을 인정하고 앞으로 나아간다', '증거보다 사람을 먼저 지키겠다는 결심을 드러낸다'],
+  counterpart: ['감춘 이유를 일부만 고백한다', '주인공을 막으면서도 떠나지 못한다', '자신이 감당할 대가를 받아들인다', '관계보다 먼저 해결해야 할 비밀을 인정한다', '주인공에게 선택권을 돌려준다', '처음으로 편을 명확히 정한다'],
+  confidant: ['감정 대신 확인할 사실을 제시한다', '주인공이 놓친 연결고리를 짚는다', '두 주연이 피한 질문을 꺼낸다', '위험을 감수하고 증거를 맡는다'],
+  rival: ['주인공의 약점을 공개적으로 건드린다', '거래처럼 보이는 제안을 던진다', '둘의 신뢰를 갈라놓을 말 한마디를 고른다', '이겼다고 믿는 순간의 속내를 드러낸다'],
+  guardian: ['과거를 덮은 자신의 책임을 인정한다', '다음 선택에 필요한 대가를 경고한다', '감춰 둔 진실의 일부를 내놓는다'],
+  wildcard: ['누구도 예상하지 못한 조건을 제시한다', '판을 뒤집을 증거의 출처를 밝힌다', '누구의 편도 아니라는 사실을 행동으로 보인다']
+};
+const pickSeeded = (list, seed) => list[Math.abs(seed) % list.length];
+function episodeIncident(number, keys) {
+  const focus = keys[(number - 1) % keys.length];
+  const pressure = keys[number % keys.length];
+  const incident = pickSeeded(SERIAL_INCIDENTS, number * 7 + keys.join('').length);
+  return { focus, pressure, incident, object: `${focus}와 ${pressure}의 연결` };
+}
+function serializedDialogue(role, number, clip, phase, incident, cast) {
+  const aim = pickSeeded(DIALOGUE_GOALS[role], number * 11 + clip * 3 + incident.focus.length);
+  const character = cast[role];
+  const clauses = {
+    lead: [`“${incident.incident}. 이제 ${incident.focus}을 숨기는 쪽에 서지 않겠어.”`, `“${incident.pressure} 때문에 또 물러나라는 말은 하지 마. ${aim}.”`, `“${incident.object}을 확인하기 전에는 누구도 믿지 않겠어. 그래도 ${character}의 선택은 내가 할게.”`],
+    counterpart: [`“${incident.incident}는 내가 막으려 했던 일이야. 하지만 ${aim}.”`, `“${incident.focus}의 진실을 말하면 네가 다칠 수 있어. 그래도 이번에는 숨기지 않겠어.”`, `“${incident.pressure}을 피하려고 널 밀어냈어. 이제는 네가 결정해.”`],
+    confidant: [`“${incident.incident}은 우연이 아니야. ${incident.object}을 확인해야 해.”`, `“둘 다 멈춰. ${incident.pressure}을 먼저 건드린 사람이 이 판을 설계했어.”`, `“${aim}. 그러니 증거는 내가 들고 있을게.”`],
+    rival: [`“${incident.incident}을 보고도 네가 이길 수 있다고 믿어?”`, `“${incident.focus}을 원하면 ${incident.pressure}을 포기해. 그게 내가 주는 마지막 선택이야.”`, `“${aim}. 네가 망설인 순간부터 이미 늦었어.”`],
+    guardian: [`“${incident.incident}은 내가 오래전 묻어 둔 일이다. ${aim}.”`, `“${incident.focus}의 값은 생각보다 크다. 그래도 지금 말하지 않으면 더 많은 사람이 다친다.”`, `“${incident.pressure}을 막으려면 과거의 거짓말부터 끝내야 한다.”`],
+    wildcard: [`“${incident.incident}을 찾은 건 나야. ${aim}.”`, `“${incident.object}은 내가 넘기지. 대신 모두가 보는 앞에서 진실을 말해.”`, `“${incident.pressure}은 네가 생각한 적이 아니야. 이제부터 조건은 내가 정한다.”`]
+  };
+  return `${pickSeeded(clauses[role], number * 5 + clip)} — ${character}`;
+}
 function episodeArc(index, total) {
   if (index === 1) return '세계관과 주인공의 결핍을 보여 주고, 피할 수 없는 사건을 시작한다.';
   if (index === total) return '처음의 결핍을 다른 선택으로 마주하고, 감정적 결말과 여운을 남긴다.';
@@ -110,7 +145,8 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
     위기: { goal: `${object(focus)} 포기할지, 관계를 지킬지 결정한다`, turn: '가장 가까운 사람이 가장 아픈 진실을 꺼낸다', hook: `결정의 대가가 바로 다음 회차에 닥친다` },
     결말: { goal: `처음의 상처를 외면하지 않고 새로운 선택을 한다`, turn: variant.ending, hook: '두 사람은 잃어버린 답 대신 앞으로의 약속을 고른다' }
   }[phase];
-  const carryOver = number === 1 ? '평범했던 일상에 처음 균열이 생긴다.' : `${number - 1}화 마지막에 남은 질문이 두 사람을 다시 같은 장소로 이끈다.`;
+  const serial = episodeIncident(number, keys);
+  const carryOver = number === 1 ? `${serial.incident}. 평범했던 일상에 처음 균열이 생긴다.` : `${number - 1}화 마지막 질문의 결과로 ${serial.incident}.`;
   const actions = [
     `${carryOver} ${topic(cast.lead)} ${withWord(focus)} 연결된 작은 흔적을 발견하고, 아무에게도 말하지 않은 이유를 떠올린다.`,
     `${topic(cast.counterpart)} 그 흔적을 숨기려 하지만, ${topic(cast.lead)} 이미 달라진 표정을 놓치지 않는다.`,
@@ -157,16 +193,15 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
   ];
   const beats = Array.from({ length: clipCount }, (_, index) => {
     const source = Math.floor(index * actions.length / clipCount);
-    const variationIndex = (number * 5 + source) % leadVariations.length;
-    const [baseCounterpart, baseLead] = exchanges[source];
-    const counterpartLine = index % 2 === 0 ? counterpartVariations[variationIndex] : baseCounterpart;
-    const leadLine = index % 2 === 0 ? baseLead : leadVariations[variationIndex];
+    const counterpartLine = serializedDialogue('counterpart', number, index + 1, phase, serial, cast);
+    const leadLine = serializedDialogue('lead', number, index + 1, phase, serial, cast);
     const bringsPressure = phase === '확장' || phase === '반전' || (phase === '위기' && index === clipCount - 1);
-    const thirdName = bringsPressure ? cast.rival : cast.confidant;
-    const thirdLine = index === 1 || index === clipCount - 2 ? `${bringsPressure ? pressureVariations[(number + source) % pressureVariations.length] : supporterVariations[(number + source) % supporterVariations.length]} — ${thirdName}` : '';
-    const guestName = phase === '시작' || phase === '결말' ? cast.guardian : cast.wildcard;
-    const guestLine = index === 3 || (clipCount === 4 && index === 2) ? `${(phase === '시작' || phase === '결말' ? guardianVariations : wildcardVariations)[(number + source) % 4]} — ${guestName}` : '';
-    return { action: actions[source], counterpartLine: `${counterpartLine} — ${cast.counterpart}`, leadLine: `${leadLine} — ${cast.lead}`, thirdLine, guestLine };
+    const thirdRole = bringsPressure ? 'rival' : 'confidant';
+    const thirdLine = index === 1 || index === clipCount - 2 ? serializedDialogue(thirdRole, number, index + 1, phase, serial, cast) : '';
+    const guestRole = phase === '시작' || phase === '결말' ? 'guardian' : 'wildcard';
+    const guestLine = index === 3 || (clipCount === 4 && index === 2) ? serializedDialogue(guestRole, number, index + 1, phase, serial, cast) : '';
+    const action = `${actions[source]} 이번 회차의 고유 사건은 “${serial.incident}”이며, ${serial.object}이 다음 선택의 대가가 된다.`;
+    return { action, counterpartLine, leadLine, thirdLine, guestLine };
   });
   return { phase, ...phaseData, beats };
 }
