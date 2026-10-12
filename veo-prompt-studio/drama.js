@@ -56,15 +56,27 @@ function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node
 function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
 async function callGeminiJson(instruction, maxOutputTokens = 16000) {
   if (!geminiApiKey) throw new Error('Google AI Studio API 키를 먼저 저장해 주세요.');
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }] }], generationConfig: { responseMimeType: 'application/json', temperature: 1, maxOutputTokens } })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message || `Gemini 요청 실패 (${response.status})`);
-  const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
-  if (!text) throw new Error('Gemini이 응답 내용을 반환하지 않았습니다. 무료 티어 한도를 확인해 주세요.');
-  return extractJson(text);
+  const delays = [0, 2500, 6500];
+  let lastError = null;
+  for (let attempt = 0; attempt < delays.length; attempt += 1) {
+    if (delays[attempt]) { setGeminiStatus(`Gemini이 혼잡합니다. ${attempt + 1}/${delays.length}회 재시도 준비 중…`); await new Promise(resolve => setTimeout(resolve, delays[attempt])); }
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }] }], generationConfig: { responseMimeType: 'application/json', temperature: 1, maxOutputTokens } })
+      });
+      const data = await response.json();
+      if (!response.ok) { const error = new Error(data?.error?.message || `Gemini 요청 실패 (${response.status})`); error.status = response.status; throw error; }
+      const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
+      if (!text) throw new Error('Gemini이 응답 내용을 반환하지 않았습니다. 무료 티어 한도를 확인해 주세요.');
+      return extractJson(text);
+    } catch (error) {
+      lastError = error;
+      const retriable = error?.status === 429 || error?.status === 500 || error?.status === 503 || /high demand|temporar|overload/i.test(error?.message || '');
+      if (!retriable || attempt === delays.length - 1) break;
+    }
+  }
+  throw lastError;
 }
 function aiSeriesPrompt(keys, tone, seconds, format, episodeCount) {
   const formatName = (PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama).label;
