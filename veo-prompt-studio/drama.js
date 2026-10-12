@@ -56,10 +56,14 @@ function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node
 function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
 async function callGeminiJson(instruction, maxOutputTokens = 16000) {
   if (!geminiApiKey) throw new Error('Google AI Studio API 키를 먼저 저장해 주세요.');
-  const delays = [0, 2500, 6500];
+  const delays = [0, 1000, 2500];
   let lastError = null;
   for (let attempt = 0; attempt < delays.length; attempt += 1) {
-    if (delays[attempt]) { setGeminiStatus(`Gemini이 혼잡합니다. ${attempt + 1}/${delays.length}회 재시도 준비 중…`); await new Promise(resolve => setTimeout(resolve, delays[attempt])); }
+    if (delays[attempt]) {
+      const lastAttempt = attempt === delays.length - 1;
+      setGeminiStatus(lastAttempt ? 'Gemini 서버가 혼잡합니다. 마지막 재시도를 보내는 중…' : `Gemini 서버가 혼잡합니다. ${delays[attempt] / 1000}초 뒤 다시 시도합니다…`);
+      await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+    }
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
