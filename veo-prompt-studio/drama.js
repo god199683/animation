@@ -29,12 +29,15 @@ const SCRIPT_STYLES = {
   'koreanized-cdrama': { label: '중국 숏드라마식 한국화', rhythm: '각 회차 첫 3초 안에 전 회차의 질문을 이어받아 새로운 압박을 보여 주고, 중간에는 억울함·모함·신분의 단서·반격 중 하나를 행동으로 전환한다. 회차 끝은 다음 화에서 답이 필요한 질문 또는 선택으로 끝낸다. 단, 한국 현대극의 자연스러운 대사와 현실적인 감정선을 유지한다.', instruction: 'High-density Korean-localized vertical mini-drama pacing: resolve or complicate the prior cliffhanger in the opening seconds, create one concrete escalation or reversal, and end on a new unanswered stake. Original Korean setting only; use genre conventions without imitating any named Chinese drama, actor, script, or existing work.' }
 };
 const DEFAULT_SCRIPT_STYLE = 'koreanized-cdrama';
+const GEMINI_STORAGE_KEY = 'tailframe-gemini-api-key';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const PRODUCTION_FORMATS = {
   drama: { label: '실사 한국 드라마', visual: 'grounded live-action Korean drama', direction: '현실적인 동선, 절제된 표정 연기, 소품과 침묵으로 감정을 보여 준다', audio: '현장음과 절제된 음악으로 감정의 빈자리를 남긴다' },
   animation: { label: '애니메이션 시리즈', visual: 'original cinematic animation series', direction: '인물의 동작과 상징적인 소품을 명료하게 보여 주되, 기존 애니메이션 작품의 화풍이나 캐릭터를 모방하지 않는다', audio: '행동과 감정을 돕는 절제된 효과음과 연속적인 음악 동기를 사용한다' },
   film: { label: '영화형 시네마틱 시리즈', visual: 'cinematic Korean film chapter', direction: '장면마다 하나의 시각적 은유와 명확한 카메라 동선을 사용해 영화적 여운을 만든다', audio: '공간감 있는 현장음과 최소한의 음악으로 긴장과 여운을 만든다' }
 };
 let dbClient = null, userId = null, archive = [], current = null, openedFromArchive = false;
+let geminiApiKey = localStorage.getItem(GEMINI_STORAGE_KEY) || '';
 const normal = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const hasFinalConsonant = value => { const code = String(value || '').trim().charCodeAt(String(value || '').trim().length - 1); return code >= 0xAC00 && code <= 0xD7A3 && (code - 0xAC00) % 28 !== 0; };
 const topic = value => `${value}${hasFinalConsonant(value) ? '은' : '는'}`;
@@ -48,6 +51,30 @@ const writeLocal = items => localStorage.setItem(localKey(), JSON.stringify(item
 const splitKeywords = text => [...new Set(String(text || '').split(/[\n,/#]+/).map(v => v.trim()).filter(Boolean))];
 const randomItem = list => list[Math.floor(Math.random() * list.length)];
 function randomDramaInputs() { return { keys: [...randomItem(RANDOM_KEYWORD_SETS)].sort(() => Math.random() - .5), tone: randomItem(RANDOM_TONES) }; }
+function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node.textContent = text; }
+function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
+async function callGeminiJson(instruction, maxOutputTokens = 16000) {
+  if (!geminiApiKey) throw new Error('Google AI Studio API 키를 먼저 저장해 주세요.');
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiApiKey)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }] }], generationConfig: { responseMimeType: 'application/json', temperature: 1, maxOutputTokens } })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message || `Gemini 요청 실패 (${response.status})`);
+  const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
+  if (!text) throw new Error('Gemini이 응답 내용을 반환하지 않았습니다. 무료 티어 한도를 확인해 주세요.');
+  return extractJson(text);
+}
+function aiSeriesPrompt(keys, tone, seconds, format) {
+  const formatName = (PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama).label;
+  return `You are a Korean vertical microdrama showrunner. Create an ORIGINAL ${formatName} series production bible and episode plan in Korean. Do not imitate or reference any existing drama, film, animation, actor, celebrity, franchise, or copyrighted character. The audience is TikTok/Google Flow. Keywords: ${keys.join(', ') || 'random original premise'}. Tone: ${tone || 'high-stakes Korean-localized vertical microdrama'}. Each episode is approximately ${seconds} seconds. Create exactly 30 episodes. Every episode must have a different concrete incident, a changed relationship state, and a non-repeating cliffhanger. Use an ensemble of 6 original characters: two leads, confidant, rival, secret keeper, wildcard. Return JSON only: {"title":"","logline":"","seriesBible":"","characters":[{"name":"","role":"","goal":"","secret":""}],"episodes":[{"number":1,"title":"","openingHook":"","goal":"","incident":"","relationshipTurn":"","endingHook":""}]}.`;
+}
+function aiEpisodePrompt() {
+  const savedEpisode = current?.episodes?.[current.aiEpisodeNumber - 1];
+  const outline = current?.aiPlan?.episodes?.find(item => item.number === current.aiEpisodeNumber) || savedEpisode?.aiOutline || {};
+  const cast = current?.aiPlan?.characters || Object.entries(current?.cast || {}).map(([role, name]) => ({ name, role }));
+  return `You are a Korean vertical microdrama screenwriter and Google Flow prompt director. Write ONE original episode in Korean from the approved series plan below. Do not copy any existing work. Keep all character names, relationships, continuity, props, setting, and unresolved conflicts consistent. The episode must have natural, specific dialogue that advances this exact incident; do not reuse generic phrases. Return JSON only: {"screenplay":"full Korean screenplay for this episode, with concise action and speaker-labelled dialogue","clips":[{"action":"Korean action and continuity note","leadLine":"speaker — Korean line","counterpartLine":"speaker — Korean line","thirdLine":"optional speaker — Korean line","flowPrompt":"detailed English Google Flow 9:16 video prompt, include exact actions, Korean dialogue, sound, continuity from prior clip and no subtitles"}]}. Series bible: ${current.aiPlan?.seriesBible || current.script || ''}. Cast: ${JSON.stringify(cast)}. Episode outline: ${JSON.stringify(outline)}. Episode length: ${current.duration_seconds} seconds and ${savedEpisode?.clips?.length || 4} clips.`;
+}
 const episodeCountFor = keys => Math.max(30, 28 + Math.ceil(keys.length / 2));
 const clipCountFor = seconds => seconds === 30 ? 4 : seconds === 45 ? 6 : 8;
 function makeOriginalName(used = new Set()) { let name = ''; do { name = `${NAME_HEADS[Math.floor(Math.random() * NAME_HEADS.length)]}${NAME_TAILS[Math.floor(Math.random() * NAME_TAILS.length)]}`; } while (used.has(name)); used.add(name); return name; }
@@ -304,7 +331,7 @@ async function archiveCurrent() {
 }
 function episodePreviews() {
   if (Array.isArray(current?.screenplayEpisodes) && current.screenplayEpisodes.length) return current.screenplayEpisodes;
-  if (current?.episodes?.length) return makeEpisodeScreenplays(current.title, current.episodes, current.cast || { lead: '주인공', counterpart: '상대역' }, current.script_style || DEFAULT_SCRIPT_STYLE, current.production_format || 'drama');
+  if (current?.episodes?.length) { const fallback = makeEpisodeScreenplays(current.title, current.episodes, current.cast || { lead: '주인공', counterpart: '상대역' }, current.script_style || DEFAULT_SCRIPT_STYLE, current.production_format || 'drama'); return current.episodes.map((episode, index) => episode.screenplay || fallback[index]); }
   return [current?.screenplay || '대본을 다시 생성해 주세요.'];
 }
 function showEpisodePreview(index = 0) {
@@ -314,6 +341,7 @@ function showEpisodePreview(index = 0) {
   const root = $('episode-preview-actions'); root.innerHTML = ''; root.hidden = false;
   const label = document.createElement('span'); label.textContent = '회차별 대본'; root.append(label);
   previews.forEach((_, i) => { const button = document.createElement('button'); button.textContent = `${i + 1}화`; button.classList.toggle('accent', i === safeIndex); button.onclick = () => showEpisodePreview(i); root.append(button); });
+  if (current?.aiPlan && geminiApiKey) { const aiButton = document.createElement('button'); aiButton.textContent = `AI로 ${safeIndex + 1}화 대본·프롬프트 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(safeIndex); root.append(aiButton); }
 }
 function showCurrent(fromArchive = false) {
   openedFromArchive = fromArchive;
@@ -344,8 +372,45 @@ function generateDrama({ forceRandom = false } = {}) {
   current = buildDrama(keys, tone, Number($('episode-duration').value), DEFAULT_SCRIPT_STYLE, $('production-format').value);
   showCurrent(false);
 }
+function episodeOutlinePreview(title, episode) { return `[${title} · ${episode.number}화 대본 설계]\n\n오프닝 훅: ${episode.openingHook}\n이번 회차의 목표: ${episode.goal}\n고유 사건: ${episode.incident}\n관계 전환: ${episode.relationshipTurn}\n\n엔딩 훅: ${episode.endingHook}\n\n이 회차를 선택한 뒤 “AI로 ${episode.number}화 대본·프롬프트 생성”을 누르면, 이 설계를 바탕으로 실제 한국어 대본과 Google Flow 클립 프롬프트를 작성합니다.`; }
+async function generateAiSeries() {
+  let keys = splitKeywords($('keywords').value); let tone = $('tone').value.trim();
+  if (keys.length < 2) { const random = randomDramaInputs(); keys = random.keys; tone = tone || random.tone; $('keywords').value = keys.join(', '); $('tone').value = tone; }
+  const button = $('generate-ai-drama'); button.disabled = true; button.textContent = 'AI 시리즈 기획 생성 중…';
+  try {
+    const seconds = Number($('episode-duration').value), format = $('production-format').value;
+    const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format), 24000);
+    if (!Array.isArray(plan.episodes) || plan.episodes.length < 30 || !Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error('AI 기획이 30개 회차 또는 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.');
+    current = buildDrama(keys, tone, seconds, DEFAULT_SCRIPT_STYLE, format);
+    current.title = plan.title || current.title; current.aiPlan = plan; current.summary = `AI 시리즈 기획 · ${current.summary}`;
+    const names = plan.characters.map(person => person.name).filter(Boolean);
+    ['lead', 'counterpart', 'confidant', 'rival', 'guardian', 'wildcard'].forEach((role, i) => { if (names[i]) current.cast[role] = names[i]; });
+    current.episodes.forEach((episode, index) => { const source = plan.episodes[index]; if (!source) return; episode.aiOutline = source; episode.goal = source.goal || episode.goal; episode.turn = source.relationshipTurn || episode.turn; episode.openingHook = source.openingHook || episode.openingHook; episode.arc = source.incident || episode.arc; episode.ending = source.endingHook || episode.ending; });
+    current.screenplayEpisodes = plan.episodes.slice(0, current.episodes.length).map(item => episodeOutlinePreview(current.title, item));
+    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n[회차 설계]\n${current.screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n')}`;
+    showCurrent(false); setGeminiStatus('AI 시리즈 기획 생성 완료 · 회차를 선택해 대본을 확장하세요.');
+  } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 요청 실패 · 키와 무료 티어 한도를 확인하세요.'); }
+  finally { button.disabled = false; button.textContent = 'AI 시리즈 기획 생성'; }
+}
+async function generateAiEpisode(index) {
+  if (!current?.aiPlan) return; current.aiEpisodeNumber = index + 1;
+  try {
+    const result = await callGeminiJson(aiEpisodePrompt(), 16000);
+    if (!Array.isArray(result.clips) || !result.clips.length || !result.screenplay) throw new Error('회차 대본 형식이 올바르지 않습니다. 다시 시도해 주세요.');
+    const episode = current.episodes[index];
+    episode.clips = result.clips.slice(0, episode.clips.length).map((clip, clipIndex) => ({ ...episode.clips[clipIndex], direction: clip.action || episode.clips[clipIndex].direction, line: clip.leadLine || episode.clips[clipIndex].line, counterpartLine: clip.counterpartLine || episode.clips[clipIndex].counterpartLine, thirdLine: clip.thirdLine || '', prompt: clip.flowPrompt || episode.clips[clipIndex].prompt }));
+    episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
+    renderCopyButtons(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`);
+  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 후 다시 시도해 주세요.'); }
+  finally { delete current.aiEpisodeNumber; }
+}
 $('generate-drama').onclick = () => generateDrama();
 $('generate-random-drama').onclick = () => generateDrama({ forceRandom: true });
+$('generate-ai-drama').onclick = generateAiSeries;
+$('gemini-api-key').value = geminiApiKey;
+setGeminiStatus(geminiApiKey ? '이 PC에 Google AI Studio API 키가 저장되어 있습니다.' : 'API 키를 저장하면 AI 대본 생성이 가능합니다.');
+$('save-gemini-key').onclick = () => { const key = $('gemini-api-key').value.trim(); if (!key) return alert('Google AI Studio API 키를 입력해 주세요.'); geminiApiKey = key; localStorage.setItem(GEMINI_STORAGE_KEY, key); $('gemini-api-key').value = ''; setGeminiStatus('API 키를 이 PC에 저장했습니다. Supabase에는 저장하지 않습니다.'); };
+$('clear-gemini-key').onclick = () => { geminiApiKey = ''; localStorage.removeItem(GEMINI_STORAGE_KEY); $('gemini-api-key').value = ''; setGeminiStatus('이 PC에 저장된 API 키를 삭제했습니다.'); };
 $('regenerate-latest').onclick = () => {
   if (!current) return;
   const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
