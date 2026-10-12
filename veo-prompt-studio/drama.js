@@ -82,7 +82,7 @@ async function callGeminiJson(instruction, maxOutputTokens = 16000) {
       return extractJson(text);
     } catch (error) {
       lastError = error;
-      const retriable = error?.status === 429 || error?.status === 500 || error?.status === 503 || /high demand|temporar|overload/i.test(error?.message || '');
+      const retriable = error?.status === 429 || error?.status === 500 || error?.status === 503 || /high demand|temporar|overload|failed to fetch|network|connection/i.test(error?.message || '');
       if (!retriable || attempt === attempts.length - 1) break;
     }
   }
