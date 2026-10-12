@@ -53,6 +53,12 @@ const randomItem = list => list[Math.floor(Math.random() * list.length)];
 function randomDramaInputs() { return { keys: [...randomItem(RANDOM_KEYWORD_SETS)].sort(() => Math.random() - .5), tone: randomItem(RANDOM_TONES) }; }
 function formatFor(keys) { const source = keys.join(' '); if (/애니|animation|cartoon|만화/i.test(source)) return 'animation'; if (/영화|cinema|시네마/i.test(source)) return 'film'; return 'drama'; }
 function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node.textContent = text; }
+function geminiFailureMessage(error) {
+  const message = String(error?.message || '');
+  if (/high demand|temporar|overload|429|503/i.test(message)) return 'Gemini 서버가 현재 혼잡합니다. 기획은 보존되어 있으니 잠시 뒤 “AI로 1화 대본·프롬프트 생성”을 다시 누르세요.';
+  if (/failed to fetch|network|connection/i.test(message)) return 'Google API 연결이 일시적으로 끊겼습니다. 인터넷 연결을 확인한 뒤 1화 생성 버튼을 다시 누르세요.';
+  return message || '알 수 없는 오류가 발생했습니다.';
+}
 function extractJson(text) { const cleaned = String(text || '').replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim(); return JSON.parse(cleaned); }
 async function callGeminiJson(instruction, maxOutputTokens = 16000) {
   if (!geminiApiKey) throw new Error('Google AI Studio API 키를 먼저 저장해 주세요.');
@@ -362,9 +368,11 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
 function renderCopyButtons() {
   const root = $('clip-copy-actions'); root.innerHTML = '';
   if (!current) { root.hidden = true; return; }
+  const episodes = current.aiPlan ? current.episodes.filter(episode => episode.screenplay) : current.episodes;
+  if (!episodes.length) { root.hidden = true; return; }
   root.hidden = false;
   const label = document.createElement('span'); label.textContent = '회차·클립별 복사'; root.append(label);
-  current.episodes.forEach(ep => ep.clips.forEach(clip => { const button = document.createElement('button'); button.textContent = `${ep.number}-${clip.clip}`; button.title = `${ep.number}화 ${clip.clip}클립 복사`; button.onclick = async () => { await navigator.clipboard.writeText(clip.prompt); const original = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = original, 900); }; root.append(button); }));
+  episodes.forEach(ep => ep.clips.forEach(clip => { const button = document.createElement('button'); button.textContent = `${ep.number}-${clip.clip}`; button.title = `${ep.number}화 ${clip.clip}클립 복사`; button.onclick = async () => { await navigator.clipboard.writeText(clip.prompt); const original = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = original, 900); }; root.append(button); }));
 }
 async function archiveCurrent() {
   if (!current) return;
@@ -445,7 +453,7 @@ async function generateAiSeries() {
     setGeminiStatus('시리즈 기획 완료 · 1화 대본과 Flow 프롬프트를 생성 중…');
     const firstEpisodeCreated = await generateAiEpisode(0);
     if (!firstEpisodeCreated) showEpisodePreview(0);
-  } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 요청 실패 · 키와 무료 티어 한도를 확인하세요.'); }
+  } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 요청 실패 · 잠시 뒤 다시 시도해 주세요.'); }
   finally { button.disabled = false; button.textContent = 'AI 시리즈·1화 생성'; }
 }
 async function generateAiEpisode(index) {
@@ -463,7 +471,7 @@ async function generateAiEpisode(index) {
     episode.clips = result.clips.slice(0, episode.clips.length).map((clip, clipIndex) => ({ ...episode.clips[clipIndex], direction: clip.action || episode.clips[clipIndex].direction, line: clip.leadLine || episode.clips[clipIndex].line, counterpartLine: clip.counterpartLine || episode.clips[clipIndex].counterpartLine, thirdLine: clip.thirdLine || '', prompt: `${clip.flowPrompt || episode.clips[clipIndex].prompt}\n\n${flowShotGuardrail(clipIndex + 1, episode.clips.length)}` }));
     episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
     renderCopyButtons(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
-  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 후 다시 시도해 주세요.'); return false; }
+  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
   finally {
     delete current.aiEpisodeNumber;
     if (previousText !== 'AI 시리즈 기획 생성 중…') { seriesButton.disabled = false; seriesButton.textContent = previousText; }
