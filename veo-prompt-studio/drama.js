@@ -78,13 +78,15 @@ function aiEpisodePrompt() {
   const savedEpisode = current?.episodes?.[current.aiEpisodeNumber - 1];
   const outline = current?.aiPlan?.episodes?.find(item => item.number === current.aiEpisodeNumber) || savedEpisode?.aiOutline || {};
   const cast = current?.aiPlan?.characters || Object.entries(current?.cast || {}).map(([role, name]) => ({ name, role }));
+  const previousEpisode = current.aiEpisodeNumber > 1 ? current?.episodes?.[current.aiEpisodeNumber - 2] : null;
+  const continuity = previousEpisode?.screenplay ? `Previous completed episode screenplay (continue its final action; do not reset it): ${previousEpisode.screenplay}\nPrevious final clip prompt: ${previousEpisode.clips?.at(-1)?.prompt || ''}` : 'This is episode 1. Start with the specific inciting incident from the approved outline.';
   return `You are a Korean vertical microdrama screenwriter and Google Flow prompt director. Write ONE original episode in Korean from the approved series plan below. Do not copy any existing work. Keep all character names, relationships, continuity, props, setting, and unresolved conflicts consistent. The episode must have natural, specific dialogue that advances this exact incident; do not reuse generic phrases.
 
 Production-quality rules: Write a complete dramatic micro-episode, not a plot summary. Each character speaks only when their line changes the other character's decision. Give each clip one playable action, one emotional shift, and one visual consequence. Use only the characters needed in that moment; never cram the entire cast into a clip. Keep dialogue to one or two brief natural Korean lines per clip, with subtext rather than explanations. Establish the exact location, time, named evidence/prop, costume state, and reason for every action. Clip 1 must begin the episode with a specific inciting action; it cannot begin with crying, staring, or an unexplained reaction.
 
 Visual directing rules: Every 8-second clip must show a visible cause-and-effect action, not only an emotional face. Clip 1 must use this exact beat order: 0-2 seconds show the full setting and the relationships in a wide or medium-wide shot; 2-5 seconds show the protagonist physically discovering, receiving, reading, hiding, or confronting one clearly described story object; 5-8 seconds show a medium shot of a decision or changed relationship. Never use an extreme close-up longer than one second, never hold a crying face, never push the camera continuously into a face, and never make an unexplained generic object the evidence. Specify the exact object, its information, and the consequence. Later clips must begin from the previous clip's final pose, prop, eye-line, lighting, and sound. Include intentional camera framing, practical lighting, ambient sound, music entry/exit, and foley that supports the exact action.
 
-Return JSON only: {"screenplay":"full Korean screenplay for this episode, with concise action and speaker-labelled dialogue","clips":[{"action":"Korean action, selected scene cast, exact prop, setting, and continuity note","leadLine":"speaker — Korean line or empty","counterpartLine":"speaker — Korean line or empty","thirdLine":"optional speaker — Korean line","flowPrompt":"detailed English Google Flow 9:16 video prompt with only the scene cast, timed 0-2/2-5/5-8 second shot plan, exact actions, Korean dialogue, camera, practical lighting, sound, music, foley, continuity from prior clip, and no subtitles"}]}. Series bible: ${current.aiPlan?.seriesBible || current.script || ''}. Cast: ${JSON.stringify(cast)}. Episode outline: ${JSON.stringify(outline)}. Episode length: ${current.duration_seconds} seconds and ${savedEpisode?.clips?.length || 4} clips.`;
+Return JSON only: {"screenplay":"full Korean screenplay for this episode, with concise action and speaker-labelled dialogue","clips":[{"action":"Korean action, selected scene cast, exact prop, setting, and continuity note","leadLine":"speaker — Korean line or empty","counterpartLine":"speaker — Korean line or empty","thirdLine":"optional speaker — Korean line","flowPrompt":"detailed English Google Flow 9:16 video prompt with only the scene cast, timed 0-2/2-5/5-8 second shot plan, exact actions, Korean dialogue, camera, practical lighting, sound, music, foley, continuity from prior clip, and no subtitles"}]}. Series bible: ${current.aiPlan?.seriesBible || current.script || ''}. Cast: ${JSON.stringify(cast)}. Episode outline: ${JSON.stringify(outline)}. Continuity to preserve: ${continuity}. Episode length: ${current.duration_seconds} seconds and ${savedEpisode?.clips?.length || 4} clips.`;
 }
 function flowShotGuardrail(clip, clipCount) {
   if (clip === 1) return 'Mandatory first-clip shot plan: 0-2s medium-wide establishing shot showing the protagonist, exact location, and another relevant person; 2-5s show hands and the exact story object being discovered or acted on, with its readable story consequence made visually clear; 5-8s return to a medium shot as the protagonist takes one decisive next action. Do not use an extreme close-up for more than one second. Do not hold tears, a still face, or a slow zoom. The discovery and decision must be visible on screen.';
@@ -353,14 +355,22 @@ function episodePreviews() {
   if (current?.episodes?.length) { const fallback = makeEpisodeScreenplays(current.title, current.episodes, current.cast || { lead: '주인공', counterpart: '상대역' }, current.script_style || DEFAULT_SCRIPT_STYLE, current.production_format || 'drama'); return current.episodes.map((episode, index) => episode.screenplay || fallback[index]); }
   return [current?.screenplay || '대본을 다시 생성해 주세요.'];
 }
+function completedEpisodeCount() {
+  if (!current?.episodes?.length) return 0;
+  let count = 0;
+  while (current.episodes[count]?.screenplay) count += 1;
+  return count;
+}
 function showEpisodePreview(index = 0) {
   const previews = episodePreviews();
-  const safeIndex = Math.max(0, Math.min(index, previews.length - 1));
+  const availableLastIndex = Math.min(previews.length - 1, completedEpisodeCount());
+  const safeIndex = Math.max(0, Math.min(index, availableLastIndex));
   $('script-preview').textContent = previews[safeIndex];
   const root = $('episode-preview-actions'); root.innerHTML = ''; root.hidden = false;
-  const label = document.createElement('span'); label.textContent = '회차별 대본'; root.append(label);
-  previews.forEach((_, i) => { const button = document.createElement('button'); button.textContent = `${i + 1}화`; button.classList.toggle('accent', i === safeIndex); button.onclick = () => showEpisodePreview(i); root.append(button); });
-  if (current?.aiPlan && geminiApiKey) { const aiButton = document.createElement('button'); aiButton.textContent = `AI로 ${safeIndex + 1}화 대본·프롬프트 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(safeIndex); root.append(aiButton); }
+  const label = document.createElement('span'); label.textContent = `완성 ${completedEpisodeCount()} / ${current?.episode_count || previews.length}화`; root.append(label);
+  previews.slice(0, availableLastIndex + 1).forEach((_, i) => { const button = document.createElement('button'); button.textContent = `${i + 1}화`; button.classList.toggle('accent', i === safeIndex); button.onclick = () => showEpisodePreview(i); root.append(button); });
+  const nextIndex = completedEpisodeCount();
+  if (current?.aiPlan && geminiApiKey && nextIndex < current.episodes.length) { const aiButton = document.createElement('button'); aiButton.textContent = nextIndex === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${nextIndex + 1}화 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(nextIndex); root.append(aiButton); }
 }
 function showCurrent(fromArchive = false) {
   openedFromArchive = fromArchive;
@@ -414,6 +424,8 @@ async function generateAiSeries() {
 async function generateAiEpisode(index) {
   if (!current?.aiPlan) return; current.aiEpisodeNumber = index + 1;
   try {
+    const expectedIndex = completedEpisodeCount();
+    if (index !== expectedIndex) throw new Error(`먼저 ${expectedIndex + 1}화까지 순서대로 생성해 주세요.`);
     const result = await callGeminiJson(aiEpisodePrompt(), 16000);
     if (!Array.isArray(result.clips) || !result.clips.length || !result.screenplay) throw new Error('회차 대본 형식이 올바르지 않습니다. 다시 시도해 주세요.');
     const episode = current.episodes[index];
