@@ -120,6 +120,12 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
     `“그 단서를 넘기면 조용히 끝낼 수 있어.”`, `“진실을 알고도 네 편에 설 수 있을까?”`, `“다음 선택은 네가 잃을 것을 먼저 정하게 될 거야.”`, `“그 문 뒤의 이야기는 네가 감당할 수 있는 게 아니야.”`,
     `“내가 원하는 건 거짓말이 아니야. 네가 포기하는 순간이지.”`, `“이번에는 네가 직접 대가를 치러.”`
   ];
+  const guardianVariations = [
+    `“너희가 모르는 선택 하나가 아직 남아 있다.”`, `“그날의 이야기는 내가 끝까지 책임질게.”`, `“진실은 늦게 와도, 선택은 지금 해야 한다.”`, `“누구의 편을 들기 전에 먼저 끝까지 들어라.”`
+  ];
+  const wildcardVariations = [
+    `“내가 왜 여기 왔는지, 아직 아무도 묻지 않았네.”`, `“그 증거는 내가 먼저 찾았어. 거래할 생각은 없어.”`, `“당신들이 믿은 순서가 처음부터 틀렸어.”`, `“이제부터는 내가 규칙을 정할게.”`
+  ];
   const beats = Array.from({ length: clipCount }, (_, index) => {
     const source = Math.floor(index * actions.length / clipCount);
     const variationIndex = (number * 5 + source) % leadVariations.length;
@@ -127,9 +133,11 @@ function makeEpisodePlan(number, total, keys, variant, cast, clipCount) {
     const counterpartLine = index % 2 === 0 ? counterpartVariations[variationIndex] : baseCounterpart;
     const leadLine = index % 2 === 0 ? baseLead : leadVariations[variationIndex];
     const bringsPressure = phase === '확장' || phase === '반전' || (phase === '위기' && index === clipCount - 1);
-    const thirdName = bringsPressure ? cast.pressure : cast.supporter;
+    const thirdName = bringsPressure ? cast.rival : cast.confidant;
     const thirdLine = index === 1 || index === clipCount - 2 ? `${bringsPressure ? pressureVariations[(number + source) % pressureVariations.length] : supporterVariations[(number + source) % supporterVariations.length]} — ${thirdName}` : '';
-    return { action: actions[source], counterpartLine: `${counterpartLine} — ${cast.counterpart}`, leadLine: `${leadLine} — ${cast.lead}`, thirdLine };
+    const guestName = phase === '시작' || phase === '결말' ? cast.guardian : cast.wildcard;
+    const guestLine = index === 3 || (clipCount === 4 && index === 2) ? `${(phase === '시작' || phase === '결말' ? guardianVariations : wildcardVariations)[(number + source) % 4]} — ${guestName}` : '';
+    return { action: actions[source], counterpartLine: `${counterpartLine} — ${cast.counterpart}`, leadLine: `${leadLine} — ${cast.lead}`, thirdLine, guestLine };
   });
   return { phase, ...phaseData, beats };
 }
@@ -177,15 +185,17 @@ function makeClip(episode, clip, clipCount, keys, tone, mode, cast, style, plan,
   const line = plannedBeat?.leadLine || dialogueFor(focus, clip, episode, cast);
   const counterpartLine = plannedBeat?.counterpartLine || counterpartDialogueFor(focus, clip, episode, cast);
   const thirdLine = plannedBeat?.thirdLine || '';
+  const guestLine = plannedBeat?.guestLine || '';
   const extraDialogue = thirdLine ? ` / ${thirdLine.split(' — ')[1]}: "${thirdLine.replace(/^“|”\s*—.*$/g, '')}"` : '';
-  const prompt = `Generate an 8-second vertical 9:16 clip for an original Korean serialized story, episode ${episode}, clip ${clip} of ${clipCount}. Production format: ${formatProfile.visual}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Directing: ${formatProfile.direction}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} Keep ${cast.lead}, ${cast.counterpart}, ${cast.supporter}, and ${cast.pressure} as consistent original fictional Korean characters when they appear. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}"${extraDialogue}. Sound: ${formatProfile.audio}; continuous subtle room tone, footsteps/fabric/prop foley synced to movement, and a restrained score motif that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
-  return { clip, beat, focus, direction, line, counterpartLine, thirdLine, prompt };
+  const guestDialogue = guestLine ? ` / ${guestLine.split(' — ')[1]}: "${guestLine.replace(/^“|”\s*—.*$/g, '')}"` : '';
+  const prompt = `Generate an 8-second vertical 9:16 clip for an original Korean serialized story, episode ${episode}, clip ${clip} of ${clipCount}. Production format: ${formatProfile.visual}. Genre: ${mode}. Tone: ${tone || 'emotionally grounded cinematic drama'}. Directing: ${formatProfile.direction}. Narrative rhythm: ${SCRIPT_STYLES[style].instruction} Keep ${cast.lead}, ${cast.counterpart}, ${cast.confidant}, ${cast.rival}, ${cast.guardian}, and ${cast.wildcard} as consistent original fictional Korean characters when they appear. They must never resemble, imitate, or be named after a real person, celebrity, famous fictional character, existing franchise, or copyrighted character identity. Story action: ${direction} Focus on ${focus}; ${next} becomes the pressure point. Start from the preceding final frame with matching pose, eye-line, prop placement, time of day, lighting direction, lens, camera axis, and continuous room tone. One sustained action, one visible emotional turn, and if dialogue is needed use this brief natural Korean exchange only: ${cast.counterpart}: "${counterpartLine.replace(/^“|”\s*—.*$/g, '')}" / ${cast.lead}: "${line.replace(/^“|”\s*—.*$/g, '')}"${extraDialogue}${guestDialogue}. Sound: ${formatProfile.audio}; continuous subtle room tone, footsteps/fabric/prop foley synced to movement, and a restrained score motif that carries over without restarting. No captions, subtitles, logo, montage, unexplained person, jump cut, reset, face drift, costume change, or music restart. ${end}`;
+  return { clip, beat, focus, direction, line, counterpartLine, thirdLine, guestLine, prompt };
 }
 function makeEpisodeScreenplays(title, episodes, cast, style, format = 'drama') {
   const styleNote = style === 'koreanized-cdrama' ? '빠른 반전과 강한 엔딩 훅을 유지하되, 감정은 한국어 대사와 행동으로 설득력 있게 쌓는다.' : '인물의 행동과 침묵으로 감정을 쌓고, 장면 끝에 다음 선택을 남긴다.';
   const formatProfile = PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama;
   return episodes.map(ep => {
-    const beats = ep.clips.map(c => `${c.direction || c.beat || '인물의 선택이 다음 갈등으로 이어진다.'}\n\n${c.thirdLine ? `${String(c.thirdLine).split(' — ')[1]}: “${String(c.thirdLine).replace(/^“|”\s*—.*$/g, '')}”\n` : ''}${cast.counterpart}: “${String(c.counterpartLine || '한 번만 더 나를 믿어 줘.').replace(/^“|”\s*—.*$/g, '')}”\n${cast.lead}: “${String(c.line || '이제는 내가 선택할게.').replace(/^“|”\s*—.*$/g, '')}”`).join('\n\n');
+    const beats = ep.clips.map(c => `${c.direction || c.beat || '인물의 선택이 다음 갈등으로 이어진다.'}\n\n${c.guestLine ? `${String(c.guestLine).split(' — ')[1]}: “${String(c.guestLine).replace(/^“|”\s*—.*$/g, '')}”\n` : ''}${c.thirdLine ? `${String(c.thirdLine).split(' — ')[1]}: “${String(c.thirdLine).replace(/^“|”\s*—.*$/g, '')}”\n` : ''}${cast.counterpart}: “${String(c.counterpartLine || '한 번만 더 나를 믿어 줘.').replace(/^“|”\s*—.*$/g, '')}”\n${cast.lead}: “${String(c.line || '이제는 내가 선택할게.').replace(/^“|”\s*—.*$/g, '')}”`).join('\n\n');
     return `[${title} · ${ep.number}화 한국어 대본]\n\n오프닝 훅: ${ep.openingHook || ep.arc}\n이번 회차의 목표: ${ep.goal || ep.arc}\n전환점: ${ep.turn || ep.arc}\n연출 원칙: ${formatProfile.direction}. ${styleNote}\n\n${beats}\n\n(회차 엔딩 훅) ${ep.ending}`;
   });
 }
@@ -195,7 +205,7 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
   const candidates = STORY_VARIANTS.filter(variant => !usedVariants.has(variant.id));
   const variant = (candidates.length ? candidates : STORY_VARIANTS)[Math.floor(Math.random() * (candidates.length || STORY_VARIANTS.length))];
   const usedNames = new Set();
-  const cast = { lead: makeOriginalName(usedNames), counterpart: makeOriginalName(usedNames), supporter: makeOriginalName(usedNames), pressure: makeOriginalName(usedNames) };
+  const cast = { lead: makeOriginalName(usedNames), counterpart: makeOriginalName(usedNames), confidant: makeOriginalName(usedNames), rival: makeOriginalName(usedNames), guardian: makeOriginalName(usedNames), wildcard: makeOriginalName(usedNames) };
   const signature = signatureFor(keys, tone, seconds, mode, cast, style, format);
   if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, format, attempt + 1);
   const episodeCount = episodeCountFor(keys), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
@@ -207,8 +217,8 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
     return { number, phase: plan.phase, goal: plan.goal, turn: plan.turn, openingHook: number === 1 ? variant.premise : `${number - 1}화 마지막 질문을 즉시 행동으로 이어받는다.`, arc: `${arc} 이번 회차 핵심 사건: ${premiseBeat}`, clips, ending: number === episodeCount ? variant.ending : `${keys[(number + 1) % keys.length]}에 대한 답을 미루는 다음 화 훅.` };
   });
   const formatProfile = PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama;
-  const header = `[드라마 제작 패키지]\n\n제목: ${title}\n작품 형식: ${formatProfile.label}\n장르: ${mode}\n핵심 키워드: ${keys.join(' · ')}\n톤: ${tone || '감정선이 선명한 시네마틱 드라마'}\n총 ${episodeCount}편 · 회당 약 ${clipCount * 8}초 · 회당 ${clipCount}개 클립(각 8초)\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[오리지널 등장인물]\n- ${cast.lead}: 주인공. ${keys[0]}을(를) 피하려 하지만 결국 그 진실을 스스로 선택해야 하는 인물.\n- ${cast.counterpart}: 상대역. 주인공이 원하는 답을 알고 있으나, 답을 주는 대가를 감추고 있는 인물.\n- ${cast.supporter}: 조력자. 둘의 감정에 휩쓸리지 않고 사실과 증거를 연결하며, 주인공이 혼자 무너지지 않게 한다.\n- ${cast.pressure}: 압박 인물. 사건의 대가를 앞당기고, 주인공이 피하고 싶은 선택을 강요한다.\n이름·외형·인물 설정은 이 시리즈를 위해 새로 만들었다. 유명인·실존 인물·기존 작품·프랜차이즈·저작권 캐릭터를 닮게 하거나 사용하지 않는다.\n\n[시리즈 성경]\n${cast.lead}은(는) ${keys[0]}을(를) 피할 수 없고, ${cast.counterpart}와의 관계에서 매 회차마다 신뢰·목표·비밀 중 하나를 얻거나 잃는다. ${cast.supporter}는 단서가 필요한 순간에, ${cast.pressure}는 선택의 대가가 필요한 순간에 등장한다. 대사는 설명이 아니라 선택과 감정을 드러내야 하며, 침묵·시선·손의 움직임 같은 행동으로도 감정을 전달한다. ${formatProfile.direction}. 모든 회차는 같은 인물 외형, 핵심 소품, 세계관, 색보정, 사운드 질감을 유지한다. 클립을 연결할 때 다음 클립은 직전 마지막 프레임의 자세·시선·소품·조명·카메라 축에서 시작한다.\n\n[시즌 아크]\n${seasonArc(episodeCount, variant, cast)}\n`;
-  const body = episodes.map(ep => `\n━━━━━━━━━━━━━━━━━━\n\n[${ep.number}화 · 약 ${clipCount * 8}초]\n회차 목표: ${ep.arc}\n엔딩 훅: ${ep.ending}\n\n` + ep.clips.map(c => `[클립 ${c.clip} · 8초]\n장면 기능: ${c.beat}\n대본: ${c.direction}\n${c.thirdLine ? `추가 인물 대사: ${c.thirdLine}\n` : ''}상대역 대사: ${c.counterpartLine}\n주인공 대사: ${c.line}\n연출/Flow 프롬프트:\n${c.prompt}`).join('\n\n')).join('');
+  const header = `[드라마 제작 패키지]\n\n제목: ${title}\n작품 형식: ${formatProfile.label}\n장르: ${mode}\n핵심 키워드: ${keys.join(' · ')}\n톤: ${tone || '감정선이 선명한 시네마틱 드라마'}\n총 ${episodeCount}편 · 회당 약 ${clipCount * 8}초 · 회당 ${clipCount}개 클립(각 8초)\n\n[로그라인]\n${variant.premise}. ${variant.conflict}.\n\n[앙상블 등장인물]\n- ${cast.lead}: 주연. ${keys[0]}을(를) 피하려 하지만 결국 그 진실을 스스로 선택해야 하는 인물.\n- ${cast.counterpart}: 주연. 주인공이 원하는 답을 알고 있으나, 답을 주는 대가를 감추고 있는 인물.\n- ${cast.confidant}: 핵심 조연. 주인공의 가장 가까운 편이지만, 사실과 증거를 먼저 믿는 인물.\n- ${cast.rival}: 핵심 조연. 주인공과 같은 목표를 두고 맞서며, 자신의 승리를 위해 관계의 약점을 파고드는 인물.\n- ${cast.guardian}: 비밀을 아는 조연. 과거의 선택을 알고 있고, 결정적 순간에 진실의 무게를 드러내는 인물.\n- ${cast.wildcard}: 변수를 만드는 조연. 누구의 편인지 쉽게 드러내지 않으며, 중반 이후의 판을 바꾸는 인물.\n이름·외형·인물 설정은 이 시리즈를 위해 새로 만들었다. 유명인·실존 인물·기존 작품·프랜차이즈·저작권 캐릭터를 닮게 하거나 사용하지 않는다.\n\n[시리즈 성경]\n${cast.lead}과 ${cast.counterpart}의 관계가 이야기의 중심이지만, ${cast.confidant}는 주인공의 선택을 검증하고, ${cast.rival}는 목표를 경쟁으로 바꾸며, ${cast.guardian}은 과거의 진실을, ${cast.wildcard}은 새로운 변수를 가져온다. 각 인물은 자신만의 목표·비밀·대가를 가지고 등장하며, 한 회차에 필요 없는 인물을 억지로 넣지 않는다. 대사는 설명이 아니라 선택과 감정을 드러내야 하며, 침묵·시선·손의 움직임 같은 행동으로도 감정을 전달한다. ${formatProfile.direction}. 모든 회차는 같은 인물 외형, 핵심 소품, 세계관, 색보정, 사운드 질감을 유지한다. 클립을 연결할 때 다음 클립은 직전 마지막 프레임의 자세·시선·소품·조명·카메라 축에서 시작한다.\n\n[시즌 아크]\n${seasonArc(episodeCount, variant, cast)}\n`;
+  const body = episodes.map(ep => `\n━━━━━━━━━━━━━━━━━━\n\n[${ep.number}화 · 약 ${clipCount * 8}초]\n회차 목표: ${ep.arc}\n엔딩 훅: ${ep.ending}\n\n` + ep.clips.map(c => `[클립 ${c.clip} · 8초]\n장면 기능: ${c.beat}\n대본: ${c.direction}\n${c.guestLine ? `조연 대사: ${c.guestLine}\n` : ''}${c.thirdLine ? `조연 대사: ${c.thirdLine}\n` : ''}상대역 대사: ${c.counterpartLine}\n주인공 대사: ${c.line}\n연출/Flow 프롬프트:\n${c.prompt}`).join('\n\n')).join('');
   const uniqueHeader = header.replace('[오리지널 등장인물]', `[기획 코드: ${variant.id}]\n\n[오리지널 등장인물]`);
   const screenplayEpisodes = makeEpisodeScreenplays(title, episodes, cast, style, format);
   return { id: crypto.randomUUID(), title, signature, story_variant: variant.id, script_style: style, production_format: format, keywords: keys, tone, cast, duration_seconds: clipCount * 8, episode_count: episodeCount, episodes, screenplayEpisodes, screenplay: screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n'), script: uniqueHeader + body, summary: `${formatProfile.label} · ${mode} · ${cast.lead}·${cast.counterpart} · ${episodeCount}편 · 회당 ${clipCount * 8}초`, created_at: new Date().toISOString() };
