@@ -428,13 +428,20 @@ async function generateAiSeries() {
     ['lead', 'counterpart', 'confidant', 'rival', 'guardian', 'wildcard'].forEach((role, i) => { if (names[i]) current.cast[role] = names[i]; });
     current.episodes.forEach((episode, index) => { const source = plan.episodes[index]; if (!source) return; episode.aiOutline = source; episode.goal = source.goal || episode.goal; episode.turn = source.relationshipTurn || episode.turn; episode.openingHook = source.openingHook || episode.openingHook; episode.arc = source.incident || episode.arc; episode.ending = source.endingHook || episode.ending; });
     current.screenplayEpisodes = plan.episodes.slice(0, current.episodes.length).map(item => episodeOutlinePreview(current.title, item));
-    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n[회차 설계]\n${current.screenplayEpisodes.join('\n\n━━━━━━━━━━━━━━━━━━\n\n')}`;
-    showCurrent(false); setGeminiStatus('AI 시리즈 기획 생성 완료 · 회차를 선택해 대본을 확장하세요.');
+    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n1화부터 순서대로 완성합니다. 아직 생성하지 않은 회차의 실제 대본과 Flow 프롬프트는 포함하지 않습니다.`;
+    showCurrent(false);
+    setGeminiStatus('시리즈 기획 완료 · 1화 대본과 Flow 프롬프트를 생성 중…');
+    const firstEpisodeCreated = await generateAiEpisode(0);
+    if (!firstEpisodeCreated) showEpisodePreview(0);
   } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 요청 실패 · 키와 무료 티어 한도를 확인하세요.'); }
-  finally { button.disabled = false; button.textContent = 'AI 시리즈 기획 생성'; }
+  finally { button.disabled = false; button.textContent = 'AI 시리즈·1화 생성'; }
 }
 async function generateAiEpisode(index) {
   if (!current?.aiPlan) return; current.aiEpisodeNumber = index + 1;
+  const seriesButton = $('generate-ai-drama');
+  const previousText = seriesButton.textContent;
+  seriesButton.disabled = true;
+  seriesButton.textContent = `AI ${index + 1}화 생성 중…`;
   try {
     const expectedIndex = completedEpisodeCount();
     if (index !== expectedIndex) throw new Error(`먼저 ${expectedIndex + 1}화까지 순서대로 생성해 주세요.`);
@@ -443,9 +450,12 @@ async function generateAiEpisode(index) {
     const episode = current.episodes[index];
     episode.clips = result.clips.slice(0, episode.clips.length).map((clip, clipIndex) => ({ ...episode.clips[clipIndex], direction: clip.action || episode.clips[clipIndex].direction, line: clip.leadLine || episode.clips[clipIndex].line, counterpartLine: clip.counterpartLine || episode.clips[clipIndex].counterpartLine, thirdLine: clip.thirdLine || '', prompt: `${clip.flowPrompt || episode.clips[clipIndex].prompt}\n\n${flowShotGuardrail(clipIndex + 1, episode.clips.length)}` }));
     episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
-    renderCopyButtons(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`);
-  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 후 다시 시도해 주세요.'); }
-  finally { delete current.aiEpisodeNumber; }
+    renderCopyButtons(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
+  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${error.message}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 후 다시 시도해 주세요.'); return false; }
+  finally {
+    delete current.aiEpisodeNumber;
+    if (previousText !== 'AI 시리즈 기획 생성 중…') { seriesButton.disabled = false; seriesButton.textContent = previousText; }
+  }
 }
 $('generate-ai-drama').onclick = generateAiSeries;
 $('gemini-api-key').value = geminiApiKey;
