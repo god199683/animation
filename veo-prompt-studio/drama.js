@@ -80,11 +80,11 @@ async function callGeminiJson(instruction, maxOutputTokens = 16000) {
 }
 function aiSeriesPrompt(keys, tone, seconds, format, episodeCount) {
   const formatName = (PRODUCTION_FORMATS[format] || PRODUCTION_FORMATS.drama).label;
-  return `You are a senior Korean drama, animation, and feature-film showrunner. Create an ORIGINAL ${formatName} vertical series bible and episode plan in polished Korean. Do not imitate or reference any existing drama, film, animation, actor, celebrity, franchise, or copyrighted character. The audience is TikTok/Google Flow. Keywords: ${keys.join(', ') || 'random original premise'}. Tone: ${tone || 'high-stakes Korean-localized vertical microdrama'}. Each episode is approximately ${seconds} seconds. Create exactly ${episodeCount} episodes.
+  return `You are a senior Korean drama, animation, and feature-film showrunner. Create a COMPACT ORIGINAL ${formatName} vertical series bible in polished Korean. Do not imitate or reference any existing drama, film, animation, actor, celebrity, franchise, or copyrighted character. The audience is TikTok/Google Flow. Keywords: ${keys.join(', ') || 'random original premise'}. Tone: ${tone || 'high-stakes Korean-localized vertical microdrama'}. Each episode is approximately ${seconds} seconds. The final series length is exactly ${episodeCount} episodes.
 
-Quality rules: Build one coherent causal story, not a collection of interchangeable twists. First define the protagonist's wound, want, false belief, moral choice, and final change. Give every one of 6 ensemble characters a distinct goal, secret, relationship to the protagonist, visual continuity marker (silhouette, wardrobe palette, signature prop), and turning point. Define recurring locations, prop history, visual tone, music motif, and the factual cause of the central conflict. Divide the season into setup, escalation, midpoint reversal, counterattack, climax, and resolution. Each episode must resolve or worsen the exact prior cliffhanger, introduce one concrete new incident, change at least one relationship or power balance, and end with a different actionable cliffhanger. Do not repeat incidents, dialogue situations, locations, or vague phrases such as “the truth” without naming the specific fact. Keep Korean dialogue natural, subtextual, and emotionally specific. Do not make every scene a confrontation; include choices, discoveries, reversals, and consequences.
+Quality rules: Build one coherent causal story, not a collection of interchangeable twists. First define the protagonist's wound, want, false belief, moral choice, and final change. Give every one of 6 ensemble characters a distinct goal, secret, relationship to the protagonist, visual continuity marker (silhouette, wardrobe palette, signature prop), and turning point. Define recurring locations, prop history, visual tone, music motif, and the factual cause of the central conflict. Divide the season into setup, escalation, midpoint reversal, counterattack, climax, and resolution. Future episodes will be written one at a time, so provide a six-phase roadmap that preserves causal continuity. Do not repeat incidents, dialogue situations, locations, or vague phrases such as “the truth” without naming the specific fact. Keep Korean dialogue natural, subtextual, and emotionally specific. Do not make every scene a confrontation; include choices, discoveries, reversals, and consequences. Keep every text field compact and concrete; do not write full episode scripts or a list of all ${episodeCount} episodes.
 
-Return JSON only: {"title":"","logline":"","seriesBible":"setting, visual rules, recurring locations, prop continuity, sound motif, season arcs, protagonist arc, and continuity rules","characters":[{"name":"","role":"","goal":"","secret":"","relationship":"","turningPoint":"","visualMarker":""}],"episodes":[{"number":1,"title":"","openingHook":"specific consequence of the prior episode or inciting event","goal":"","incident":"concrete event with named evidence/object/action","relationshipTurn":"","endingHook":"specific next decision or danger","sceneCast":"only characters necessary for this episode","location":""}]}.`;
+Return JSON only: {"title":"","logline":"","seriesBible":"setting, visual rules, recurring locations, prop continuity, sound motif, protagonist arc, factual central conflict, and continuity rules","seasonRoadmap":["phase 1 concrete cause and goal","phase 2 escalation","phase 3 midpoint reversal","phase 4 counterattack","phase 5 climax","phase 6 resolution"],"characters":[{"name":"","role":"","goal":"","secret":"","relationship":"","turningPoint":"","visualMarker":""}]}.`;
 }
 function aiEpisodePrompt() {
   const savedEpisode = current?.episodes?.[current.aiEpisodeNumber - 1];
@@ -420,15 +420,17 @@ async function generateAiSeries() {
   const button = $('generate-ai-drama'); button.disabled = true; button.textContent = 'AI 시리즈 기획 생성 중…';
   try {
     const seconds = Number($('episode-duration').value), format = formatFor(keys), requestedEpisodes = episodeCountFor(keys);
-    const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format, requestedEpisodes), 24000);
-    if (!Array.isArray(plan.episodes) || plan.episodes.length < requestedEpisodes || !Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error(`AI 기획이 요청한 ${requestedEpisodes}개 회차 또는 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.`);
+    const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format, requestedEpisodes), 7000);
+    if (!Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error('AI 기획이 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.');
     current = buildDrama(keys, tone, seconds, DEFAULT_SCRIPT_STYLE, format, 0, requestedEpisodes);
-    current.title = plan.title || current.title; current.aiPlan = plan; current.summary = `AI 시리즈 기획 · ${current.summary}`;
+    current.title = plan.title || current.title; current.summary = `AI 시리즈 기획 · ${current.summary}`;
     const names = plan.characters.map(person => person.name).filter(Boolean);
     ['lead', 'counterpart', 'confidant', 'rival', 'guardian', 'wildcard'].forEach((role, i) => { if (names[i]) current.cast[role] = names[i]; });
-    current.episodes.forEach((episode, index) => { const source = plan.episodes[index]; if (!source) return; episode.aiOutline = source; episode.goal = source.goal || episode.goal; episode.turn = source.relationshipTurn || episode.turn; episode.openingHook = source.openingHook || episode.openingHook; episode.arc = source.incident || episode.arc; episode.ending = source.endingHook || episode.ending; });
-    current.screenplayEpisodes = plan.episodes.slice(0, current.episodes.length).map(item => episodeOutlinePreview(current.title, item));
-    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n1화부터 순서대로 완성합니다. 아직 생성하지 않은 회차의 실제 대본과 Flow 프롬프트는 포함하지 않습니다.`;
+    const localOutlines = current.episodes.map(episode => ({ number: episode.number, title: `${current.title} ${episode.number}화`, openingHook: episode.openingHook, goal: episode.goal, incident: episode.arc, relationshipTurn: episode.turn, endingHook: episode.ending, sceneCast: '', location: '' }));
+    current.aiPlan = { ...plan, episodes: localOutlines };
+    current.episodes.forEach((episode, index) => { episode.aiOutline = localOutlines[index]; });
+    current.screenplayEpisodes = localOutlines.map(item => episodeOutlinePreview(current.title, item));
+    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[시즌 전개]\n${Array.isArray(plan.seasonRoadmap) ? plan.seasonRoadmap.map((item, index) => `${index + 1}. ${item}`).join('\n') : ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n1화부터 순서대로 완성합니다. 아직 생성하지 않은 회차의 실제 대본과 Flow 프롬프트는 포함하지 않습니다.`;
     showCurrent(false);
     setGeminiStatus('시리즈 기획 완료 · 1화 대본과 Flow 프롬프트를 생성 중…');
     const firstEpisodeCreated = await generateAiEpisode(0);
@@ -445,7 +447,7 @@ async function generateAiEpisode(index) {
   try {
     const expectedIndex = completedEpisodeCount();
     if (index !== expectedIndex) throw new Error(`먼저 ${expectedIndex + 1}화까지 순서대로 생성해 주세요.`);
-    const result = await callGeminiJson(aiEpisodePrompt(), 16000);
+    const result = await callGeminiJson(aiEpisodePrompt(), 10000);
     if (!Array.isArray(result.clips) || !result.clips.length || !result.screenplay) throw new Error('회차 대본 형식이 올바르지 않습니다. 다시 시도해 주세요.');
     const episode = current.episodes[index];
     episode.clips = result.clips.slice(0, episode.clips.length).map((clip, clipIndex) => ({ ...episode.clips[clipIndex], direction: clip.action || episode.clips[clipIndex].direction, line: clip.leadLine || episode.clips[clipIndex].line, counterpartLine: clip.counterpartLine || episode.clips[clipIndex].counterpartLine, thirdLine: clip.thirdLine || '', prompt: `${clip.flowPrompt || episode.clips[clipIndex].prompt}\n\n${flowShotGuardrail(clipIndex + 1, episode.clips.length)}` }));
