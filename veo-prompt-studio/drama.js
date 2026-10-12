@@ -30,7 +30,7 @@ const SCRIPT_STYLES = {
 };
 const DEFAULT_SCRIPT_STYLE = 'koreanized-cdrama';
 const GEMINI_STORAGE_KEY = 'tailframe-gemini-api-key';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.8-flash';
 const PRODUCTION_FORMATS = {
   drama: { label: '실사 한국 드라마', visual: 'grounded live-action Korean drama', direction: '현실적인 동선, 절제된 표정 연기, 소품과 침묵으로 감정을 보여 준다', audio: '현장음과 절제된 음악으로 감정의 빈자리를 남긴다' },
   animation: { label: '애니메이션 시리즈', visual: 'original cinematic animation series', direction: '인물의 동작과 상징적인 소품을 명료하게 보여 주되, 기존 애니메이션 작품의 화풍이나 캐릭터를 모방하지 않는다', audio: '행동과 감정을 돕는 절제된 효과음과 연속적인 음악 동기를 사용한다' },
@@ -80,7 +80,10 @@ function aiEpisodePrompt() {
   const cast = current?.aiPlan?.characters || Object.entries(current?.cast || {}).map(([role, name]) => ({ name, role }));
   return `You are a Korean vertical microdrama screenwriter and Google Flow prompt director. Write ONE original episode in Korean from the approved series plan below. Do not copy any existing work. Keep all character names, relationships, continuity, props, setting, and unresolved conflicts consistent. The episode must have natural, specific dialogue that advances this exact incident; do not reuse generic phrases. Return JSON only: {"screenplay":"full Korean screenplay for this episode, with concise action and speaker-labelled dialogue","clips":[{"action":"Korean action and continuity note","leadLine":"speaker — Korean line","counterpartLine":"speaker — Korean line","thirdLine":"optional speaker — Korean line","flowPrompt":"detailed English Google Flow 9:16 video prompt, include exact actions, Korean dialogue, sound, continuity from prior clip and no subtitles"}]}. Series bible: ${current.aiPlan?.seriesBible || current.script || ''}. Cast: ${JSON.stringify(cast)}. Episode outline: ${JSON.stringify(outline)}. Episode length: ${current.duration_seconds} seconds and ${savedEpisode?.clips?.length || 4} clips.`;
 }
-const episodeCountFor = () => Math.max(30, Number($('episode-count')?.value) || 30);
+const episodeCountFor = keys => {
+  const spread = Math.max(18, Math.min(72, 18 + keys.length * 9));
+  return 30 + Math.floor(Math.random() * spread);
+};
 const clipCountFor = seconds => seconds === 30 ? 4 : seconds === 45 ? 6 : 8;
 function makeOriginalName(used = new Set()) { let name = ''; do { name = `${NAME_HEADS[Math.floor(Math.random() * NAME_HEADS.length)]}${NAME_TAILS[Math.floor(Math.random() * NAME_TAILS.length)]}`; } while (used.has(name)); used.add(name); return name; }
 function signatureFor(keys, tone, seconds, mode, cast, style, format) { return [keys.map(normal).sort().join('|'), normal(tone), seconds, mode, style, format, cast.lead, cast.counterpart].join('::'); }
@@ -306,7 +309,7 @@ function buildDrama(keys, tone, seconds, style = DEFAULT_SCRIPT_STYLE, format = 
   const blueprint = buildMicroDramaBlueprint(keys, cast);
   const signature = signatureFor(keys, tone, seconds, mode, cast, style, format);
   if (archive.some(item => item.signature === signature) && attempt < STORY_MODES.length - 1) return buildDrama(keys, tone, seconds, style, format, attempt + 1, episodeCountOverride);
-  const episodeCount = episodeCountOverride || episodeCountFor(), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
+  const episodeCount = episodeCountOverride || episodeCountFor(keys), clipCount = clipCountFor(seconds), title = titleFor(keys, mode);
   const episodes = Array.from({ length: episodeCount }, (_, offset) => {
     const number = offset + 1, arc = episodeArc(number, episodeCount);
     const plan = makeEpisodePlan(number, episodeCount, keys, variant, cast, clipCount);
@@ -383,7 +386,7 @@ async function generateAiSeries() {
   if (keys.length < 2) { const random = randomDramaInputs(); keys = random.keys; tone = tone || random.tone; $('keywords').value = keys.join(', '); $('tone').value = tone; }
   const button = $('generate-ai-drama'); button.disabled = true; button.textContent = 'AI 시리즈 기획 생성 중…';
   try {
-    const seconds = Number($('episode-duration').value), format = formatFor(keys), requestedEpisodes = episodeCountFor();
+    const seconds = Number($('episode-duration').value), format = formatFor(keys), requestedEpisodes = episodeCountFor(keys);
     const plan = await callGeminiJson(aiSeriesPrompt(keys, tone, seconds, format, requestedEpisodes), 24000);
     if (!Array.isArray(plan.episodes) || plan.episodes.length < requestedEpisodes || !Array.isArray(plan.characters) || plan.characters.length < 6) throw new Error(`AI 기획이 요청한 ${requestedEpisodes}개 회차 또는 6명 앙상블 조건을 충족하지 못했습니다. 다시 시도해 주세요.`);
     current = buildDrama(keys, tone, seconds, DEFAULT_SCRIPT_STYLE, format, 0, requestedEpisodes);
@@ -421,7 +424,6 @@ $('regenerate-latest').onclick = () => {
   const seconds = current.duration_seconds <= 32 ? 30 : current.duration_seconds <= 48 ? 45 : 60;
   $('keywords').value = current.keywords.join(', ');
   $('tone').value = current.tone || '';
-  $('episode-count').value = String(Math.max(30, current.episode_count || 30));
   $('episode-duration').value = String(seconds);
   current = buildDrama(current.keywords, current.tone || '', seconds, DEFAULT_SCRIPT_STYLE, current.production_format || formatFor(current.keywords));
   showCurrent(false);
