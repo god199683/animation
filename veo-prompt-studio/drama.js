@@ -393,6 +393,33 @@ function renderCopyButtons() {
   const label = document.createElement('span'); label.textContent = '회차·클립별 복사'; root.append(label);
   episodes.forEach(ep => ep.clips.forEach(clip => { const button = document.createElement('button'); button.textContent = `${ep.number}-${clip.clip}`; button.title = `${ep.number}화 ${clip.clip}클립 복사`; button.onclick = async () => { await navigator.clipboard.writeText(clip.prompt); const original = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = original, 900); }; root.append(button); }));
 }
+function makeCharacterSheetPrompt() {
+  const people = current?.aiPlan?.characters || [];
+  const profiles = people.map((person, index) => `${index + 1}. ${person.name || `인물 ${index + 1}`} — ${person.role || 'supporting character'}; visual marker: ${person.visualMarker || 'distinct original silhouette, wardrobe palette, and signature prop'}; personality and voice: ${person.voice || person.goal || 'clear individual motivation'}`).join('\n');
+  return `Create one polished integrated character sheet image for an original Korean vertical short drama, 9:16 portrait composition. This is a pre-production reference sheet, not a scene from an existing show. Show every named character as a clearly separated full-body design with consistent face, height, build, hairstyle, wardrobe palette, signature prop, and emotional baseline. Use a clean premium Korean drama concept-art presentation: neutral studio background, soft cinematic key light, subtle individual name labels only if the image model can render them cleanly, no logos, no watermark, no collage clutter, no celebrity likeness, and no resemblance to existing fictional characters. Keep all designs realistic, production-ready, and mutually distinct. Series title: ${current?.title || 'Original Korean short drama'}. Series tone: ${current?.tone || 'emotionally grounded Korean vertical drama'}. Character profiles:\n${profiles}`;
+}
+function renderProductionActions() {
+  const root = $('production-actions'); root.innerHTML = '';
+  if (!current?.aiPlan) { root.hidden = true; return; }
+  root.hidden = false;
+  const completed = completedEpisodeCount();
+  const label = document.createElement('span');
+  if (!current.characterSheetPrompt) {
+    label.textContent = '다음 단계 · 기획안 확인 후 캐릭터 시트'; root.append(label);
+    const characterButton = document.createElement('button'); characterButton.classList.add('accent'); characterButton.textContent = '통합 캐릭터 시트 이미지 프롬프트 생성'; characterButton.onclick = () => {
+      current.characterSheetPrompt = makeCharacterSheetPrompt();
+      current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[통합 캐릭터 시트 이미지 프롬프트]\n${current.characterSheetPrompt}`;
+      $('output').textContent = current.script;
+      renderProductionActions();
+      setGeminiStatus('통합 캐릭터 시트 이미지 프롬프트 생성 완료 · 확인 후 1화를 생성하세요.');
+    }; root.append(characterButton); return;
+  }
+  label.textContent = `캐릭터 시트 준비 완료 · 완성 ${completed} / ${current.episode_count}화`; root.append(label);
+  const copySheet = document.createElement('button'); copySheet.textContent = '캐릭터 시트 프롬프트 복사'; copySheet.onclick = async () => { await navigator.clipboard.writeText(current.characterSheetPrompt); copySheet.textContent = '복사됨'; setTimeout(() => copySheet.textContent = '캐릭터 시트 프롬프트 복사', 900); }; root.append(copySheet);
+  if (geminiApiKey && completed < current.episodes.length) {
+    const nextButton = document.createElement('button'); nextButton.classList.add('accent'); nextButton.textContent = completed === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${completed + 1}화 생성`; nextButton.onclick = () => generateAiEpisode(completed); root.append(nextButton);
+  }
+}
 async function archiveCurrent() {
   if (!current) return;
   const local = readLocal(); if (!local.some(item => item.signature === current.signature)) { local.unshift(current); writeLocal(local); }
@@ -419,7 +446,7 @@ function showEpisodePreview(index = 0) {
   const label = document.createElement('span'); label.textContent = `완성 ${completedEpisodeCount()} / ${current?.episode_count || previews.length}화`; root.append(label);
   previews.slice(0, availableLastIndex + 1).forEach((_, i) => { const button = document.createElement('button'); button.textContent = `${i + 1}화`; button.classList.toggle('accent', i === safeIndex); button.onclick = () => showEpisodePreview(i); root.append(button); });
   const nextIndex = completedEpisodeCount();
-  if (current?.aiPlan && geminiApiKey && nextIndex < current.episodes.length) { const aiButton = document.createElement('button'); aiButton.textContent = nextIndex === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${nextIndex + 1}화 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(nextIndex); root.append(aiButton); }
+  if (current?.aiPlan && current.characterSheetPrompt && geminiApiKey && nextIndex < current.episodes.length) { const aiButton = document.createElement('button'); aiButton.textContent = nextIndex === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${nextIndex + 1}화 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(nextIndex); root.append(aiButton); }
 }
 function showCurrent(fromArchive = false) {
   openedFromArchive = fromArchive;
@@ -436,6 +463,7 @@ function showCurrent(fromArchive = false) {
   $('regenerate-latest').hidden = !fromArchive;
   $('regenerate-latest').disabled = !fromArchive;
   renderCopyButtons();
+  renderProductionActions();
 }
 function generateDrama({ forceRandom = false } = {}) {
   let keys = splitKeywords($('keywords').value);
@@ -467,16 +495,16 @@ async function generateAiSeries() {
     current.aiPlan = { ...plan, episodes: localOutlines };
     current.episodes.forEach((episode, index) => { episode.aiOutline = localOutlines[index]; });
     current.screenplayEpisodes = localOutlines.map(item => episodeOutlinePreview(current.title, item));
-    current.script = `[AI 시리즈 기획]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[시즌 전개]\n${Array.isArray(plan.seasonRoadmap) ? plan.seasonRoadmap.map((item, index) => `${index + 1}. ${item}`).join('\n') : ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n1화부터 순서대로 완성합니다. 아직 생성하지 않은 회차의 실제 대본과 Flow 프롬프트는 포함하지 않습니다.`;
+    current.script = `[AI 시리즈 기획안]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[시즌 전개]\n${Array.isArray(plan.seasonRoadmap) ? plan.seasonRoadmap.map((item, index) => `${index + 1}. ${item}`).join('\n') : ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n[다음 진행]\n기획안이 마음에 들면 “통합 캐릭터 시트 이미지 프롬프트 생성”을 누르세요. 캐릭터 시트를 확인한 뒤 1화부터 순서대로 실제 대본과 Google Flow 프롬프트를 생성합니다.`;
     showCurrent(false);
-    setGeminiStatus('시리즈 기획 완료 · 1화 대본과 Flow 프롬프트를 생성 중…');
-    const firstEpisodeCreated = await generateAiEpisode(0);
-    if (!firstEpisodeCreated) showEpisodePreview(0);
+    setGeminiStatus('AI 시리즈 기획안 생성 완료 · 기획안을 확인해 주세요.');
   } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 요청 실패 · 잠시 뒤 다시 시도해 주세요.'); }
-  finally { button.disabled = false; button.textContent = 'AI 시리즈·1화 생성'; }
+  finally { button.disabled = false; button.textContent = 'AI 시리즈 기획안 생성'; }
 }
 async function generateAiEpisode(index) {
-  if (!current?.aiPlan) return; current.aiEpisodeNumber = index + 1;
+  if (!current?.aiPlan) return;
+  if (!current.characterSheetPrompt) { alert('먼저 통합 캐릭터 시트 이미지 프롬프트를 생성해 확인해 주세요.'); return; }
+  current.aiEpisodeNumber = index + 1;
   const seriesButton = $('generate-ai-drama');
   const previousText = seriesButton.textContent;
   seriesButton.disabled = true;
@@ -495,7 +523,7 @@ async function generateAiEpisode(index) {
       return { ...clip, prompt: `${originalPrompt}\n\n${continuityDirective(previousClip, clipIndex === 0)}\n${sceneTransitionDirective(clip, clipIndex)}\n${flashbackDirective()}\n${spokenAudioDirective(clip)}\n${flowShotGuardrail(clipIndex + 1, generatedClips.length)}` };
     });
     episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
-    renderCopyButtons(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
+    renderCopyButtons(); renderProductionActions(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
   } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
   finally {
     delete current.aiEpisodeNumber;
