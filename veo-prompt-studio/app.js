@@ -158,8 +158,8 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
-  if (stage === 3) return [compactThirdClipPrompt(), clipBgmContinuity(3)].join('\n\n');
-  if (stage === 4) return [compactFourthClipPrompt(), clipBgmContinuity(4)].join('\n\n');
+  if (stage === 3) return [compactThirdClipPrompt(), clipBgmContinuity(3), TRANSFORMATION_VISIBILITY_SUFFIXES[3], IRREVERSIBLE_TRANSFORMATION_SUFFIXES[3], EXTEND_MOTION_SUFFIX].filter(Boolean).join('\n\n');
+  if (stage === 4) return [compactFourthClipPrompt(), clipBgmContinuity(4), TRANSFORMATION_VISIBILITY_SUFFIXES[4], IRREVERSIBLE_TRANSFORMATION_SUFFIXES[4], FINAL_FORM_HOLD_SUFFIX, FINAL_FORM_INVENTORY_SUFFIX].filter(Boolean).join('\n\n');
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
