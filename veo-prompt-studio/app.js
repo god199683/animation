@@ -39,6 +39,11 @@ const finalPoses = [
   'makes one soft half-turn, ending in a calm side-facing stance while glancing back at camera so the chest and tail tips stay visible',
   'leans forward to inspect one transformed tail tip, then lifts the head into a quiet proud standing pose with ears alert'
 ];
+const humanCameos = [
+  { stage: 1, ko: '얼굴과 몸은 절대 보이지 않는 사람이 화면 아래에서 손 하나만 잠깐 내밀어 음식 접시를 조심스럽게 내려놓고, 화면 밖에서 부드럽게 “이건 네 거야.”라고 한마디 말한다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second, show only one anonymous human hand entering from the bottom edge to gently place or steady the existing food plate. Never show a human face, head, torso, body, reflection, shadow, or a second person. One warm off-screen adult voice says exactly one short Korean line, “이건 네 거야.” Then the hand leaves before the fox approaches. Keep the single food prop unchanged and unobscured.' },
+  { stage: 1, ko: '얼굴과 몸은 보이지 않는 사람이 손 하나로 음식 포장지를 살짝 정리하고, 화면 밖에서 “천천히 먹어.”라고 짧게 말한다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second, show only one anonymous human hand from the lower edge gently straightening the existing food wrapper. Never show a human face, head, torso, body, reflection, shadow, or a second person. One gentle off-screen adult voice says exactly one short Korean line, “천천히 먹어.” The hand leaves immediately; it must not cover the fox or create, replace, or duplicate food.' },
+  { stage: 2, ko: '캐릭터가 먹기 시작할 때 얼굴과 몸이 보이지 않는 사람 손 하나가 접시가 밀리지 않게 잠깐 잡아 주고, 화면 밖에서 “맛있어?”라고 짧게 묻는다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second at the beginning, show only one anonymous human hand from the bottom edge lightly steadying the existing plate while the fox begins eating. Never show a human face, head, torso, body, reflection, shadow, or a second person. One quiet off-screen adult voice says exactly one short Korean line, “맛있어?” The hand exits before the first bite is complete; preserve physically believable fox, food, paw, and plate contact.' }
+];
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
@@ -170,6 +175,7 @@ function stagePrompt(storyboard, stage){
   const motion = stage >= 1 && stage <= 3 ? EXTEND_MOTION_SUFFIX : '';
   const food = current?.food || current?.title?.split(' · ')[0] || '';
   const [, feature, colors] = foodProfile(food);
+  const humanCameoDirection = current?.humanCameo?.stage === stage ? current.humanCameo.en : '';
   const foodDesign = stage >= 3 ? `FOOD-SPECIFIC DESIGN TO APPLY: ${foodTransformationPrompt(food, feature, colors)}` : '';
   const masterContract = masterContinuityContract(food, feature, colors, current?.title?.split(' · ')[1] || 'the same established setting');
   const visibility = TRANSFORMATION_VISIBILITY_SUFFIXES[stage] || '';
@@ -178,7 +184,7 @@ function stagePrompt(storyboard, stage){
   const finalHold = stage === 4 ? FINAL_FORM_HOLD_SUFFIX : '';
   const finalInventory = stage === 4 ? FINAL_FORM_INVENTORY_SUFFIX : '';
   const finalReference = stage === 4 ? 'If a generated “clip 4 final-transformation reference image” is attached as an additional Ingredient, match its completed materials exactly. Keep the saved final frame of clip 3 as the only Start Frame; do not replace it with the reference image. The clip-3 partial reference is not needed for clip 4.' : '';
-  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, motion].filter(Boolean).join('\n\n');
+  return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, humanCameoDirection, motion].filter(Boolean).join('\n\n');
 }
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
@@ -221,6 +227,7 @@ function buildPrompt(data, attempt = 0){
   const foodData = data.food && !/랜덤/i.test(data.food) ? [data.food, `${data.food}의 실제 식감과 향`, '음식 고유 색감'] : pick(foods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
   const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds);
+  const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
   const [food, feature, colors] = foodData;
   const signature = [normalize(food), normalize(place), method[0], ending].join('|');
@@ -245,10 +252,11 @@ function buildPrompt(data, attempt = 0){
   const qualityDirection = `[고품질 영상 잠금]\n\n시각 품질: 캐릭터의 얼굴·눈 반사·털 한 올·음식 표면·한입 자국을 선명하게 유지하는 시네마틱 고해상도 디테일. 얕은 심도는 음식과 얼굴의 행동이 읽힐 때만 사용하고, 꼬리 수와 발 위치가 흐려지지 않게 한다.\n\n카메라 품질: 한 번의 부드러운 돌리·아크 이동만 사용한다. 과도한 줌, 흔들림, 광각 왜곡, 초점 펌핑, 갑작스러운 구도 변경을 금지한다.\n\n일관성 품질: 모든 프레임에서 동일한 캐릭터 모델·털 패턴·이마 문양·정확히 9개 꼬리·음식의 남은 크기·조명 방향·배경 소품을 유지한다. 추가 인물·동물·음식·텍스트·로고·워터마크는 절대 넣지 않는다.`;
   const omniProductionDirection = `[Gemini OMNI · 단일 연속 영상 제작 지시]\n\nTikTok 9:16 세로, 약 32초의 하나의 끊기지 않는 연속 영상으로 생성한다. 아래 4단계의 사건은 컷 분할이 아니라 하나의 카메라 이동 안에서 자연스럽게 이어진다. 동일한 캐릭터·음식·배경·시간대·조명·카메라 축을 끝까지 유지하며, 점프컷·페이드·검은 화면·리셋을 금지한다.\n\n`;
   const omniAudioDirection = `[OMNI 오디오 연출 — 영상 전체에서 일관되게]\n\nBGM: ${place}의 공기감과 ${food}의 질감을 반영한 무보컬 판타지 팝 한 곡. 86–92 BPM, 부드러운 펠트 피아노·가벼운 글로켄슈필·따뜻한 신스 패드만 사용한다. 0초부터 같은 조성·템포·주 멜로디를 유지하고, 마지막 1.5초에만 자연스럽게 잔향으로 감쇠한다. 장면마다 새 음악을 시작하거나 보컬·노래·급격한 박자 변화를 넣지 않는다.\n\n효과음: 1단계에는 ${place}의 낮은 볼륨 앰비언스와 두 번의 부드러운 발소리, 2단계에는 실제 한입 소리와 한 번의 작은 벨, 3단계에는 변화가 시작한 부위를 따라가는 아주 약한 결정음과 털 스침, 4단계에는 꼬리 스침·가벼운 착지음만 사용한다. 모든 효과음은 화면 행동과 정확히 동기화하고, 같은 리버브 거리·음량 바닥을 유지한다.\n\n캐릭터 음성: 변화 순간에만 0.5초 이하의 낮고 부드러운 여우 소리 한 번. 사람 대사, 내레이션, 긴 울음, 노래, 반복 음성은 금지한다.`;
-  const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}`;
-  const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}`;
+  const humanCameoDirection = humanCameo ? `\n\n━━━━━━━━━━━━━━━━━━\n\n[선택된 사람 손·대사 연출 — 이번 결과에만 적용]\n${humanCameo.ko}\n\n${humanCameo.en}` : '';
+  const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
+  const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, summary: `${place} · ${method[0]} · ${ending}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, summary: `${place} · ${method[0]} · ${ending}` };
 }
 
 async function initSupabase(){
@@ -391,6 +399,7 @@ $('storyboard').onclick = async () => {
   const foodTransformation = foodTransformationPrompt(food, foodFeature, foodColors);
   const masterContract = masterContinuityContract(food, foodFeature, foodColors, place);
   const finalPose = pick(finalPoses);
+  const humanCameo = current.humanCameo || null;
   const storyboardDirections = [
     '카메라는 낮은 눈높이에서 음식과 얼굴 사이를 부드럽게 반원으로 이동한다.',
     '카메라는 캐릭터의 왼쪽 앞발에서 시작해 꼬리 끝을 따라 천천히 얼굴로 올라간다.',
@@ -469,7 +478,7 @@ $('storyboard').onclick = async () => {
   ).replace(
     '2→3: 음식은 섭취 완료 상태이고 최초 빛이 같은 위치에서 이어지는가?',
     '2→3: 음식의 마지막 20–25%가 같은 위치에 남은 채, 클립 3 첫 프레임부터 변화가 시작되는가?'
-  ) + `\n\n━━━━━━━━━━━━━━━━━━\n\n${masterContract}\n\n${FINAL_FORM_HOLD_SUFFIX}\n\n${FINAL_FORM_INVENTORY_SUFFIX}`;
+  ) + `\n\n━━━━━━━━━━━━━━━━━━\n\n${masterContract}\n\n${humanCameo ? `[이번 결과의 랜덤 사람 손·대사]\n${humanCameo.ko}\n\n${humanCameo.en}\n\n` : ''}${FINAL_FORM_HOLD_SUFFIX}\n\n${FINAL_FORM_INVENTORY_SUFFIX}`;
   $('result-title').textContent = `${current.title} · Google Flow 스토리보드`;
   $('output').textContent = styledManualFrameStoryboard;
   setStageCopyActions(true);
