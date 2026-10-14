@@ -135,6 +135,19 @@ function simpleFourthClipPrompt(){
   const [, feature, colors] = foodProfile(food);
   return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 3. Preserve the exact same character, face, eyes, forehead flower marking, necklace, aqua pendant, nine tails, ${place}, camera axis, lighting, bitten ${food} remainder, and especially the unified ${feature}-inspired ${colors} chest/back and nine-tail-tip fur material already visible in the Start Frame.\n\nCLIP 4 ADDS ONLY TWO SMALL FINAL DETAILS. Seconds 0–2: preserve the locked fur material unchanged. Seconds 2–4: add one small food-inspired ornament beside—not over—the existing forehead flower marking, and one subtle matching filigree accent around the existing aqua pendant. Seconds 4–8: keep the fur material, forehead ornament, and pendant accent all visible together while the character naturally notices the result and finishes one gentle tail movement.\n\nDo NOT alter ears, face, body shape, tail count, necklace, food, or background. Do NOT replace or simplify the clip-3 fur material. No new decorative categories, no glow hiding the details, no reset, no reversion, no food reappearing, no new character, no text, no logo, no fade. Final frame: face, forehead ornament, pendant accent, chest texture, and all nine tail tips are visible together in a relaxed natural pose.`;
 }
+function compactFourthClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  const design = foodTransformationPrompt(food, feature, colors);
+  return `Generate an 8-second vertical 9:16 video from the supplied saved final frame of clip 3. This saved clip-3 frame is the only Start Frame. Preserve the exact original white nine-tailed fox identity, same face, lavender-blue eyes, flower forehead marking, flower necklace, aqua pendant, exactly nine tails, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder.
+
+NON-NEGOTIABLE START STATE: the Start Frame already contains the permanent clip-3 partial transformation. Keep it continuously visible from seconds 0–8: chest and upper-back food-derived texture, both ear-edge trims, exactly three to five changed tail tips, and the half-formed ornament beside the original forehead flower. Never reset, hide, simplify, or restore clean original fur.
+
+Seconds 0–2: continue the existing head turn, tail arc, and forehead-bound light while every partial detail remains visible. Seconds 2–5: complete the remaining layers of this exact unified food-derived design: ${design} Add matching detail to all nine tail tips, finish the small ornament beside—not over—the forehead flower, and add one subtle matching filigree accent around the existing aqua pendant. Seconds 5–8: keep every completed detail visible together while the character notices one transformed tail and naturally completes one gentle tail movement.
+
+Use a stable medium three-quarter view with face, forehead ornament, chest texture, pendant, and all nine tail tips readable at once. The completed details are permanent physical fur and ornament materials, not temporary glow. No food reappearing, no eating, no new character, no fairy, no sprite, no text, no logo, no cut, no fade, no transformation reversal, and no before-and-after flicker. Final frame: all completed details remain visible in a relaxed natural pose.`;
+}
 function stagePrompt(storyboard, stage){
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
   const start = storyboard.indexOf(labels[stage]);
@@ -145,8 +158,8 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
-  if (stage === 3) return [simpleThirdClipPrompt(), clipBgmContinuity(3)].join('\n\n');
-  if (stage === 4) return [simpleFourthClipPrompt(), clipBgmContinuity(4)].join('\n\n');
+  if (stage === 3) return [compactThirdClipPrompt(), clipBgmContinuity(3)].join('\n\n');
+  if (stage === 4) return [compactFourthClipPrompt(), clipBgmContinuity(4)].join('\n\n');
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
