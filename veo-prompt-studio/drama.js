@@ -53,8 +53,14 @@ const randomItem = list => list[Math.floor(Math.random() * list.length)];
 function randomDramaInputs() { return { keys: [...randomItem(RANDOM_KEYWORD_SETS)].sort(() => Math.random() - .5), tone: randomItem(RANDOM_TONES) }; }
 function formatFor(keys) { const source = keys.join(' '); if (/애니|animation|cartoon|만화/i.test(source)) return 'animation'; if (/영화|cinema|시네마/i.test(source)) return 'film'; return 'drama'; }
 function setGeminiStatus(text) { const node = $('gemini-status'); if (node) node.textContent = text; }
+function isGeminiQuotaError(error) { return /exceeded your current quota|quota exceeded|free_tier_requests|resource has been exhausted|daily quota/i.test(String(error?.message || '')); }
+function quotaRetryHint(message) {
+  const retry = String(message || '').match(/retry in\s+([^\n.]+)/i)?.[1]?.trim();
+  return retry ? ` Google 안내상 약 ${retry} 뒤에 다시 사용할 수 있습니다.` : '';
+}
 function geminiFailureMessage(error) {
   const message = String(error?.message || '');
+  if (isGeminiQuotaError(error)) return `Gemini 무료 API 요청 한도를 모두 사용했습니다. 서버 혼잡이 아니므로 지금 재시도해도 생성되지 않습니다.${quotaRetryHint(message)} 한도가 초기화된 뒤 다시 시도하거나, Google AI Studio에서 결제 계정이 연결된 별도 API 키를 저장해 사용해 주세요.`;
   if (/high demand|temporar|overload|429|503/i.test(message)) return 'Gemini 서버가 현재 혼잡합니다. 기획은 보존되어 있으니 잠시 뒤 “AI로 1화 대본·프롬프트 생성”을 다시 누르세요.';
   if (/failed to fetch|network|connection/i.test(message)) return 'Google API 연결이 일시적으로 끊겼습니다. 인터넷 연결을 확인한 뒤 1화 생성 버튼을 다시 누르세요.';
   return message || '알 수 없는 오류가 발생했습니다.';
@@ -88,6 +94,10 @@ async function callGeminiJson(instruction, maxOutputTokens = 16000) {
       return extractJson(text);
     } catch (error) {
       lastError = error;
+      if (isGeminiQuotaError(error)) {
+        setGeminiStatus(`Gemini 무료 API 한도 초과 · 자동 재시도를 멈췄습니다.${quotaRetryHint(error.message)}`);
+        break;
+      }
       const retriable = error?.status === 429 || error?.status === 500 || error?.status === 503 || /high demand|temporar|overload|failed to fetch|network|connection/i.test(error?.message || '');
       if (!retriable || attempt === attempts.length - 1) break;
     }
@@ -498,7 +508,7 @@ async function generateAiSeries() {
     current.script = `[AI 시리즈 기획안]\n\n제목: ${current.title}\n최종 화수: ${current.episode_count}화\n로그라인: ${plan.logline || ''}\n\n[시리즈 성경]\n${plan.seriesBible || ''}\n\n[시즌 전개]\n${Array.isArray(plan.seasonRoadmap) ? plan.seasonRoadmap.map((item, index) => `${index + 1}. ${item}`).join('\n') : ''}\n\n[앙상블]\n${plan.characters.map(person => `- ${person.name}: ${person.role}. 목표: ${person.goal}. 비밀: ${person.secret}.`).join('\n')}\n\n[다음 진행]\n기획안이 마음에 들면 “통합 캐릭터 시트 이미지 프롬프트 생성”을 누르세요. 캐릭터 시트를 확인한 뒤 1화부터 순서대로 실제 대본과 Google Flow 프롬프트를 생성합니다.`;
     showCurrent(false);
     setGeminiStatus('AI 시리즈 기획안 생성 완료 · 기획안을 확인해 주세요.');
-  } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 요청 실패 · 잠시 뒤 다시 시도해 주세요.'); }
+  } catch (error) { alert(`AI 시리즈 기획 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus(isGeminiQuotaError(error) ? `Gemini 무료 API 한도 초과 · 자동 재시도를 멈췄습니다.${quotaRetryHint(error.message)}` : 'AI 요청 실패 · 잠시 뒤 다시 시도해 주세요.'); }
   finally { button.disabled = false; button.textContent = 'AI 시리즈 기획안 생성'; }
 }
 async function generateAiEpisode(index) {
@@ -524,7 +534,7 @@ async function generateAiEpisode(index) {
     });
     episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
     renderCopyButtons(); renderProductionActions(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
-  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus('AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
+  } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus(isGeminiQuotaError(error) ? `Gemini 무료 API 한도 초과 · 자동 재시도를 멈췄습니다.${quotaRetryHint(error.message)}` : 'AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
   finally {
     delete current.aiEpisodeNumber;
     if (previousText !== 'AI 시리즈 기획 생성 중…') { seriesButton.disabled = false; seriesButton.textContent = previousText; }
