@@ -222,16 +222,22 @@ const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g,' ');
 const setSync = (text, online = false) => { $('sync-status').textContent = text; document.querySelector('.sync').classList.toggle('online', online); };
 
 function selectedInputs(){ return { food: $('food').value.trim(), place: $('place').value.trim(), action: $('action').value.trim(), notes: $('notes').value.trim() }; }
-function hasConflict(signature){ return archive.some(x => x.signature === signature); }
-function buildPrompt(data, attempt = 0){
-  const foodData = data.food && !/랜덤/i.test(data.food) ? [data.food, `${data.food}의 실제 식감과 향`, '음식 고유 색감'] : pick(foods);
+function archiveFood(item){ return normalize(item?.food || String(item?.title || '').split(' · ')[0] || ''); }
+function archivedFoods(){ return new Set([...archive, ...uploadCandidates()].map(archiveFood).filter(Boolean)); }
+function hasArchiveSignature(signature){ return [...archive, ...uploadCandidates()].some(item => item?.signature === signature); }
+function buildPrompt(data){
+  const usedFoods = archivedFoods();
+  const requestedFood = data.food && !/랜덤/i.test(data.food) ? data.food : '';
+  if (requestedFood && usedFoods.has(normalize(requestedFood))) throw new Error(`“${requestedFood}”는 이미 보관함에 있는 음식입니다. 보관된 음식은 다시 생성할 수 없습니다.`);
+  const availableFoods = foods.filter(([name]) => !usedFoods.has(normalize(name)));
+  if (!requestedFood && !availableFoods.length) throw new Error('기본 음식 목록이 모두 보관되었습니다. 새 음식 이름을 직접 입력해 생성해 주세요.');
+  const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : pick(availableFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
   const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
   const [food, feature, colors] = foodData;
   const signature = [normalize(food), normalize(place), method[0], ending].join('|');
-  if (hasConflict(signature) && attempt < 24) return buildPrompt(data, attempt + 1);
   const title = `${food} · ${place}`;
   const notes = data.notes ? `사용자 지정 조건: ${data.notes}\n` : '';
   const masterContract = masterContinuityContract(food, feature, colors, place);
@@ -362,7 +368,7 @@ async function uploadLocalArchive(){
 async function archiveCurrent(){
   if (!current) return;
   const item = { ...current, id: crypto.randomUUID(), user_id:userId, created_at:new Date().toISOString() };
-  if (hasConflict(item.signature)) return alert('동일한 구조의 결과가 이미 보관되어 있습니다. 새 프롬프트를 생성해 주세요.');
+  if (hasArchiveSignature(item.signature)) return alert('동일한 구조의 결과가 이미 보관되어 있습니다. 새 프롬프트를 생성해 주세요.');
   saveLocalArchiveItem(item);
   if (dbClient && userId) {
     const base = { user_id:userId, title:item.title, food:item.food, signature:item.signature, prompt:item.prompt, omni_prompt:item.omniPrompt || item.omni_prompt || null, flow_prompt:item.flowPrompt || item.flow_prompt || null, summary:item.summary };
@@ -382,7 +388,15 @@ async function archiveCurrent(){
   } else { loadLocalArchive(); }
   $('archive').disabled = true; $('archive').textContent = '보관됨';
 }
-$('generate').onclick = () => { current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관'; };
+$('generate').onclick = async () => {
+  const button = $('generate'); const previousText = button.textContent;
+  button.disabled = true; button.textContent = '보관함 중복 확인 중…';
+  try {
+    if (dbClient && userId) await loadArchive();
+    current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
+  } catch (error) { alert(error?.message || '보관함 중복 확인 중 오류가 발생했습니다.'); }
+  finally { button.disabled = false; button.textContent = previousText; }
+};
 $('storyboard').onclick = async () => {
   if (!current) return;
   const preservedStoryboard = current.storyboard || savedStoryboard(current);
