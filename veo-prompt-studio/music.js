@@ -2,13 +2,14 @@ const CONFIG = { url: 'https://pxzerharmpbxvmuomsfo.supabase.co', anonKey: 'eyJh
 const $ = id => document.getElementById(id);
 const pick = list => list[Math.floor(Math.random() * list.length)];
 const concepts = [
-  ['neon-night city pop', 'rain-polished Seoul side streets at midnight', 'quietly recovering after a difficult goodbye', 'warm female Korean vocal'],
-  ['dreamy future garage', 'pastel dawn above a floating coastal city', 'a secret message arriving just before sunrise', 'airy and intimate Korean vocal'],
-  ['bright indie dance-pop', 'a sunlit rooftop market filled with handmade charms', 'choosing joy after a long period of self-doubt', 'playful mixed-gender Korean duet'],
-  ['cinematic Korean R&B', 'a blue-hour train platform and an empty final carriage', 'missing someone while deciding to move forward', 'low, soulful male Korean vocal'],
-  ['soft electronic ambient pop', 'a moonlit glass greenhouse full of silver flowers', 'turning a recurring dream into a new beginning', 'gentle wordless vocal textures'],
-  ['uplifting synth-pop', 'a vivid arcade-lit beach boardwalk at summer night', 'friends making one reckless but hopeful promise', 'confident female Korean vocal'],
-  ['acoustic folk-pop', 'a snowy riverside bookshop with paper lanterns', 'finding courage to say what was never said', 'close-mic warm Korean vocal']
+  ['high-energy K-pop dance-pop', 'an arcade-lit beach boardwalk at summer night', 'friends making one reckless but hopeful promise', 'bright confident Korean female vocal'],
+  ['melodic Korean hip-hop', 'neon city streets after a midnight victory', 'turning a bad day into a personal comeback', 'rhythmic Korean vocal with short English hook phrases'],
+  ['festival EDM-pop', 'a glowing rooftop party above a futuristic city', 'choosing the night that changes everything', 'powerful Korean female vocal and crowd-ready hook'],
+  ['funky disco-pop', 'a colorful roller rink filled with mirrored lights', 'finding instant courage on the dance floor', 'playful Korean mixed-gender duet'],
+  ['upbeat synth-pop', 'a sunlit coastal highway and a vivid convertible ride', 'running toward a new beginning without looking back', 'clear sparkling Korean vocal'],
+  ['pop-punk anthem', 'a youthful rooftop concert under electric summer clouds', 'breaking a rule to protect a friend', 'energetic Korean male vocal with singalong chorus'],
+  ['danceable Korean R&B-pop', 'a stylish late-night convenience store and rainy crosswalk', 'flirting with a risky new connection', 'groovy Korean vocal with short English ad-libs'],
+  ['Latin-inspired summer pop', 'a warm seaside carnival with paper lanterns', 'one unforgettable night of freedom and motion', 'rhythmic Korean vocal with an original bilingual hook']
 ];
 const structures = [
   'start delicate and intimate, build a clear hook by minute 6, introduce a contrasting bridge around minute 28, reach the emotional high point around minute 46, then resolve with a warm final reprise',
