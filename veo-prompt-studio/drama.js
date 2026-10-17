@@ -410,6 +410,7 @@ function makeCharacterSheetPrompt() {
 }
 function hydrateAiContinuation(item) {
   if (!item?.episodes?.length) return item;
+  item.keywords = Array.isArray(item.keywords) ? item.keywords : splitKeywords(item.keywords || '');
   const restoreCompletedMarkers = () => item.episodes.forEach(episode => {
     if (episode.aiCompleted !== true && String(item.script || '').includes(`[AI 완성 ${episode.number}화]`)) episode.aiCompleted = true;
   });
@@ -468,7 +469,7 @@ async function archiveCurrent({ silent = false } = {}) {
   if (existing >= 0) local[existing] = { ...current }; else local.unshift({ ...current });
   writeLocal(local);
   if (dbClient && userId) {
-    const payload = { id: current.id, user_id: userId, title: current.title, keywords: current.keywords.join(', '), signature: current.signature, duration_seconds: current.duration_seconds, episode_count: current.episode_count, script: current.script, episodes: episodesWithProductionState(), summary: current.summary };
+    const payload = { id: current.id, user_id: userId, title: current.title, keywords: (Array.isArray(current.keywords) ? current.keywords : splitKeywords(current.keywords || '')).join(', '), signature: current.signature, duration_seconds: current.duration_seconds, episode_count: current.episode_count, script: current.script, episodes: episodesWithProductionState(), summary: current.summary };
     const { error } = await dbClient.from('drama_archive').upsert(payload, { onConflict: 'id' });
     if (error) { if (!silent) alert(`PC에는 보관했지만 Supabase 저장에 실패했습니다: ${error.message}`); return; }
   }
