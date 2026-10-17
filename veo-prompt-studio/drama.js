@@ -408,6 +408,30 @@ function makeCharacterSheetPrompt() {
   const profiles = people.map((person, index) => `${index + 1}. ${person.name || `인물 ${index + 1}`} — ${person.role || 'supporting character'}; visual marker: ${person.visualMarker || 'distinct original silhouette, wardrobe palette, and signature prop'}; personality and voice: ${person.voice || person.goal || 'clear individual motivation'}`).join('\n');
   return `Create one polished integrated character sheet image for an original Korean vertical short drama, 9:16 portrait composition. This is a pre-production reference sheet, not a scene from an existing show. Show every named character as a clearly separated full-body design with consistent face, height, build, hairstyle, wardrobe palette, signature prop, and emotional baseline. Use a clean premium Korean drama concept-art presentation: neutral studio background, soft cinematic key light, subtle individual name labels only if the image model can render them cleanly, no logos, no watermark, no collage clutter, no celebrity likeness, and no resemblance to existing fictional characters. Keep all designs realistic, production-ready, and mutually distinct. Series title: ${current?.title || 'Original Korean short drama'}. Series tone: ${current?.tone || 'emotionally grounded Korean vertical drama'}. Character profiles:\n${profiles}`;
 }
+function hydrateAiContinuation(item) {
+  if (!item?.episodes?.length) return item;
+  const state = item.episodes[0]?.__tailframeProductionState;
+  if (state) {
+    Object.assign(item, state);
+    item.episodes = item.episodes.map(({ __tailframeProductionState, ...episode }) => episode);
+    return item;
+  }
+  const isAiSeries = String(item.script || '').startsWith('[AI 시리즈 기획안]') || item.episodes.some(episode => episode.aiOutline);
+  if (!isAiSeries) return item;
+  const names = [...String(item.script || '').matchAll(/^[-*]\s*([^:\n]+):\s*([^\n]+)/gm)].slice(0, 6);
+  const roles = ['lead', 'counterpart', 'confidant', 'rival', 'guardian', 'wildcard'];
+  const cast = item.cast || Object.fromEntries(roles.map((role, index) => [role, names[index]?.[1]?.trim() || `인물 ${index + 1}`]));
+  const characterSheet = String(item.script || '').match(/\[통합 캐릭터 시트 이미지 프롬프트\]\n([\s\S]*?)(?=\n\n━━━━━━━━|$)/)?.[1]?.trim() || '';
+  item.cast = cast;
+  item.aiPlan = { seriesBible: item.script || '', characters: roles.map((role, index) => ({ name: cast[role], role: names[index]?.[2]?.trim() || role })), episodes: item.episodes.map(episode => episode.aiOutline || ({ number: episode.number, title: `${item.title} ${episode.number}화`, openingHook: episode.openingHook, goal: episode.goal, incident: episode.arc, relationshipTurn: episode.turn, endingHook: episode.ending })) };
+  if (characterSheet) item.characterSheetPrompt = characterSheet;
+  return item;
+}
+function episodesWithProductionState() {
+  const episodes = (current?.episodes || []).map(episode => ({ ...episode }));
+  if (episodes.length) episodes[0].__tailframeProductionState = { aiPlan: current.aiPlan, characterSheetPrompt: current.characterSheetPrompt || '', screenplayEpisodes: current.screenplayEpisodes || [], cast: current.cast, script_style: current.script_style, production_format: current.production_format, tone: current.tone, keywords: current.keywords };
+  return episodes;
+}
 function renderProductionActions() {
   const root = $('production-actions'); root.innerHTML = '';
   if (!current?.aiPlan) { root.hidden = true; return; }
@@ -419,6 +443,7 @@ function renderProductionActions() {
     const characterButton = document.createElement('button'); characterButton.classList.add('accent'); characterButton.textContent = '통합 캐릭터 시트 이미지 프롬프트 생성'; characterButton.onclick = () => {
       current.characterSheetPrompt = makeCharacterSheetPrompt();
       current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[통합 캐릭터 시트 이미지 프롬프트]\n${current.characterSheetPrompt}`;
+      if (openedFromArchive || archive.some(item => item.signature === current.signature)) archiveCurrent({ silent: true });
       $('output').textContent = current.script;
       renderProductionActions();
       setGeminiStatus('통합 캐릭터 시트 이미지 프롬프트 생성 완료 · 확인 후 1화를 생성하세요.');
@@ -430,11 +455,17 @@ function renderProductionActions() {
     const nextButton = document.createElement('button'); nextButton.classList.add('accent'); nextButton.textContent = completed === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${completed + 1}화 생성`; nextButton.onclick = () => generateAiEpisode(completed); root.append(nextButton);
   }
 }
-async function archiveCurrent() {
+async function archiveCurrent({ silent = false } = {}) {
   if (!current) return;
-  const local = readLocal(); if (!local.some(item => item.signature === current.signature)) { local.unshift(current); writeLocal(local); }
-  if (dbClient && userId) { const payload = { id: current.id, user_id: userId, title: current.title, keywords: current.keywords.join(', '), signature: current.signature, duration_seconds: current.duration_seconds, episode_count: current.episode_count, script: current.script, episodes: current.episodes, summary: current.summary }; const { error } = await dbClient.from('drama_archive').upsert(payload, { onConflict: 'id' }); if (error) { alert(`PC에는 보관했지만 Supabase 저장에 실패했습니다: ${error.message}`); return; } }
-  archive = readLocal(); $('archive').disabled = true; $('archive').textContent = '보관됨';
+  const local = readLocal(); const existing = local.findIndex(item => item.id === current.id || item.signature === current.signature);
+  if (existing >= 0) local[existing] = { ...current }; else local.unshift({ ...current });
+  writeLocal(local);
+  if (dbClient && userId) {
+    const payload = { id: current.id, user_id: userId, title: current.title, keywords: current.keywords.join(', '), signature: current.signature, duration_seconds: current.duration_seconds, episode_count: current.episode_count, script: current.script, episodes: episodesWithProductionState(), summary: current.summary };
+    const { error } = await dbClient.from('drama_archive').upsert(payload, { onConflict: 'id' });
+    if (error) { if (!silent) alert(`PC에는 보관했지만 Supabase 저장에 실패했습니다: ${error.message}`); return; }
+  }
+  archive = readLocal(); if (!silent) { $('archive').disabled = true; $('archive').textContent = '보관됨'; }
 }
 function episodePreviews() {
   if (Array.isArray(current?.screenplayEpisodes) && current.screenplayEpisodes.length) return current.screenplayEpisodes;
@@ -459,6 +490,7 @@ function showEpisodePreview(index = 0) {
   if (current?.aiPlan && current.characterSheetPrompt && geminiApiKey && nextIndex < current.episodes.length) { const aiButton = document.createElement('button'); aiButton.textContent = nextIndex === 0 ? 'AI로 1화 대본·프롬프트 생성' : `다음 ${nextIndex + 1}화 생성`; aiButton.classList.add('accent'); aiButton.onclick = () => generateAiEpisode(nextIndex); root.append(aiButton); }
 }
 function showCurrent(fromArchive = false) {
+  current = hydrateAiContinuation(current);
   openedFromArchive = fromArchive;
   $('result-title').textContent = `${current.title} · ${current.episode_count}부작`;
   $('output').textContent = current.script;
@@ -533,6 +565,7 @@ async function generateAiEpisode(index) {
       return { ...clip, prompt: `${originalPrompt}\n\n${continuityDirective(previousClip, clipIndex === 0)}\n${sceneTransitionDirective(clip, clipIndex)}\n${flashbackDirective()}\n${spokenAudioDirective(clip)}\n${flowShotGuardrail(clipIndex + 1, generatedClips.length)}` };
     });
     episode.screenplay = result.screenplay; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
+    if (openedFromArchive || archive.some(item => item.signature === current.signature)) await archiveCurrent({ silent: true });
     renderCopyButtons(); renderProductionActions(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
   } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus(isGeminiQuotaError(error) ? `Gemini 무료 API 한도 초과 · 자동 재시도를 멈췄습니다.${quotaRetryHint(error.message)}` : 'AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
   finally {
