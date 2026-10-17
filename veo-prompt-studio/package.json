@@ -18,6 +18,8 @@
       "app.js",
       "archive.html",
       "archive.js",
+      "music.html",
+      "music.js",
       "main.js",
       "preload.js",
       "package.json"
