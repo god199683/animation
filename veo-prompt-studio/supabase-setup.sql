@@ -24,6 +24,28 @@ create policy "Users manage own VEO archive" on public.veo_prompt_archive
 grant select, insert, update, delete on public.veo_prompt_archive to authenticated;
 create index if not exists veo_prompt_archive_owner_created_idx on public.veo_prompt_archive (user_id, created_at desc);
 
+-- Flow Music 전용 보관함. 영상·드라마 보관함과 섞이지 않습니다.
+create table if not exists public.music_prompt_archive (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  signature text not null,
+  song_prompt text not null,
+  video_prompt text not null,
+  clips jsonb not null default '[]'::jsonb,
+  summary text,
+  created_at timestamptz not null default now(),
+  unique (user_id, signature)
+);
+alter table public.music_prompt_archive enable row level security;
+revoke all on table public.music_prompt_archive from anon, authenticated;
+grant select, insert, update, delete on table public.music_prompt_archive to authenticated;
+drop policy if exists "Users manage own music archive" on public.music_prompt_archive;
+create policy "Users manage own music archive" on public.music_prompt_archive
+  for all to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+create index if not exists music_prompt_archive_owner_created_idx on public.music_prompt_archive (user_id, created_at desc);
+
 -- 드라마 생성기 전용 보관함. 기존 영상 프롬프트 보관함과 절대 섞이지 않습니다.
 create table if not exists public.drama_archive (
   id uuid primary key default gen_random_uuid(),

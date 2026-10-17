@@ -11,7 +11,7 @@
   <main>
     <header class="topbar">
       <div><p class="eyebrow">GOOGLE FLOW MUSIC · 60-MINUTE TIKTOK PROGRAM</p><h1>TAILFRAME</h1></div>
-      <div class="top-actions"><a href="index.html" class="archive-link">영상 생성기</a><a href="archive.html" class="archive-link">영상 보관함</a></div>
+      <div class="top-actions"><div class="sync"><span id="sync-dot"></span><span id="sync-status">뮤직 보관함 준비 중</span></div><a href="index.html" class="archive-link">영상 생성기</a><a href="archive.html" class="archive-link">영상 보관함</a><a href="music-archive.html" class="archive-link">뮤직 보관함</a></div>
     </header>
     <section class="workspace">
       <aside class="control-panel">
@@ -23,11 +23,15 @@
         <p class="hint">Flow Music의 실제 노래 길이와 생성 횟수는 계정·크레딧에 따라 달라집니다. 이 도구는 60분을 12개 5분 챕터로 이어 만드는 제작 프롬프트를 제공합니다.</p>
       </aside>
       <section class="result-panel">
-        <div class="result-head"><div><p class="eyebrow">FLOW MUSIC PRODUCTION PACK</p><h2 id="music-title">새로운 1시간 음악 기획을 생성하세요</h2></div><div class="result-actions"><button id="copy-song" disabled>노래 프롬프트 복사</button><button id="copy-video" disabled>뮤비 프롬프트 복사</button><button id="open-song" class="accent" disabled>Flow Music에서 노래 만들기</button><button id="open-video" class="accent" disabled>Flow Music에서 뮤비 만들기</button></div></div>
+        <div class="result-head"><div><p class="eyebrow">FLOW MUSIC PRODUCTION PACK</p><h2 id="music-title">새로운 1시간 음악 기획을 생성하세요</h2></div><div class="result-actions"><button id="copy-song" disabled>노래 프롬프트 복사</button><button id="copy-video" disabled>전체 뮤비 프롬프트</button><button id="copy-clips" disabled>클립별 프롬프트</button><button id="archive-music" disabled>보관</button><button id="open-song" class="accent" disabled>Flow Music에서 노래 만들기</button><button id="open-video" class="accent" disabled>Flow Music에서 뮤비 만들기</button></div></div>
+        <div id="clip-actions" class="stage-copy-actions" hidden></div>
         <pre id="music-output">왼쪽 버튼을 누르면 Google Flow Music에 붙여 넣을 1시간 음악 제작 플랜과, 같은 음악을 사용하는 세로형 뮤직비디오 프롬프트가 생성됩니다.</pre>
       </section>
     </section>
   </main>
   <script src="music.js"></script>
+  <script>
+    window.addEventListener('load', () => { const script = document.createElement('script'); script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'; script.async = true; script.onload = () => window.connectMusicSupabase?.(); document.head.appendChild(script); });
+  </script>
 </body>
 </html>
