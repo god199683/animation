@@ -417,6 +417,7 @@ function hydrateAiContinuation(item) {
   if (state) {
     Object.assign(item, state);
     item.episodes = item.episodes.map(({ __tailframeProductionState, ...episode }) => episode);
+    if (!Array.isArray(item.screenplayEpisodes)) item.screenplayEpisodes = item.episodes.map(episode => episode.screenplay || episodeOutlinePreview(item.title, episode.aiOutline || ({ number: episode.number, openingHook: episode.openingHook, goal: episode.goal, incident: episode.arc, relationshipTurn: episode.turn, endingHook: episode.ending })));
     restoreCompletedMarkers();
     return item;
   }
@@ -429,6 +430,7 @@ function hydrateAiContinuation(item) {
   item.cast = cast;
   item.aiPlan = { seriesBible: item.script || '', characters: roles.map((role, index) => ({ name: cast[role], role: names[index]?.[2]?.trim() || role })), episodes: item.episodes.map(episode => episode.aiOutline || ({ number: episode.number, title: `${item.title} ${episode.number}화`, openingHook: episode.openingHook, goal: episode.goal, incident: episode.arc, relationshipTurn: episode.turn, endingHook: episode.ending })) };
   if (characterSheet) item.characterSheetPrompt = characterSheet;
+  if (!Array.isArray(item.screenplayEpisodes)) item.screenplayEpisodes = item.episodes.map(episode => episode.screenplay || episodeOutlinePreview(item.title, episode.aiOutline));
   restoreCompletedMarkers();
   return item;
 }
@@ -569,7 +571,7 @@ async function generateAiEpisode(index) {
       const originalPrompt = result.clips[clipIndex]?.flowPrompt || episode.clips[clipIndex]?.prompt || '';
       return { ...clip, prompt: `${originalPrompt}\n\n${continuityDirective(previousClip, clipIndex === 0)}\n${sceneTransitionDirective(clip, clipIndex)}\n${flashbackDirective()}\n${spokenAudioDirective(clip)}\n${flowShotGuardrail(clipIndex + 1, generatedClips.length)}` };
     });
-    episode.screenplay = result.screenplay; episode.aiCompleted = true; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
+    episode.screenplay = result.screenplay; episode.aiCompleted = true; current.screenplayEpisodes ||= []; current.screenplayEpisodes[index] = result.screenplay; current.script = `${current.script}\n\n━━━━━━━━━━━━━━━━━━\n\n[AI 완성 ${index + 1}화]\n${result.screenplay}`;
     if (openedFromArchive || archive.some(item => item.signature === current.signature)) await archiveCurrent({ silent: true });
     renderCopyButtons(); renderProductionActions(); showEpisodePreview(index); setGeminiStatus(`AI ${index + 1}화 대본과 Google Flow 프롬프트 생성 완료`); return true;
   } catch (error) { alert(`AI ${index + 1}화 생성에 실패했습니다: ${geminiFailureMessage(error)}`); setGeminiStatus(isGeminiQuotaError(error) ? `Gemini 무료 API 한도 초과 · 자동 재시도를 멈췄습니다.${quotaRetryHint(error.message)}` : 'AI 회차 생성 실패 · 잠시 뒤 다시 시도해 주세요.'); return false; }
