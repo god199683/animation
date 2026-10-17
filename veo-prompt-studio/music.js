@@ -9,7 +9,11 @@ const concepts = [
   ['upbeat synth-pop', 'a sunlit coastal highway and a vivid convertible ride', 'running toward a new beginning without looking back', 'clear sparkling Korean vocal'],
   ['pop-punk anthem', 'a youthful rooftop concert under electric summer clouds', 'breaking a rule to protect a friend', 'energetic Korean male vocal with singalong chorus'],
   ['danceable Korean R&B-pop', 'a stylish late-night convenience store and rainy crosswalk', 'flirting with a risky new connection', 'groovy Korean vocal with short English ad-libs'],
-  ['Latin-inspired summer pop', 'a warm seaside carnival with paper lanterns', 'one unforgettable night of freedom and motion', 'rhythmic Korean vocal with an original bilingual hook']
+  ['Latin-inspired summer pop', 'a warm seaside carnival with paper lanterns', 'one unforgettable night of freedom and motion', 'rhythmic Korean vocal with an original bilingual hook'],
+  ['neon-night city pop', 'rain-polished Seoul side streets at midnight', 'quietly recovering after a difficult goodbye', 'warm female Korean vocal'],
+  ['cinematic Korean R&B', 'a blue-hour train platform and an empty final carriage', 'missing someone while deciding to move forward', 'low, soulful male Korean vocal'],
+  ['soft electronic ambient pop', 'a moonlit glass greenhouse full of silver flowers', 'turning a recurring dream into a new beginning', 'gentle wordless vocal textures'],
+  ['acoustic folk-pop ballad', 'a snowy riverside bookshop with paper lanterns', 'finding courage to say what was never said', 'close-mic warm Korean vocal']
 ];
 const structures = [
   'start delicate and intimate, build a clear hook by minute 6, introduce a contrasting bridge around minute 28, reach the emotional high point around minute 46, then resolve with a warm final reprise',
@@ -28,7 +32,7 @@ async function uploadLocalMusicArchive() { if (!dbClient || !userId) return; con
 }
 function makePack() {
   const used = usedSignatures(); let candidate, title, signature;
-  for (let attempt = 0; attempt < 60; attempt += 1) { candidate = pick(concepts); title = pick(['새벽의 암호', '유리빛 파도', '잠들지 않는 편지', '마지막 열차의 별빛', '우리만 아는 계절', '빛이 남긴 이름', '창가의 작은 우주', '여름 끝의 신호']); signature = `${title}|${candidate.join('|')}`.toLowerCase(); if (!used.has(signature)) break; }
+  for (let attempt = 0; attempt < 60; attempt += 1) { candidate = pick(Math.random() < 0.75 ? concepts.slice(0, 8) : concepts.slice(8)); title = pick(['새벽의 암호', '유리빛 파도', '잠들지 않는 편지', '마지막 열차의 별빛', '우리만 아는 계절', '빛이 남긴 이름', '창가의 작은 우주', '여름 끝의 신호']); signature = `${title}|${candidate.join('|')}`.toLowerCase(); if (!used.has(signature)) break; }
   if (used.has(signature)) { alert('보관함에 없는 조합을 더 만들 수 없습니다. 보관함에서 항목을 삭제하거나 조건을 바꿔 주세요.'); return null; }
   const [genre, world, theme, defaultVocal] = candidate;
   const tone = $('music-tone').value.trim() || `${genre}, ${world}`;
