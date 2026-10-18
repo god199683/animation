@@ -24,6 +24,8 @@
       "music-archive.js",
       "fairytale-music.html",
       "fairytale-music.js",
+      "fairytale-archive.html",
+      "fairytale-archive.js",
       "main.js",
       "preload.js",
       "package.json"

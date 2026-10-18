@@ -10,7 +10,7 @@ const taleSeeds = {
   '오즈의 마법사': ['four strangers walking a luminous road toward the courage already inside them', 'cinematic dance-pop']
 };
 function makePack() {
-  const tale = $('tale').value; const [motif, defaultGenre] = taleSeeds[tale]; const rawMinutes = $('minutes').value.trim(); const minutes = Number(rawMinutes);
+  const tale = $('tale').value.trim(); if (!tale) { alert('고전 동화 원전 이름을 입력해 주세요.'); return null; } const [motif, defaultGenre] = taleSeeds[tale] || [`a newly imagined journey inspired by the public-domain source tale “${tale}”`, 'uplifting storybook pop']; const rawMinutes = $('minutes').value.trim(); const minutes = Number(rawMinutes);
   if (rawMinutes && (!Number.isFinite(minutes) || minutes < 1)) { alert('음악 길이는 최소 1분 이상으로 입력해 주세요.'); return null; }
   const duration = minutes >= 1 ? `${Math.ceil(minutes)} minutes` : 'at least 1 minute, with no upper time limit'; const clipCount = minutes >= 1 ? Math.ceil(minutes) : 5;
   const tone = $('tone').value.trim() || defaultGenre; const notes = $('notes').value.trim(); const signature = `${tale}|${tone}|${notes}|${duration}`.toLowerCase(); if (readArchive().some(item => item.signature === signature)) { alert('동화 음악 보관함에 같은 기획이 있습니다. 조건을 바꿔 새롭게 생성해 주세요.'); return null; } const title = `${tale}의 달빛 노래`;
@@ -30,3 +30,5 @@ $('copy-video').onclick = () => current && copy(current.video, $('copy-video'), 
 $('copy-clips').onclick = () => current && copy(current.clips.join('\n\n'), $('copy-clips'), `클립 ${current.clips.length}개 복사됨`);
 $('open-song').onclick = () => current && navigator.clipboard.writeText(current.song).finally(() => window.open('https://www.flowmusic.app', '_blank', 'noopener'));
 $('archive-tale').onclick = () => { if (!current) return; localStorage.setItem(archiveKey(), JSON.stringify([{ ...current, created_at: new Date().toISOString() }, ...readArchive()])); $('archive-tale').disabled = true; $('archive-tale').textContent = '보관됨'; };
+const opened = localStorage.getItem('tailframe-opened-fairytale-archive');
+if (opened) { try { current = JSON.parse(opened); show(); $('archive-tale').disabled = true; $('archive-tale').textContent = '보관됨'; } finally { localStorage.removeItem('tailframe-opened-fairytale-archive'); } }

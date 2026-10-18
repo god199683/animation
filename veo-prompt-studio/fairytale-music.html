@@ -11,17 +11,17 @@
   <main>
     <header class="topbar">
       <div><p class="eyebrow">PUBLIC-DOMAIN TALES · FLOW MUSIC</p><h1>TAILFRAME</h1></div>
-      <div class="top-actions"><a href="music.html" class="archive-link">Flow Music</a><a href="music-archive.html" class="archive-link">뮤직 보관함</a><a href="index.html" class="archive-link">영상 생성기</a></div>
+      <div class="top-actions"><a href="music.html" class="archive-link">Flow Music</a><a href="fairytale-archive.html" class="archive-link">동화 음악 보관함</a><a href="music-archive.html" class="archive-link">뮤직 보관함</a><a href="index.html" class="archive-link">영상 생성기</a></div>
     </header>
     <section class="workspace">
       <aside class="control-panel">
         <div class="panel-heading"><p class="eyebrow">CLASSIC TALE MUSIC</p><h2>고전 동화로 음악을 만드세요</h2><p>원전의 핵심 모티프만 활용하고, 캐릭터·가사·장면은 새롭게 만듭니다.</p></div>
-        <label>고전 동화 원전 <select id="tale"><option value="콩쥐팥쥐">콩쥐팥쥐</option><option value="흥부와 놀부">흥부와 놀부</option><option value="선녀와 나무꾼">선녀와 나무꾼</option><option value="빨간 모자">빨간 모자</option><option value="신데렐라">신데렐라</option><option value="이상한 나라의 앨리스">이상한 나라의 앨리스</option><option value="오즈의 마법사">오즈의 마법사</option></select></label>
+        <label>고전 동화 원전 <input id="tale" placeholder="직접 입력 · 예: 콩쥐팥쥐, 신데렐라" /></label>
         <label>원하는 길이(분) <input id="minutes" type="number" min="1" step="1" placeholder="비워두면 상한 없음 · 최소 1분" /></label>
         <label>음악 분위기 <input id="tone" placeholder="비워두면 원전에 맞춰 랜덤" /></label>
         <label>추가 조건 <textarea id="notes" rows="4" placeholder="예: 신나는 댄스팝, 여성 보컬, 성장 서사"></textarea></label>
         <button id="generate" class="primary">동화 음악·뮤비 기획 생성</button>
-        <p class="hint">현대 영화·애니메이션 버전은 참고하지 않으며, 원전에서 영감 받은 새 창작물로만 작성합니다.</p>
+        <p class="hint">저작권이 만료된 고전·민담 원전만 입력해 주세요. 현대 영화·애니메이션 버전은 참고하지 않으며, 원전에서 영감 받은 새 창작물로만 작성합니다.</p>
       </aside>
       <section class="result-panel">
         <div class="result-head"><div><p class="eyebrow">ORIGINAL FAIRY-TALE PRODUCTION PACK</p><h2 id="title">고전 동화를 선택하세요</h2></div><div class="result-actions"><button id="copy-song" disabled>노래 프롬프트 복사</button><button id="copy-video" disabled>전체 뮤비 프롬프트</button><button id="copy-clips" disabled>클립별 프롬프트</button><button id="archive-tale" disabled>보관</button><button id="open-song" class="accent" disabled>Flow Music 열기</button></div></div>
