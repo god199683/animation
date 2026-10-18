@@ -1,3 +1,4 @@
+const CONFIG = { url: 'https://pxzerharmpbxvmuomsfo.supabase.co', anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A' };
 const $ = id => document.getElementById(id);
 const pick = items => items[Math.floor(Math.random() * items.length)];
 const taleSeeds = {
@@ -19,7 +20,7 @@ function makePack() {
   const video = `Create the ${clipCount} Google Flow clips below one at a time for the original fairy-tale music video “${title}.” Use the completed song audio as reference. Target duration: ${duration}. Use Flow’s available clip duration and Extend as needed, retaining the prior last frame and exact visual identity.\n\n${clips.join('\n\n')}`;
   return { title, signature, song, video, clips, summary: `${tale} · ${tone} · ${duration}` };
 }
-let current = null;
+let current = null, dbClient = null, userId = null, cloudSignatures = new Set();
 function archiveKey() { return 'fairytale-music-archive'; }
 function readArchive() { try { const saved = JSON.parse(localStorage.getItem(archiveKey()) || '[]'); return Array.isArray(saved) ? saved : []; } catch { return []; } }
 async function copy(value, button, label) { await navigator.clipboard.writeText(value); const old = button.textContent; button.textContent = label; setTimeout(() => button.textContent = old, 1000); }
@@ -29,6 +30,8 @@ $('copy-song').onclick = () => current && copy(current.song, $('copy-song'), '�
 $('copy-video').onclick = () => current && copy(current.video, $('copy-video'), '복사됨');
 $('copy-clips').onclick = () => current && copy(current.clips.join('\n\n'), $('copy-clips'), `클립 ${current.clips.length}개 복사됨`);
 $('open-song').onclick = () => current && navigator.clipboard.writeText(current.song).finally(() => window.open('https://www.flowmusic.app', '_blank', 'noopener'));
-$('archive-tale').onclick = () => { if (!current) return; localStorage.setItem(archiveKey(), JSON.stringify([{ ...current, created_at: new Date().toISOString() }, ...readArchive()])); $('archive-tale').disabled = true; $('archive-tale').textContent = '보관됨'; };
+$('archive-tale').onclick = async () => { if (!current) return; const item = { ...current, signature: `fairytale:${current.signature}`, created_at: new Date().toISOString() }; localStorage.setItem(archiveKey(), JSON.stringify([item, ...readArchive().filter(entry => entry.signature !== item.signature)])); if (dbClient && userId) { const { error } = await dbClient.from('music_prompt_archive').insert({ user_id: userId, title: item.title, signature: item.signature, song_prompt: item.song, video_prompt: item.video, clips: item.clips, summary: item.summary }); if (error) alert(`수파베이스에는 저장하지 못했지만 이 PC 보관함에는 저장했습니다.\n${error.message}`); else cloudSignatures.add(item.signature); } $('archive-tale').disabled = true; $('archive-tale').textContent = '보관됨'; };
+async function initFairytaleSupabase() { try { dbClient = window.supabase.createClient(CONFIG.url, CONFIG.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }); const { data: { session } } = await dbClient.auth.getSession(); userId = session?.user?.is_anonymous ? null : session?.user?.id; if (!userId) return; const { data, error } = await dbClient.from('music_prompt_archive').select('signature'); if (error) return; cloudSignatures = new Set((data || []).map(item => item.signature).filter(signature => signature?.startsWith('fairytale:'))); for (const item of readArchive()) { const signature = item.signature?.startsWith('fairytale:') ? item.signature : `fairytale:${item.signature}`; if (cloudSignatures.has(signature)) continue; const { error: insertError } = await dbClient.from('music_prompt_archive').insert({ user_id: userId, title: item.title, signature, song_prompt: item.song, video_prompt: item.video, clips: item.clips || [], summary: item.summary || null }); if (!insertError) cloudSignatures.add(signature); } } catch (error) { console.warn(error); } }
+window.connectFairytaleSupabase = initFairytaleSupabase;
 const opened = localStorage.getItem('tailframe-opened-fairytale-archive');
 if (opened) { try { current = JSON.parse(opened); show(); $('archive-tale').disabled = true; $('archive-tale').textContent = '보관됨'; } finally { localStorage.removeItem('tailframe-opened-fairytale-archive'); } }
