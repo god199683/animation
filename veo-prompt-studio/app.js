@@ -150,7 +150,7 @@ function focusedSecondClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const eating = foodEatingPlan(food);
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that frame as the only Start Frame. Keep the original white nine-tailed fox reference only as an additional Ingredient. Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single prepared serving of ${food}.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that saved frame as the only Start Frame. ${characterReferenceRule(2)} Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single prepared serving of ${food}.
 
 Show one continuous natural eating action. ${eating} Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. Do not finish the food or show an empty plate.
 
@@ -159,7 +159,7 @@ In the final second, keep that remainder visible and begin only a tiny faint lig
 function focusedFirstClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  return `Generate one 8-second vertical 9:16 video from the supplied first image. Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and one whole ${food}.
+  return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and one whole ${food}.
 
 The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
 }
@@ -167,7 +167,7 @@ function focusedThirdClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const [, feature, colors] = foodProfile(food);
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Use that frame as the only Start Frame. Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder on its plate or wrapper.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Use that saved frame as the only Start Frame. ${characterReferenceRule(3)} Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder on its plate or wrapper.
 
 Continue the tiny ear-tip or paw light from clip 2. Over the clip, build one cumulative ${feature}-inspired physical fur design with ${colors}: reveal it across the chest and upper back, both ear edges, and exactly seven visible tail tips; add one nearly complete small ornament beside the existing forehead flower and the beginning of matching pendant filigree. By the final frame, this stable 70–80% transformed design is visible together. Every revealed detail stays visible permanently; never revert, flicker, hide, dissolve, or restore clean fur.
 
@@ -177,11 +177,16 @@ function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const [, feature, colors] = foodProfile(food);
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 3. Use that frame as the only Start Frame. Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, the 20–25% bitten ${food} remainder, and every visible clip-3 transformation detail.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 3. Use that saved frame as the only Start Frame. ${characterReferenceRule(4)} Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, the 20–25% bitten ${food} remainder, and every visible clip-3 transformation detail.
 
 Complete the same ${feature}-inspired ${colors} physical design: add matching detail to the last two tail tips, finish the already-started small ornament beside the forehead flower, and complete the subtle pendant filigree. Keep every earlier chest, back, ear, and tail detail visible continuously. Do not restore clean fur, simplify, flicker, dissolve, or replace any transformed element.
 
 After completion, the fox notices one changed tail, takes a calm breath, and naturally finishes one gentle tail movement. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. BGM: continue the same 88 BPM felt-piano, glockenspiel, and warm-pad cue; resolve it softly only in the final second. No new food, new character, pose, freeze, fade, text, logo, or camera reset.`;
+}
+function characterReferenceRule(stage){
+  return stage === 1
+    ? 'In Google Flow, attach the user’s original character image directly to this prompt as a Reference/Ingredient. Use it to lock the fox identity and illustration style; do not replace the supplied first image.'
+    : 'In Google Flow, attach the user’s original character image directly to this prompt as an additional Reference/Ingredient. Use the saved previous-clip frame only as the Start Frame; never replace it with the original character image.';
 }
 function oneMinuteClipPrompt(stage){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -191,7 +196,7 @@ function oneMinuteClipPrompt(stage){
   const owner = Boolean(route.owner);
   const start = stage === 1 ? 'the supplied first image' : `the supplied saved final frame of clip ${stage - 1}`;
   const startRule = stage === 1 ? 'Use the supplied first image as the Start Frame.' : 'Use that saved frame as the only Start Frame.';
-  const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
+  const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterReferenceRule(stage)} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
   const ownerLock = 'Show only one anonymous human hand when specified. Never show a human face, head, torso, full body, reflection, or second person; any human line is one short off-screen Korean line only.';
   const solo = {
     1: `The fox is ${route.setup}, alert and curious. Show two soft paw steps, natural location ambience, and one brief “mrrp?” fox sound. End mid-step, still moving forward.`,
