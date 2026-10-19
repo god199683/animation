@@ -199,6 +199,19 @@ function bgmSegmentInstruction(stage, total){
   const start = (stage - 1) * 8, end = stage * 8;
   return `Shared BGM plan: use one master instrumental cue titled “${cue.title}” (${cue.prompt}). This clip is its ${start}–${end} second segment of a single ${total * 8}-second track; do not restart or replace the music. For exact continuity, add this one completed BGM track once in final editing across all clips. If the current Flow screen supports an audio reference, attach that same BGM file for every clip; otherwise generate only the listed foley and add the master BGM during editing.`;
 }
+function foxVoiceInstruction(stage){
+  const voices = {
+    1: 'one quiet curious “mrrp?” fox sound under 0.5 seconds',
+    2: 'one soft scent-tracing “hm?” fox sound under 0.5 seconds',
+    3: 'one tiny excited “mip!” fox sound under 0.5 seconds',
+    4: 'one muffled satisfied “mm?” fox sound under 0.5 seconds',
+    5: 'one short surprised breathy “nyu?” fox sound under 0.5 seconds',
+    6: 'one startled but gentle “mip?” fox sound under 0.5 seconds',
+    7: 'one quiet amazed “nyu…” fox sound under 0.5 seconds',
+    8: 'one warm content “rru…” fox sound under 0.5 seconds'
+  };
+  return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing.`;
+}
 function oneMinuteClipPrompt(stage){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -230,7 +243,7 @@ function oneMinuteClipPrompt(stage){
     8: `Complete the final two tail tips, forehead-side ornament, and pendant filigree while keeping every earlier detail. The fox calmly looks up. One anonymous hand briefly rests near—but does not touch—the fox, and an off-screen adult voice says “이번만이야.” ${ownerLock} Finish with a natural gentle tail movement.`
   };
   const action = (owner ? walk : solo)[stage];
-  const sound = `${bgmSegmentInstruction(stage, 8)} Use only soft synchronized foley and the same ${place} ambience.`;
+  const sound = `${bgmSegmentInstruction(stage, 8)} ${foxVoiceInstruction(stage)} Use only soft synchronized foley and the same ${place} ambience.`;
   return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}`;
 }
 function simpleFourthClipPrompt(){
