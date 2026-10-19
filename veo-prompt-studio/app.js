@@ -197,20 +197,20 @@ function characterReferenceRule(stage){
 function bgmSegmentInstruction(stage, total){
   const cue = current?.bgm || bgmCues[0];
   const start = (stage - 1) * 8, end = stage * 8;
-  return `Shared BGM plan: use one master instrumental cue titled “${cue.title}” (${cue.prompt}). This clip is its ${start}–${end} second segment of a single ${total * 8}-second track; do not restart or replace the music. For exact continuity, add this one completed BGM track once in final editing across all clips. If the current Flow screen supports an audio reference, attach that same BGM file for every clip; otherwise generate only the listed foley and add the master BGM during editing.`;
+  return `Shared BGM plan: use one master instrumental cue titled “${cue.title}” (${cue.prompt}). This clip is its ${start}–${end} second segment of a single ${total * 8}-second track; do not restart or replace the music. For exact continuity, add this one completed BGM track once in final editing across all clips. If the current Flow screen supports an audio reference, attach that same BGM file for every clip; otherwise generate only the listed foley and add the master BGM during editing. Any fox vocalization must be a short high-pitched chirp or trill, never a dog bark, yelp, howl, growl, pant, or dog-like whine.`;
 }
 function foxVoiceInstruction(stage){
   const voices = {
-    1: 'one quiet curious “mrrp?” fox sound under 0.5 seconds',
-    2: 'one soft scent-tracing “hm?” fox sound under 0.5 seconds',
-    3: 'one tiny excited “mip!” fox sound under 0.5 seconds',
-    4: 'one muffled satisfied “mm?” fox sound under 0.5 seconds',
-    5: 'one short surprised breathy “nyu?” fox sound under 0.5 seconds',
-    6: 'one startled but gentle “mip?” fox sound under 0.5 seconds',
-    7: 'one quiet amazed “nyu…” fox sound under 0.5 seconds',
-    8: 'one warm content “rru…” fox sound under 0.5 seconds'
+    1: 'one quiet high-pitched fox chirp with a soft breathy trill under 0.5 seconds',
+    2: 'one soft nasal fox chirrup while scent-tracing under 0.5 seconds',
+    3: 'one tiny bright fox kit chirp under 0.5 seconds',
+    4: 'one muted content fox trill under 0.5 seconds',
+    5: 'one short breathy surprised fox chirp under 0.5 seconds',
+    6: 'one gentle startled fox chirrup under 0.5 seconds',
+    7: 'one quiet airy amazed fox trill under 0.5 seconds',
+    8: 'one warm soft fox chirrup under 0.5 seconds'
   };
-  return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing.`;
+  return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing. Never bark, yelp, howl, growl, pant, whine like a dog, or make any dog-like sound.`;
 }
 function oneMinuteClipPrompt(stage){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
