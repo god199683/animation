@@ -140,9 +140,10 @@ function simpleThirdClipPrompt(){
 function focusedSecondClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that frame as the only Start Frame. Keep the original white nine-tailed fox reference only as an additional Ingredient. Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single whole ${food}.
+  const eating = foodEatingPlan(food);
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that frame as the only Start Frame. Keep the original white nine-tailed fox reference only as an additional Ingredient. Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single prepared serving of ${food}.
 
-Show one continuous natural eating action. The fox steadies the same food or its plate with one front paw, takes three small believable bites directly from it, and chews between bites. Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. After bite one, about 85% remains; after bite two, about 50% remains; after bite three, leave a visible 20–25% bitten remainder on the same plate or wrapper. Do not finish the food or show an empty plate.
+Show one continuous natural eating action. ${eating} Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. Do not finish the food or show an empty plate.
 
 In the final second, keep that remainder visible and begin only a tiny faint light at one ear tip or front paw. No body transformation yet. Maintain physical mouth–food–paw contact in one stable medium shot. The fox continues a small head turn, ear reaction, breathing, and tail movement through the final frame; do not pose, freeze, fade, add characters, text, logos, or magical creatures.`;
 }
@@ -234,6 +235,12 @@ async function copyStage(stage){
 }
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 function foodProfile(food){ return foods.find(item => item[0] === food) || [food, `${food} 고유의 질감·향·색감`, '음식 고유 색감']; }
+function foodEatingPlan(food){
+  if (/빙수/.test(food)) return `Keep the dessert as one compact coconut-white shaved-ice mound with mango pieces in one shallow bowl. The fox takes three tiny natural surface mouthfuls from the same mound, pausing to swallow between them. Reduce the mound gradually: about 85% remains after the first mouthful, about 50% after the second, then leave one visible 20–25% mound in the same bowl after the third. Do not scatter ice, separate mango pieces, or create a second topping.`;
+  if (/푸딩|젤라토/.test(food)) return `Keep one soft dessert portion in one small dish. The fox takes three tiny gentle surface mouthfuls from the same portion, pausing to swallow between them. Reduce it gradually: about 85% remains after the first mouthful, about 50% after the second, then leave one visible 20–25% portion in the same dish after the third. Do not melt, splatter, split, or create extra portions.`;
+  if (/솜사탕/.test(food)) return `The fox holds the same single anchored cotton-candy puff with one front paw and takes three tiny wisps directly from its edge, pausing to swallow between them. Keep it as one connected puff: about 85% remains after the first mouthful, about 50% after the second, then leave one visible 20–25% connected puff after the third. Do not let it dissolve, float away, or split into separate pieces.`;
+  return `The fox steadies the same food or its plate with one front paw, takes three small believable bites directly from it, and chews between bites. Keep the bite marks and shrinkage gradual: about 85% remains after bite one, about 50% after bite two, then leave a visible 20–25% bitten remainder on the same plate or wrapper after bite three.`;
+}
 function foodTransformationPrompt(food, feature, colors){
   const known = [
     [/유자/, 'Start with a single pearly citron-yellow glint at one ear tip. Let thin translucent rice-paper-like light trace the fur only along the chest and tail tips, with tiny gold citrus-zest sparkles. Complete one small three-petal citron crystal beside—not over—the existing forehead marking.'],
