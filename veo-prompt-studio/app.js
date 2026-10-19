@@ -32,6 +32,12 @@ const sounds = [
   '만족한 순간의 낮은 콧소리와 부드러운 “rru…”',
   '변화를 느낀 순간의 작고 맑은 “nyu?”'
 ];
+const bgmCues = [
+  { title: '유리 정원의 산책', prompt: 'gentle no-vocal fantasy-pop, 88 BPM, D major, felt piano, light glockenspiel, warm pad, soft garden ambience' },
+  { title: '별가루를 따라', prompt: 'bright no-vocal storybook-pop, 92 BPM, G major, celesta, soft pizzicato strings, warm airy pad' },
+  { title: '작은 꼬리의 모험', prompt: 'playful no-vocal fantasy cue, 90 BPM, C major, marimba, felt piano, light hand percussion, soft pad' },
+  { title: '노을빛 약속', prompt: 'warm no-vocal cinematic-pop, 84 BPM, A major, piano, glockenspiel, gentle strings, soft ambient pad' }
+];
 const finalPoses = [
   'settles into a three-quarter seated pose, one front paw lightly lifted, looking back over one shoulder toward the transformed tails',
   'takes one small diagonal step, then pauses in a gentle standing pose with the chest facing camera and the tail fan curving behind',
@@ -154,14 +160,14 @@ function focusedSecondClipPrompt(){
 
 Show one continuous natural eating action. ${eating} Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. Do not finish the food or show an empty plate.
 
-In the final second, keep that remainder visible and begin only a tiny faint light at one ear tip or front paw. No body transformation yet. Maintain physical mouth–food–paw contact in one stable medium shot. The fox continues a small head turn, ear reaction, breathing, and tail movement through the final frame; do not pose, freeze, fade, add characters, text, logos, or magical creatures.`;
+In the final second, keep that remainder visible and begin only a tiny faint light at one ear tip or front paw. No body transformation yet. Maintain physical mouth–food–paw contact in one stable medium shot. ${bgmSegmentInstruction(2, 4)} Use food-appropriate soft eating foley and one brief satisfied fox sound only. The fox continues a small head turn, ear reaction, breathing, and tail movement through the final frame; do not pose, freeze, fade, add characters, text, logos, or magical creatures.`;
 }
 function focusedFirstClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and one whole ${food}.
 
-The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
+The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. ${bgmSegmentInstruction(1, 4)} Use only soft paw steps, a sniff, and one brief “mrrp?” fox sound. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
 }
 function focusedThirdClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -171,7 +177,7 @@ function focusedThirdClipPrompt(){
 
 Continue the tiny ear-tip or paw light from clip 2. Over the clip, build one cumulative ${feature}-inspired physical fur design with ${colors}: reveal it across the chest and upper back, both ear edges, and exactly seven visible tail tips; add one nearly complete small ornament beside the existing forehead flower and the beginning of matching pendant filigree. By the final frame, this stable 70–80% transformed design is visible together. Every revealed detail stays visible permanently; never revert, flicker, hide, dissolve, or restore clean fur.
 
-Do not eat more food. Keep a stable medium three-quarter shot with chest, forehead, pendant, and tail tips readable. Continue soft breathing, eye movement, one small backward step, tail motion, and a subtle camera drift through the final frame. BGM: continue the same quiet 88 BPM felt-piano, glockenspiel, and warm-pad cue; add only one restrained rising pad. No new song, pose, freeze, fade, text, logo, or extra character.`;
+Do not eat more food. Keep a stable medium three-quarter shot with chest, forehead, pendant, and tail tips readable. Continue soft breathing, eye movement, one small backward step, tail motion, and a subtle camera drift through the final frame. ${bgmSegmentInstruction(3, 4)} Use only a quiet fur shimmer, one light chime, and one brief surprised fox sound. No new song, pose, freeze, fade, text, logo, or extra character.`;
 }
 function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -181,12 +187,17 @@ function focusedFourthClipPrompt(){
 
 Complete the same ${feature}-inspired ${colors} physical design: add matching detail to the last two tail tips, finish the already-started small ornament beside the forehead flower, and complete the subtle pendant filigree. Keep every earlier chest, back, ear, and tail detail visible continuously. Do not restore clean fur, simplify, flicker, dissolve, or replace any transformed element.
 
-After completion, the fox notices one changed tail, takes a calm breath, and naturally finishes one gentle tail movement. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. BGM: continue the same 88 BPM felt-piano, glockenspiel, and warm-pad cue; resolve it softly only in the final second. No new food, new character, pose, freeze, fade, text, logo, or camera reset.`;
+After completion, the fox notices one changed tail, takes a calm breath, and naturally finishes one gentle tail movement. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. ${bgmSegmentInstruction(4, 4)} Use only one soft completion shimmer, tail rustle, and a brief warm fox sound. No new food, new character, pose, freeze, fade, text, logo, or camera reset.`;
 }
 function characterReferenceRule(stage){
   return stage === 1
     ? 'In Google Flow, attach the user’s original character image directly to this prompt as a Reference/Ingredient. Use it to lock the fox identity and illustration style; do not replace the supplied first image.'
     : 'In Google Flow, attach the user’s original character image directly to this prompt as an additional Reference/Ingredient. Use the saved previous-clip frame only as the Start Frame; never replace it with the original character image.';
+}
+function bgmSegmentInstruction(stage, total){
+  const cue = current?.bgm || bgmCues[0];
+  const start = (stage - 1) * 8, end = stage * 8;
+  return `Shared BGM plan: use one master instrumental cue titled “${cue.title}” (${cue.prompt}). This clip is its ${start}–${end} second segment of a single ${total * 8}-second track; do not restart or replace the music. For exact continuity, add this one completed BGM track once in final editing across all clips. If the current Flow screen supports an audio reference, attach that same BGM file for every clip; otherwise generate only the listed foley and add the master BGM during editing.`;
 }
 function oneMinuteClipPrompt(stage){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -219,7 +230,7 @@ function oneMinuteClipPrompt(stage){
     8: `Complete the final two tail tips, forehead-side ornament, and pendant filigree while keeping every earlier detail. The fox calmly looks up. One anonymous hand briefly rests near—but does not touch—the fox, and an off-screen adult voice says “이번만이야.” ${ownerLock} Finish with a natural gentle tail movement.`
   };
   const action = (owner ? walk : solo)[stage];
-  const sound = `Audio continuity: keep one quiet 88 BPM no-vocal fantasy-pop cue with felt piano, light glockenspiel, warm pad, and the same ${place} ambience. Use only soft synchronized foley; do not start a new song.`;
+  const sound = `${bgmSegmentInstruction(stage, 8)} Use only soft synchronized foley and the same ${place} ambience.`;
   return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}`;
 }
 function simpleFourthClipPrompt(){
@@ -327,11 +338,11 @@ function buildPrompt(data){
   if (!requestedFood && !availableFoods.length) throw new Error('기본 음식 목록이 모두 보관되었습니다. 새 음식 이름을 직접 입력해 생성해 주세요.');
   const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : pick(availableFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
-  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes);
+  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes), bgm = pick(bgmCues);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
   const [food, feature, colors] = foodData;
-  const signature = [normalize(food), normalize(place), method[0], ending, data.lengthMode || 'short', storyRoute.id].join('|');
+  const signature = [normalize(food), normalize(place), method[0], ending, data.lengthMode || 'short', storyRoute.id, bgm.title].join('|');
   const title = `${food} · ${place}`;
   const notes = data.notes ? `사용자 지정 조건: ${data.notes}\n` : '';
   const masterContract = masterContinuityContract(food, feature, colors, place);
@@ -356,7 +367,7 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, summary: `${place} · ${method[0]} · ${ending}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, bgm, summary: `${place} · ${method[0]} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
@@ -504,7 +515,8 @@ $('storyboard').onclick = async () => {
   }
   if (current.oneMinute) {
     const route = current.storyRoute || oneMinuteRoutes[3];
-    const longStoryboard = `[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]\n\n[이번 에피소드]\n${route.setup}. 음식 발견 → 자연스러운 섭취 → 음식 특성 기반 누적 변신 → 자연스러운 결말의 작은 이야기입니다.${route.owner ? ' 사람은 얼굴·몸 없이 손과 짧은 오프스크린 대사만 등장합니다.' : ' 캐릭터는 혼자 탐험합니다.'}\n\n[제작 방법]\n0 첫 이미지를 만든 뒤, 클립 1~8을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16입니다. 다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.\n\n[복사 순서]\n클립 1~8 버튼을 순서대로 누르세요. 각 프롬프트에는 해당 장면의 행동·효과음·여우 울음·BGM 연속성이 포함됩니다. 클립 8만 자연스러운 완결 장면으로 끝납니다.`;
+    const cue = current.bgm || bgmCues[0];
+    const longStoryboard = `[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]\n\n[이번 에피소드]\n${route.setup}. 음식 발견 → 자연스러운 섭취 → 음식 특성 기반 누적 변신 → 자연스러운 결말의 작은 이야기입니다.${route.owner ? ' 사람은 얼굴·몸 없이 손과 짧은 오프스크린 대사만 등장합니다.' : ' 캐릭터는 혼자 탐험합니다.'}\n\n[선택된 BGM 한 곡]\n“${cue.title}” — ${cue.prompt}. 64초짜리 한 곡으로 만들고, 클립 1~8은 각각 0–8초부터 56–64초까지의 연속 구간으로 나눕니다. 최종 편집에서 이 BGM 파일을 전체 타임라인에 한 번만 올리세요.\n\n[제작 방법]\n0 첫 이미지를 만든 뒤, 클립 1~8을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16입니다. 다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.\n\n[복사 순서]\n클립 1~8 버튼을 순서대로 누르세요. 각 프롬프트에는 해당 장면의 행동·효과음·여우 울음·BGM 구간이 포함됩니다. 클립 8만 자연스러운 완결 장면으로 끝납니다.`;
     current.storyboard = longStoryboard;
     $('result-title').textContent = `${current.title} · 약 1분 애니메이션 스토리보드`;
     $('output').textContent = longStoryboard;
