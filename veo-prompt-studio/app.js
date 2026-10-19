@@ -146,6 +146,33 @@ Show one continuous natural eating action. The fox steadies the same food or its
 
 In the final second, keep that remainder visible and begin only a tiny faint light at one ear tip or front paw. No body transformation yet. Maintain physical mouth–food–paw contact in one stable medium shot. The fox continues a small head turn, ear reaction, breathing, and tail movement through the final frame; do not pose, freeze, fade, add characters, text, logos, or magical creatures.`;
 }
+function focusedFirstClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  return `Generate one 8-second vertical 9:16 video from the supplied first image. Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and one whole ${food}.
+
+The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
+}
+function focusedThirdClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Use that frame as the only Start Frame. Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder on its plate or wrapper.
+
+Continue the tiny ear-tip or paw light from clip 2. Over the clip, build one cumulative ${feature}-inspired physical fur design with ${colors}: reveal it across the chest and upper back, both ear edges, and exactly seven visible tail tips; add one nearly complete small ornament beside the existing forehead flower and the beginning of matching pendant filigree. By the final frame, this stable 70–80% transformed design is visible together. Every revealed detail stays visible permanently; never revert, flicker, hide, dissolve, or restore clean fur.
+
+Do not eat more food. Keep a stable medium three-quarter shot with chest, forehead, pendant, and tail tips readable. Continue soft breathing, eye movement, one small backward step, tail motion, and a subtle camera drift through the final frame. BGM: continue the same quiet 88 BPM felt-piano, glockenspiel, and warm-pad cue; add only one restrained rising pad. No new song, pose, freeze, fade, text, logo, or extra character.`;
+}
+function focusedFourthClipPrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 3. Use that frame as the only Start Frame. Preserve the same white nine-tailed fox, nine tails, face, eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, the 20–25% bitten ${food} remainder, and every visible clip-3 transformation detail.
+
+Complete the same ${feature}-inspired ${colors} physical design: add matching detail to the last two tail tips, finish the already-started small ornament beside the forehead flower, and complete the subtle pendant filigree. Keep every earlier chest, back, ear, and tail detail visible continuously. Do not restore clean fur, simplify, flicker, dissolve, or replace any transformed element.
+
+After completion, the fox notices one changed tail, takes a calm breath, and naturally finishes one gentle tail movement. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. BGM: continue the same 88 BPM felt-piano, glockenspiel, and warm-pad cue; resolve it softly only in the final second. No new food, new character, pose, freeze, fade, text, logo, or camera reset.`;
+}
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -175,9 +202,10 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
+  if (stage === 1) return focusedFirstClipPrompt();
   if (stage === 2) return focusedSecondClipPrompt();
-  if (stage === 3) return [compactThirdClipPrompt(), clipBgmContinuity(3), TRANSFORMATION_VISIBILITY_SUFFIXES[3], PROGRESSIVE_CLIP3_PERSISTENCE_SUFFIX, TAIL_CHANGE_LOCK_CLIP3, EXTEND_MOTION_SUFFIX].filter(Boolean).join('\n\n');
-  if (stage === 4) return [compactFourthClipPrompt(), clipBgmContinuity(4), TRANSFORMATION_VISIBILITY_SUFFIXES[4], IRREVERSIBLE_TRANSFORMATION_SUFFIXES[4], TAIL_CHANGE_LOCK_CLIP4, FINAL_FORM_HOLD_SUFFIX, FINAL_FORM_INVENTORY_SUFFIX].filter(Boolean).join('\n\n');
+  if (stage === 3) return focusedThirdClipPrompt();
+  if (stage === 4) return focusedFourthClipPrompt();
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
   if (!prompt) return '';
   const narrative = STORY_STAGE_SUFFIXES[stage] || '';
