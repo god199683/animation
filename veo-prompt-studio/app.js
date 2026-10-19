@@ -140,11 +140,11 @@ function simpleThirdClipPrompt(){
 function focusedSecondClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  return `Generate ONE 8-second vertical 9:16 video from the supplied saved final frame of clip 1. This saved frame is the only Start Frame. Keep the user's original character image only as an additional Reference/Ingredient, never as a replacement Start Frame. Preserve the exact same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, flower necklace, aqua pendant, exactly nine tails, ${place}, background objects, lighting, lens, camera axis, and the one whole ${food} from the Start Frame.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that frame as the only Start Frame. Keep the original white nine-tailed fox reference only as an additional Ingredient. Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single whole ${food}.
 
-SINGLE PURPOSE: natural, gradual eating only. No body transformation in this clip. Seconds 0–2: the fox steadies the same food or its plate with one front paw and takes one small believable bite directly from it; 85–90% of that same single food remains visible. Seconds 2–4: it chews naturally while the same food remains 60–70% visible. Seconds 4–6: it takes one second small bite; 40–50% remains visibly attached to the same food on the same plate or wrapper. Seconds 6–7: it takes one final small third bite; leave a clear 20–25% bitten remainder in that exact same position. Seconds 7–8: do not eat again. Keep the same remainder visible while only a faint first light begins at one ear tip or one front paw.
+Show one continuous natural eating action. The fox steadies the same food or its plate with one front paw, takes three small believable bites directly from it, and chews between bites. Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. After bite one, about 85% remains; after bite two, about 50% remains; after bite three, leave a visible 20–25% bitten remainder on the same plate or wrapper. Do not finish the food or show an empty plate.
 
-Keep mouth, paw, plate, and food in continuous physically believable contact in one stable medium shot. Exactly one physical ${food} exists at every instant: never duplicate it, make it vanish, dissolve it, jump-cut it, replace it, put a separate bite piece in the air, restore it, or reveal an empty plate. The food remains in the scene for clips 3 and 4. Keep head movement, chewing, ear reaction, tail arc, and subtle camera drift active through the final frame. No pose, freeze, fade, new character, text, logo, fairy, sprite, or transformation beyond the one tiny starting light.`;
+In the final second, keep that remainder visible and begin only a tiny faint light at one ear tip or front paw. No body transformation yet. Maintain physical mouth–food–paw contact in one stable medium shot. The fox continues a small head turn, ear reaction, breathing, and tail movement through the final frame; do not pose, freeze, fade, add characters, text, logos, or magical creatures.`;
 }
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -175,7 +175,7 @@ function stagePrompt(storyboard, stage){
     const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
     return [imagePrompt, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
   }
-  if (stage === 2) return [focusedSecondClipPrompt(), clipBgmContinuity(2), FOOD_CONTINUITY_SUFFIXES[2], INGESTION_PROGRESS_SUFFIXES[2], EXTEND_MOTION_SUFFIX].filter(Boolean).join('\n\n');
+  if (stage === 2) return focusedSecondClipPrompt();
   if (stage === 3) return [compactThirdClipPrompt(), clipBgmContinuity(3), TRANSFORMATION_VISIBILITY_SUFFIXES[3], PROGRESSIVE_CLIP3_PERSISTENCE_SUFFIX, TAIL_CHANGE_LOCK_CLIP3, EXTEND_MOTION_SUFFIX].filter(Boolean).join('\n\n');
   if (stage === 4) return [compactFourthClipPrompt(), clipBgmContinuity(4), TRANSFORMATION_VISIBILITY_SUFFIXES[4], IRREVERSIBLE_TRANSFORMATION_SUFFIXES[4], TAIL_CHANGE_LOCK_CLIP4, FINAL_FORM_HOLD_SUFFIX, FINAL_FORM_INVENTORY_SUFFIX].filter(Boolean).join('\n\n');
   const prompt = (section.match(/((?:Generate|Continue)[\s\S]*?)(?=\n\n(?:Extend 직전 확인|\[최종 검수|\[32초 쇼츠 길이|\[최우선:)|$)/) || [])[1]?.trim() || '';
