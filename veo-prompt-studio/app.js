@@ -44,6 +44,15 @@ const humanCameos = [
   { stage: 1, ko: '얼굴과 몸은 보이지 않는 사람이 손 하나로 음식 포장지를 살짝 정리하고, 화면 밖에서 “천천히 먹어.”라고 짧게 말한다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second, show only one anonymous human hand from the lower edge gently straightening the existing food wrapper. Never show a human face, head, torso, body, reflection, shadow, or a second person. One gentle off-screen adult voice says exactly one short Korean line, “천천히 먹어.” The hand leaves immediately; it must not cover the fox or create, replace, or duplicate food.' },
   { stage: 2, ko: '캐릭터가 먹기 시작할 때 얼굴과 몸이 보이지 않는 사람 손 하나가 접시가 밀리지 않게 잠깐 잡아 주고, 화면 밖에서 “맛있어?”라고 짧게 묻는다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second at the beginning, show only one anonymous human hand from the bottom edge lightly steadying the existing plate while the fox begins eating. Never show a human face, head, torso, body, reflection, shadow, or a second person. One quiet off-screen adult voice says exactly one short Korean line, “맛있어?” The hand exits before the first bite is complete; preserve physically believable fox, food, paw, and plate contact.' }
 ];
+const oneMinuteRoutes = [
+  { id: 'owner-walk', owner: true, setup: 'a leisurely walk with an unseen owner', scent: 'a sweet scent drifting from a hedge', discovery: 'beside a small park bench' },
+  { id: 'owner-garden', owner: true, setup: 'helping an unseen owner in a rooftop garden', scent: 'a scent carried from a planter after watering', discovery: 'beside a low flowerpot' },
+  { id: 'owner-market', owner: true, setup: 'walking home with an unseen owner after a quiet market visit', scent: 'a tempting scent near a folded paper bag', discovery: 'at the edge of a calm side street' },
+  { id: 'solo-forest', owner: false, setup: 'exploring a quiet forest trail alone', scent: 'an unfamiliar sweet scent between mossy stones', discovery: 'under a fern beside the path' },
+  { id: 'solo-rain', owner: false, setup: 'wandering through a garden just after rain alone', scent: 'a warm dessert scent rising from a sheltered step', discovery: 'beneath a broad leaf' },
+  { id: 'solo-greenhouse', owner: false, setup: 'exploring a sunlit abandoned glasshouse alone', scent: 'a sweet scent near an old potting table', discovery: 'beside a fallen watering can' },
+  { id: 'solo-lantern', owner: false, setup: 'following lantern light along a twilight path alone', scent: 'a gentle scent carried on the evening breeze', discovery: 'near a small stone lantern' }
+];
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
@@ -109,7 +118,7 @@ const INGESTION_PROGRESS_SUFFIXES = [
   'GRADUAL INGESTION TIMELINE FOR CLIP 2: The single food prop must visibly shrink by physical eating, never vanish, dissolve, jump-cut, or get replaced. Seconds 0–2: keep 85–90% of the original food visible and make one small bite mark. Seconds 2–4: chew while the same prop remains clearly 60–70% of its original volume. Seconds 4–6: take the second small bite and leave 40–50% visibly attached to the same prop. Seconds 6–7: take one final small third bite and leave a clear 20–25% final portion on the same plate or wrapper. Seconds 7–8: do not eat more; keep that remainder visible while a faint first transformation light begins at one ear tip or front paw. Do NOT finish eating in this clip and do NOT reveal an empty plate yet. Keep the food, mouth, paw, and plate in one continuous shot with no camera cut, no occlusion hiding a swap, no duplicate food, no separate bite piece, and no magic disappearance.',
   '', ''
 ];
-function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; }
+function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; document.querySelectorAll('[data-long]').forEach(button => { button.hidden = !current?.oneMinute; }); }
 function thirdKeyframePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -174,6 +183,40 @@ Complete the same ${feature}-inspired ${colors} physical design: add matching de
 
 After completion, the fox notices one changed tail, takes a calm breath, and naturally finishes one gentle tail movement. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. BGM: continue the same 88 BPM felt-piano, glockenspiel, and warm-pad cue; resolve it softly only in the final second. No new food, new character, pose, freeze, fade, text, logo, or camera reset.`;
 }
+function oneMinuteClipPrompt(stage){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const [, feature, colors] = foodProfile(food);
+  const route = current?.storyRoute || oneMinuteRoutes[3];
+  const owner = Boolean(route.owner);
+  const start = stage === 1 ? 'the supplied first image' : `the supplied saved final frame of clip ${stage - 1}`;
+  const startRule = stage === 1 ? 'Use the supplied first image as the Start Frame.' : 'Use that saved frame as the only Start Frame.';
+  const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
+  const ownerLock = 'Show only one anonymous human hand when specified. Never show a human face, head, torso, full body, reflection, or second person; any human line is one short off-screen Korean line only.';
+  const solo = {
+    1: `The fox is ${route.setup}, alert and curious. Show two soft paw steps, natural location ambience, and one brief “mrrp?” fox sound. End mid-step, still moving forward.`,
+    2: `The fox catches ${route.scent}, follows it naturally, and turns one ear toward it. No food visible yet. End with the nose still tracking the scent.`,
+    3: `The fox discovers one prepared serving of ${food} ${route.discovery}, circles it once, and sniffs without eating. Keep exactly one food serving. End with the nose close to the food.`,
+    4: `Show natural eating only. ${foodEatingPlan(food)} Keep the final 20–25% remainder visible. End with a tiny light at one ear tip or front paw; no body transformation yet.`,
+    5: `The fox steps back from the same 20–25% ${food} remainder as the tiny light slowly travels into the chest fur. Reveal only a first ${colors} reflection; keep moving and do not complete the change.`,
+    6: `Build a cumulative 35–50% ${feature}-inspired physical design across chest, upper back, both ear edges, and three tail tips. Every change stays visible; the fox watches one tail in surprise.`,
+    7: `Continue to a stable 70–80% ${feature}-inspired design: chest and upper back, both ear edges, exactly seven tail tips, a nearly complete ornament beside the forehead flower, and beginning pendant filigree. Keep all details visible and moving naturally.`,
+    8: `Complete the last two tail tips, the small ornament beside the forehead flower, and pendant filigree. Keep every earlier transformed detail visible. The fox takes a calm breath and finishes one gentle tail movement in a natural final pose.`
+  };
+  const walk = {
+    1: `The fox is ${route.setup}. For less than one second, one anonymous hand enters only from the lower edge to loosely guide a simple leash handle or point gently onward, then exits. The fox trots with a curious “mrrp?” and soft paw steps. ${ownerLock} End while the action continues.`,
+    2: `The fox suddenly catches ${route.scent} and gently moves toward it; the unseen owner’s hand pauses without pulling. No food visible yet. End with the fox still following the scent.`,
+    3: `The fox finds one prepared serving of ${food} ${route.discovery}, circles it, and sniffs. One anonymous hand briefly points toward the food from the lower edge, then leaves. An off-screen adult voice quietly says “어, 그건 어디서 났지?” ${ownerLock} Do not eat yet.`,
+    4: `Show natural eating only. ${foodEatingPlan(food)} Keep the final 20–25% remainder visible. The owner is not visible. End with a tiny light at one ear tip or front paw.`,
+    5: `The tiny light travels into the fox’s chest fur while the same 20–25% ${food} remainder stays in place. One anonymous hand reaches in as if to stop the fox, then pauses and withdraws. One off-screen adult voice says “아이고, 또 먹었네.” ${ownerLock} Reveal only a first ${colors} reflection.`,
+    6: `Build a cumulative 35–50% ${feature}-inspired physical design across chest, upper back, both ear edges, and three tail tips. The fox takes one surprised backward step. No human is visible.`,
+    7: `Continue to a stable 70–80% ${feature}-inspired design: chest and upper back, both ear edges, exactly seven tail tips, a nearly complete ornament beside the forehead flower, and beginning pendant filigree. Every detail remains visible; no human appears.`,
+    8: `Complete the final two tail tips, forehead-side ornament, and pendant filigree while keeping every earlier detail. The fox calmly looks up. One anonymous hand briefly rests near—but does not touch—the fox, and an off-screen adult voice says “이번만이야.” ${ownerLock} Finish with a natural gentle tail movement.`
+  };
+  const action = (owner ? walk : solo)[stage];
+  const sound = `Audio continuity: keep one quiet 88 BPM no-vocal fantasy-pop cue with felt piano, light glockenspiel, warm pad, and the same ${place} ambience. Use only soft synchronized foley; do not start a new song.`;
+  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}`;
+}
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -194,6 +237,7 @@ Seconds 0–2: continue the existing head turn, tail arc, and forehead-bound lig
 Use a stable medium three-quarter view with face, forehead ornament, chest texture, pendant, and all nine tail tips readable at once. The completed details are permanent physical fur and ornament materials, not temporary glow. No food reappearing, no eating, no new character, no fairy, no sprite, no text, no logo, no cut, no fade, no transformation reversal, and no before-and-after flicker. Final frame: all completed details remain visible in a relaxed natural pose.`;
 }
 function stagePrompt(storyboard, stage){
+  if (current?.oneMinute && stage >= 1 && stage <= 8) return oneMinuteClipPrompt(stage);
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
   const start = storyboard.indexOf(labels[stage]);
   if (start < 0) return '';
@@ -266,7 +310,7 @@ Clip 4: keep the same bitten food remainder, plate or wrapper, and crumbs unchan
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g,' ');
 const setSync = (text, online = false) => { $('sync-status').textContent = text; document.querySelector('.sync').classList.toggle('online', online); };
 
-function selectedInputs(){ return { food: $('food').value.trim(), place: $('place').value.trim(), action: $('action').value.trim(), notes: $('notes').value.trim() }; }
+function selectedInputs(){ return { food: $('food').value.trim(), place: $('place').value.trim(), action: $('action').value.trim(), notes: $('notes').value.trim(), lengthMode: $('length-mode').value }; }
 function archiveFood(item){ return normalize(item?.food || String(item?.title || '').split(' · ')[0] || ''); }
 function archivedFoods(){ return new Set([...archive, ...uploadCandidates()].map(archiveFood).filter(Boolean)); }
 function hasArchiveSignature(signature){ return [...archive, ...uploadCandidates()].some(item => item?.signature === signature); }
@@ -278,11 +322,11 @@ function buildPrompt(data){
   if (!requestedFood && !availableFoods.length) throw new Error('기본 음식 목록이 모두 보관되었습니다. 새 음식 이름을 직접 입력해 생성해 주세요.');
   const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : pick(availableFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
-  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds);
+  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
   const [food, feature, colors] = foodData;
-  const signature = [normalize(food), normalize(place), method[0], ending].join('|');
+  const signature = [normalize(food), normalize(place), method[0], ending, data.lengthMode || 'short', storyRoute.id].join('|');
   const title = `${food} · ${place}`;
   const notes = data.notes ? `사용자 지정 조건: ${data.notes}\n` : '';
   const masterContract = masterContinuityContract(food, feature, colors, place);
@@ -307,7 +351,7 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, summary: `${place} · ${method[0]} · ${ending}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, summary: `${place} · ${method[0]} · ${ending}` };
 }
 
 async function initSupabase(){
@@ -449,6 +493,18 @@ $('storyboard').onclick = async () => {
     $('result-title').textContent = `${current.title} · 저장된 스토리보드`;
     $('output').textContent = preservedStoryboard;
     setStageCopyActions(true);
+    $('regenerate-storyboard').disabled = false;
+    $('copy').disabled = false;
+    return;
+  }
+  if (current.oneMinute) {
+    const route = current.storyRoute || oneMinuteRoutes[3];
+    const longStoryboard = `[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]\n\n[이번 에피소드]\n${route.setup}. 음식 발견 → 자연스러운 섭취 → 음식 특성 기반 누적 변신 → 자연스러운 결말의 작은 이야기입니다.${route.owner ? ' 사람은 얼굴·몸 없이 손과 짧은 오프스크린 대사만 등장합니다.' : ' 캐릭터는 혼자 탐험합니다.'}\n\n[제작 방법]\n0 첫 이미지를 만든 뒤, 클립 1~8을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16입니다. 다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.\n\n[복사 순서]\n클립 1~8 버튼을 순서대로 누르세요. 각 프롬프트에는 해당 장면의 행동·효과음·여우 울음·BGM 연속성이 포함됩니다. 클립 8만 자연스러운 완결 장면으로 끝납니다.`;
+    current.storyboard = longStoryboard;
+    $('result-title').textContent = `${current.title} · 약 1분 애니메이션 스토리보드`;
+    $('output').textContent = longStoryboard;
+    setStageCopyActions(true);
+    await saveStoryboard(current, longStoryboard);
     $('regenerate-storyboard').disabled = false;
     $('copy').disabled = false;
     return;

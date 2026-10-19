@@ -21,6 +21,7 @@
         <label>음식 <input id="food" placeholder="예: 유자 크림 다이후쿠 / 랜덤" /></label>
         <label>장소 <input id="place" placeholder="예: 비 내린 온실 / 랜덤" /></label>
         <label>시작 행동 <input id="action" placeholder="예: 먹고 재채기 / 랜덤" /></label>
+        <label>영상 길이 <select id="length-mode"><option value="short">32초 · 4클립</option><option value="one-minute">약 1분 · 8클립 애니메이션</option></select></label>
         <label>추가 조건 <textarea id="notes" rows="3" placeholder="고정하고 싶은 분위기나 연출"></textarea></label>
         <button id="generate" class="primary">새 프롬프트 생성</button>
         <p id="generation-note" class="hint">보관된 결과와 음식·변신 구조·엔딩을 비교합니다.</p>
@@ -28,7 +29,7 @@
 
       <section class="result-panel">
         <div class="result-head"><div><p class="eyebrow">OUTPUT</p><h2 id="result-title">생성 준비 완료</h2></div><div class="result-actions"><button id="original-prompt" disabled>Gemini OMNI</button><button id="flow-prompt" disabled>Google Flow</button><button id="storyboard" disabled>스토리보드</button><button id="regenerate-storyboard" disabled>스토리보드 재생성</button><button id="copy" disabled>복사</button><button id="archive" disabled class="accent">보관</button></div></div>
-        <div id="stage-copy-actions" class="stage-copy-actions" hidden><span>FLOW 클립별 복사</span><button id="copy-full-storyboard">전체 스토리보드</button><button data-stage="0">0 첫 이미지</button><button data-stage="1">1 클립 1</button><button data-stage="2">2 클립 2</button><button data-stage="3">3 클립 3</button><button data-stage="4">4 클립 4</button></div>
+        <div id="stage-copy-actions" class="stage-copy-actions" hidden><span>FLOW 클립별 복사</span><button id="copy-full-storyboard">전체 스토리보드</button><button data-stage="0">0 첫 이미지</button><button data-stage="1">1 클립 1</button><button data-stage="2">2 클립 2</button><button data-stage="3">3 클립 3</button><button data-stage="4">4 클립 4</button><button data-stage="5" data-long hidden>5 클립 5</button><button data-stage="6" data-long hidden>6 클립 6</button><button data-stage="7" data-long hidden>7 클립 7</button><button data-stage="8" data-long hidden>8 클립 8</button></div>
         <pre id="output">왼쪽에서 조건을 입력하거나 그대로 “새 프롬프트 생성”을 눌러 시작하세요.</pre>
       </section>
     </section>
