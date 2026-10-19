@@ -67,6 +67,27 @@ const foods = [
   ['마법숲 도토리 쿠키','도토리 모양 견과 쿠키','밤색·이끼·금빛'],
   ['바다유리 레몬 캔디','바다유리 같은 반투명 레몬 사탕','아쿠아·레몬·투명']
 ];
+// Random mode is deliberately generative, not a finite menu.  These building blocks
+// create fresh real-world and fantasy foods while the archive still rejects exact repeats.
+const foodIngredients = [
+  ['유자','산뜻한 감귤 향과 반투명 과육','연노랑·금빛·우윳빛'], ['딸기','새콤한 붉은 과즙과 씨앗','딸기·루비·크림'], ['블루베리','짙은 베리 향과 은은한 과즙','남보라·은빛·크림'], ['복숭아','말랑한 과육과 꽃향','복숭아·산호·크림'], ['망고','진한 열대 과육과 밝은 단맛','망고·호박·청록'], ['체리','짙은 과즙과 맑은 산미','체리·버건디·은빛'], ['석류','투명하게 반짝이는 알갱이','석류·루비·투명'], ['무화과','고운 씨앗과 꿀 같은 단맛','자주·연두·브론즈'], ['사과','아삭한 과육과 계피 향','사과·계피·호박빛'], ['배','맑은 과즙과 서늘한 향','배·연두·투명'], ['청포도','톡 터지는 과즙과 서리','민트·라임·투명'], ['자몽','쌉싸름한 과육과 맑은 향','산호·분홍·투명'], ['리치','은은한 꽃향과 투명한 과육','아쿠아·분홍·진주빛'], ['바나나','부드러운 단맛과 크림 질감','바나나·크림·코코아'], ['코코넛','하얀 과육과 고소한 향','화이트·아쿠아·모래빛'], ['라즈베리','선명한 산미와 작은 알갱이','라즈베리·은빛·크림'], ['밤','고소한 밤크림과 따뜻한 향','밤색·금빛·크림'], ['단호박','부드러운 단맛과 포근한 질감','호박·구리빛·크림'], ['고구마','달콤한 구움 향과 보랏빛 결','보라·꿀·호박빛'], ['옥수수','고소한 알갱이와 버터 향','옥수수·버터·금빛'], ['팥','진한 단맛과 포슬한 질감','팥색·버터·금빛'], ['흑임자','고소한 향과 먹빛 알갱이','차콜·베이지·은빛'], ['말차','쌉싸름한 녹차 향','말차·크림·진녹색'], ['라벤더','은은한 꽃향과 서늘한 여운','라벤더·은빛·크림'], ['꿀','점성 있는 금빛 단맛','꿀·호박·금빛'], ['바닐라','포근한 크림 향','바닐라·화이트·금빛'], ['카라멜','짙은 버터 향과 윤기','캐러멜·호박·브론즈'], ['초콜릿','진한 코코아와 부드러운 단맛','코코아·버건디·금빛'], ['피스타치오','고소한 견과 향과 바삭한 결','연두·브론즈·크림'], ['치즈','짭짤한 크림 질감','크림·금빛·연노랑']
+];
+const foodForms = [
+  ['타르트','바삭한 테두리와 부드러운 필링'], ['마카롱','얇은 껍질과 크림 필링'], ['다이후쿠','반투명한 찹쌀 껍질과 말랑한 속'], ['푸딩','한 접시에 담긴 흔들리는 부드러운 질감'], ['젤라토','작은 컵 안의 차갑고 단단한 한 스쿱'], ['파르페','투명 잔 안의 선명한 층'], ['롤케이크','얇은 시트가 말린 크림 단면'], ['에클레어','길쭉한 슈와 윤기 나는 글레이즈'], ['밀푀유','얇은 페이스트리 층과 크림'], ['모나카','바삭한 껍질 안의 앙금'], ['경단','한 접시에 놓인 연결된 찹쌀 경단'], ['크레페','얇게 접힌 반죽과 속재료'], ['도넛','둥근 반죽과 매끈한 글레이즈'], ['쿠키','작고 두툼한 바삭한 원형'], ['비스킷','담백한 결이 보이는 작은 과자'], ['젤리','투명한 한 덩어리 젤리'], ['사탕','빛을 통과시키는 단단한 사탕'], ['샤베트','작은 컵의 서리 낀 과일 얼음'], ['빙수','얕은 그릇의 작은 얼음 산'], ['수프','작은 그릇에 담긴 걸쭉한 수프'], ['고로케','바삭한 빵가루 외피와 부드러운 속'], ['주먹밥','한 손 크기의 단단한 쌀밥'], ['미니 피자','한 접시 위의 작은 둥근 피자'], ['크루아상','결이 분명한 초승달 모양 빵'], ['크림빵','폭신한 둥근 빵과 부드러운 크림']
+];
+const foodThemes = [
+  '', '', '', '새벽 이슬', '노을빛', '별가루', '달빛', '오로라', '벚꽃', '유리연못', '숲이슬', '바다유리', '구름', '은하수', '불꽃', '보름달', '마법숲', '황혼', '겨울눈꽃', '여름소나기'
+];
+function randomFoodData(usedFoods){
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    const ingredient = pick(foodIngredients), form = pick(foodForms), theme = pick(foodThemes);
+    const name = `${theme ? `${theme} ` : ''}${ingredient[0]} ${form[0]}`;
+    if (!usedFoods.has(normalize(name))) return [name, `${ingredient[1]}, ${form[1]}`, ingredient[2]];
+  }
+  // This fallback remains unique even after an unusually large archive; it is never a fixed menu item.
+  const ingredient = pick(foodIngredients), form = pick(foodForms);
+  return [`새로운 ${ingredient[0]} ${form[0]} ${Math.random().toString(36).slice(2, 7)}`, `${ingredient[1]}, ${form[1]}`, ingredient[2]];
+}
 const places = ['이른 새벽의 유리 온실','비가 막 그친 골목의 작은 디저트 창가','별빛이 비치는 고요한 해변 모래언덕','해 질 무렵의 오래된 찻집 테라스','눈 녹은 숲의 이끼 낀 돌계단','노을빛 지붕 위 작은 정원'];
 const mechanisms = [
   ['오른쪽 귀 끝의 작은 결정에서 목과 등으로 빛이 번지는 방식','몸의 무늬가 음식의 질감을 따라 천천히 피어나는 방식'],
@@ -400,9 +421,7 @@ function buildPrompt(data){
   const usedFoods = archivedFoods();
   const requestedFood = data.food && !/랜덤/i.test(data.food) ? data.food : '';
   if (requestedFood && usedFoods.has(normalize(requestedFood))) throw new Error(`“${requestedFood}”는 이미 보관함에 있는 음식입니다. 보관된 음식은 다시 생성할 수 없습니다.`);
-  const availableFoods = foods.filter(([name]) => !usedFoods.has(normalize(name)));
-  if (!requestedFood && !availableFoods.length) throw new Error('기본 음식 목록이 모두 보관되었습니다. 새 음식 이름을 직접 입력해 생성해 주세요.');
-  const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : pick(availableFoods);
+  const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : randomFoodData(usedFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
   const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes), bgm = pick(bgmCues);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
