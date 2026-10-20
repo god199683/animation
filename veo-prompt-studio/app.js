@@ -134,6 +134,11 @@ const oneMinuteRoutes = [
 let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
 const LOGIN_EMAIL_DOMAIN = 'tailframe.local';
+function isOneMinuteItem(item){
+  return item?.oneMinute === true
+    || String(item?.signature || '').split('|').includes('one-minute')
+    || String(item?.storyboard || '').includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]');
+}
 function accountEmail(loginId){ return `${loginId.trim().toLowerCase()}@${LOGIN_EMAIL_DOMAIN}`; }
 function validLoginId(loginId){ return /^[a-z0-9][a-z0-9._-]{2,29}$/i.test(loginId); }
 function localArchiveKey(){ return `veo-prompt-archive:${userId || 'signed-out'}`; }
@@ -716,6 +721,9 @@ $('storyboard').onclick = async () => {
 };
 $('regenerate-storyboard').onclick = async () => {
   if (!current) return;
+  // Cloud rows from older schema versions do not have a oneMinute column.
+  // Restore it from the durable signature before regenerating.
+  current.oneMinute = isOneMinuteItem(current);
   const key = storyboardKey(current);
   const cache = readStoryboardCache();
   current.previousStoryboard = current.storyboard || cache[key] || '';
@@ -752,15 +760,17 @@ function restoreOpenedArchive(){
     if (!current?.prompt) return;
     current.omniPrompt ||= current.omni_prompt || current.prompt;
     current.flowPrompt ||= current.flow_prompt || current.prompt;
+    current.oneMinute = isOneMinuteItem(current);
     const preservedStoryboard = current.storyboard || savedStoryboard(current);
     const isExtendStoryboard = preservedStoryboard?.includes('[Google Flow · 수동 프레임 연결 · 클립별 제작 v1]');
-    $('result-title').textContent = isExtendStoryboard ? `${current.title} · 저장된 스토리보드` : (current.title || '보관된 프롬프트');
-    $('output').textContent = isExtendStoryboard ? preservedStoryboard : current.omniPrompt;
-    setStageCopyActions(isExtendStoryboard);
+    const isLongStoryboard = current.oneMinute || preservedStoryboard?.includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]');
+    $('result-title').textContent = (isExtendStoryboard || isLongStoryboard) ? `${current.title} · 저장된 스토리보드` : (current.title || '보관된 프롬프트');
+    $('output').textContent = (isExtendStoryboard || isLongStoryboard) ? (preservedStoryboard || current.omniPrompt) : current.omniPrompt;
+    setStageCopyActions(isExtendStoryboard || isLongStoryboard);
     $('original-prompt').disabled = false;
     $('flow-prompt').disabled = false;
     $('storyboard').disabled = false;
-    $('regenerate-storyboard').disabled = Boolean(isExtendStoryboard);
+    $('regenerate-storyboard').disabled = Boolean(isExtendStoryboard && !isLongStoryboard);
     $('copy').disabled = false;
     $('archive').disabled = true;
     $('archive').textContent = '보관됨';
