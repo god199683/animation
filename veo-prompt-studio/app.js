@@ -295,7 +295,7 @@ function oneMinuteClipPrompt(stage){
   const start = stage === 1 ? 'the supplied first image' : `the supplied saved final frame of clip ${stage - 1}`;
   const startRule = stage === 1 ? 'Use the supplied first image as the Start Frame.' : 'Use that saved frame as the only Start Frame.';
   const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterReferenceRule(stage)} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
-  const ownerLock = 'Show only one anonymous human hand when specified. Never show a human face, head, torso, full body, reflection, or second person; any human line is one short off-screen Korean line only.';
+  const ownerLock = 'HUMAN REFERENCE RULE: Only for this owner episode, the user may attach a separate human reference image. Use that image only to preserve the human character’s hand shape, sleeve/costume colors, and gentle storybook styling when the human hand appears. Never use that human image to alter the fox, food, setting, camera, or background; ignore any text, logos, and any animal visible in the human reference. Show only one human hand when specified. Never show a human face, head, torso, full body, reflection, or second person; any human line is one short off-screen Korean line only.';
   const solo = {
     1: `The fox is ${route.setup}, alert and curious. Show two soft paw steps, natural location ambience, and one brief “mrrp?” fox sound. End mid-step, still moving forward.`,
     2: `The fox catches ${route.scent}, follows it naturally, and turns one ear toward it. No food visible yet. End with the nose still tracking the scent.`,
