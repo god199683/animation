@@ -339,7 +339,17 @@ Seconds 0–2: continue the existing head turn, tail arc, and forehead-bound lig
 
 Use a stable medium three-quarter view with face, forehead ornament, chest texture, pendant, and all nine tail tips readable at once. The completed details are permanent physical fur and ornament materials, not temporary glow. No food reappearing, no eating, no new character, no fairy, no sprite, no text, no logo, no cut, no fade, no transformation reversal, and no before-and-after flicker. Final frame: all completed details remain visible in a relaxed natural pose.`;
 }
+function oneMinuteFirstImagePrompt(){
+  const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
+  const place = current?.title?.split(' · ')[1] || 'the same established setting';
+  const route = current?.storyRoute || oneMinuteRoutes[3];
+  const ownerSetup = route.owner
+    ? 'The unseen owner is only implied by the setting; do not show any human hand, face, body, reflection, shadow, or text in this first image.'
+    : 'The fox is alone; do not show any person, hand, reflection, shadow, or companion.';
+  return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and bright ethereal pastel illustration style while creating a new vertical composition. Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. Place exactly ONE whole, untouched ${food} naturally in the setting but not directly at the fox’s mouth or paws yet; it must be clearly visible and physically plausible. Keep the food’s shape, color, toppings, dish or wrapper, scale, and location locked for the coming clips. ${ownerSetup}\n\nUse the fox reference’s soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy fantasy rendering across both character and background. No transformation, no glow on the body, no bite mark, no duplicate food, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no human figure, no photorealism, and no dark style.`;
+}
 function stagePrompt(storyboard, stage){
+  if (current?.oneMinute && stage === 0) return oneMinuteFirstImagePrompt();
   if (current?.oneMinute && stage >= 1 && stage <= 8) return oneMinuteClipPrompt(stage);
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
   const start = storyboard.indexOf(labels[stage]);
