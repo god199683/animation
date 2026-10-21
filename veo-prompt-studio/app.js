@@ -205,6 +205,7 @@ function thirdKeyframePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const [, feature, colors] = foodProfile(food);
+  const foodVisual = foodVisualDescription(food);
   const design = foodTransformationPrompt(food, feature, colors);
   return `Create ONE still vertical 9:16 partial-transformation reference image for clip 3. Use the saved final frame of clip 2 as the composition reference and the user's original white nine-tailed fox image as the character reference. Keep the exact same face, lavender-blue eyes, flower forehead marking, flower necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and same 20–25% bitten ${food} remainder on its plate or wrapper.\n\nShow ONE stable 70–80% food-derived physical design, not an animated effect: ${design}\n\nThe largely completed chest and upper back, both ear edges, exactly seven tail tips, one nearly completed ornament beside the forehead flower, and the beginning of matching pendant filigree must be visible together in a medium three-quarter view. Leave only two tail tips and tiny final refinements for clip 4. Apply one unified ${feature}-inspired material language with ${colors} across every changed area. Keep the original white fox identity; do not restore clean original fur on any changed area. No glow covering details, no food chunks, no extra decoration, no extra character, no fairy, no text, no logo.\n\nUse this resulting image only as an additional Reference/Ingredient for clip 3. Do NOT use it as clip 3 Start Frame; the saved final frame of clip 2 remains the Start Frame to preserve motion continuity.`;
 }
@@ -295,6 +296,7 @@ function oneMinuteClipPrompt(stage){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const [, feature, colors] = foodProfile(food);
+  const foodVisual = foodVisualDescription(food);
   const route = current?.storyRoute || oneMinuteRoutes[3];
   const owner = Boolean(route.owner);
   const start = stage === 1 ? 'the supplied first image' : `the supplied saved final frame of clip ${stage - 1}`;
@@ -305,7 +307,7 @@ function oneMinuteClipPrompt(stage){
   const foodAbsence = stage === 1
     ? 'FOOD ABSENCE LOCK — HIGHEST PRIORITY: The food has not been discovered yet. At no moment in this entire clip may any food, dessert, snack, bowl, plate, wrapper, crumb, bag, food prop, or food-like object be visible anywhere in the frame. Keep it completely outside the camera world until clip 3. Do not let the fox walk past, look at, smell directly, touch, or ignore a visible food object.'
     : '';
-  const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterReferenceRule(stage)} ${frameContinuity} ${foodAbsence} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
+  const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterReferenceRule(stage)} ${frameContinuity} ${foodAbsence} ${stage >= 2 ? `FOOD VISUAL IDENTITY LOCK: ${foodVisual}` : ''} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
   const ownerLock = 'HUMAN REFERENCE RULE: For this owner episode, attach the user’s separate human reference image as an additional Ingredient in every clip. Show the single human character from that reference when the action calls for the owner: preserve that person’s recognizable face, hairstyle, hair ornaments, costume silhouette, sleeve colors, and gentle storybook style. Use the human reference ONLY for the person; never use it to alter the fox, food, setting, camera, or background. Ignore any text, logos, and any animal visible in the human reference. Never add a second person, replace the referenced person, or change their outfit between clips. Any spoken line is one short natural Korean line only.';
   const solo = {
     1: `The fox is ${route.setup}, alert and curious. Show two soft paw steps, then have the fox slow and look around with a clear searching expression. The food is NOT visible yet. Do not let the fox walk past, step over, or ignore any food. End while the fox is still actively searching ahead.`,
@@ -402,7 +404,20 @@ async function copyStage(stage){
   if (button) { const label = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = label, 1200); }
 }
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
-function foodProfile(food){ return foods.find(item => item[0] === food) || [food, `${food} 고유의 질감·향·색감`, '음식 고유 색감']; }
+function foodProfile(food){
+  const saved = foods.find(item => item[0] === food);
+  if (saved) return saved;
+  const ingredient = foodIngredients.find(([name]) => food.includes(name));
+  const form = foodForms.find(([name]) => food.includes(name));
+  if (ingredient || form) return [food, [ingredient?.[1], form?.[1]].filter(Boolean).join(', '), ingredient?.[2] || '음식 고유 색감'];
+  return [food, `${food} 고유의 질감·향·색감`, '음식 고유 색감'];
+}
+function foodVisualDescription(food){
+  const [, feature, colors] = foodProfile(food);
+  const form = foodForms.find(([name]) => food.includes(name));
+  const formShape = form?.[1] || 'its real, recognizable serving shape and texture';
+  return `It must visibly read as the named food “${food}”, not as a generic dessert: ${feature}. Show ${formShape}, with a coherent ${colors} palette, realistic toppings and structure for that exact food, and one physically plausible matching dish, wrapper, or serving vessel.`;
+}
 function foodEatingPlan(food){
   if (/빙수/.test(food)) return `Keep the dessert as one compact coconut-white shaved-ice mound with mango pieces in one shallow bowl. The fox takes three tiny natural surface mouthfuls from the same mound, pausing to swallow between them. Reduce the mound gradually: about 85% remains after the first mouthful, about 50% after the second, then leave one visible 20–25% mound in the same bowl after the third. Do not scatter ice, separate mango pieces, or create a second topping.`;
   if (/푸딩|젤라토/.test(food)) return `Keep one soft dessert portion in one small dish. The fox takes three tiny gentle surface mouthfuls from the same portion, pausing to swallow between them. Reduce it gradually: about 85% remains after the first mouthful, about 50% after the second, then leave one visible 20–25% portion in the same dish after the third. Do not melt, splatter, split, or create extra portions.`;
