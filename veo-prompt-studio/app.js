@@ -130,6 +130,18 @@ const oneMinuteRoutes = [
   { id: 'solo-greenhouse', owner: false, setup: 'exploring a sunlit abandoned glasshouse alone', scent: 'a sweet scent near an old potting table', discovery: 'beside a fallen watering can' },
   { id: 'solo-lantern', owner: false, setup: 'following lantern light along a twilight path alone', scent: 'a gentle scent carried on the evening breeze', discovery: 'near a small stone lantern' }
 ];
+function episodeFoodIntroduction(route){
+  const modes = route?.owner
+    ? [
+        { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
+        { id: 'owner-gives', label: '주인이 자연스럽게 음식을 꺼내 건넴' }
+      ]
+    : [
+        { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
+        { id: 'passerby-gives', label: '행인이 자연스럽게 음식을 건넴' }
+      ];
+  return pick(modes);
+}
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
@@ -309,10 +321,20 @@ function oneMinuteClipPrompt(stage){
     : '';
   const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterReferenceRule(stage)} ${frameContinuity} ${foodAbsence} ${stage >= 2 ? `FOOD VISUAL IDENTITY LOCK: ${foodVisual}` : ''} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and story state.`;
   const ownerLock = 'HUMAN REFERENCE RULE: For this owner episode, attach the user’s separate human reference image as an additional Ingredient in every clip. Show the single human character from that reference when the action calls for the owner: preserve that person’s recognizable face, hairstyle, hair ornaments, costume silhouette, sleeve colors, and gentle storybook style. Use the human reference ONLY for the person; never use it to alter the fox, food, setting, camera, or background. Ignore any text, logos, and any animal visible in the human reference. Never add a second person, replace the referenced person, or change their outfit between clips. Any spoken line is one short natural Korean line only.';
+  const introduction = current?.foodIntroduction || episodeFoodIntroduction(route);
+  if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
+  const foundStage2 = `During seconds 0–3, no food is visible. During seconds 3–8, the fox and camera make one continuous small curved move around an already-visible foreground stone, leaf, planter, or path edge. As a result of that move, one prepared serving of ${food} gradually enters from behind that existing foreground object: first only its dish or wrapper edge, then the full same serving by the final frame. It must be revealed by occlusion and parallax, never pop into an empty area, dissolve in, or replace an existing object. The fox has not noticed it yet; end with both front paws planted while its nose and eyes still track the scent.`;
+  const foundStage3 = `Continue from the exact clip-2 final frame where the same one prepared serving of ${food} is already visibly resting ${route.discovery}. Do not create, reveal, replace, resize, or move the food at the start of this clip. Within the first second, the fox finally notices the already-present food and comes to a complete stop before reaching it. The fox focuses its eyes on it, then approaches and sniffs without eating.`;
+  const ownerGiveStage2 = `During seconds 0–3, no food is visible. The referenced owner notices the fox tracking a scent, then naturally opens the same small closed carry pouch already visible in the Start Frame. During seconds 3–8, the owner slowly takes out exactly one prepared serving of ${food} and holds it at the fox’s eye level. The food must emerge continuously from the opened pouch through the owner’s hand, never pop into empty space or replace any object. The fox has not eaten yet and watches the owner’s hand.`;
+  const ownerGiveStage3 = `Continue from the exact clip-2 final frame where the referenced owner is already holding the same one prepared serving of ${food}. Do not create, reveal, replace, resize, or move the food at the start. The owner gently lowers it onto the same ground or plate in front of the fox, then withdraws the hand. Within the first second, the fox notices the offered food, comes to a complete stop, then approaches and sniffs without eating.`;
+  const passerbyGiveStage2 = `During seconds 0–3, no food is visible. The single friendly passerby already visible at a distance in the Start Frame walks continuously closer along the same path. During seconds 3–8, the passerby gently extends exactly one prepared serving of ${food} toward the fox. The food stays in that person’s hand and enters frame only through that continuous walking and arm movement; never pop it into empty space or replace an object. The fox has not eaten yet and watches the offered food.`;
+  const passerbyGiveStage3 = `Continue from the exact clip-2 final frame where the same single passerby is already holding the same prepared serving of ${food} out to the fox. Do not create, reveal, replace, resize, or move the food at the start. The passerby gently lowers it onto the ground or plate in front of the fox, then exits naturally. Within the first second, the fox notices the offered food, comes to a complete stop, then approaches and sniffs without eating.`;
+  const foodStage2 = introduction.id === 'owner-gives' ? ownerGiveStage2 : introduction.id === 'passerby-gives' ? passerbyGiveStage2 : foundStage2;
+  const foodStage3 = introduction.id === 'owner-gives' ? ownerGiveStage3 : introduction.id === 'passerby-gives' ? passerbyGiveStage3 : foundStage3;
   const solo = {
     1: `The fox is ${route.setup}, alert and curious. Show two soft paw steps, then have the fox slow and look around with a clear searching expression. The food is NOT visible yet. Do not let the fox walk past, step over, or ignore any food. End while the fox is still actively searching ahead.`,
-    2: `The fox catches ${route.scent}, stops, turns its head toward the scent, and follows it carefully at a slow pace. During seconds 0–3, no food is visible. During seconds 3–8, the fox and camera make one continuous small curved move around an already-visible foreground stone, leaf, planter, or path edge. As a result of that move, one prepared serving of ${food} gradually enters from behind that existing foreground object: first only its dish or wrapper edge, then the full same serving by the final frame. It must be revealed by occlusion and parallax, never pop into an empty area, dissolve in, or replace an existing object. The fox has not noticed it yet; end with both front paws planted while its nose and eyes still track the scent.`,
-    3: `Continue from the exact clip-2 final frame where the same one prepared serving of ${food} is already visibly resting ${route.discovery}. Do not create, reveal, replace, resize, or move the food at the start of this clip. Within the first second, the fox finally notices the already-present food and comes to a complete stop before reaching it. The fox focuses its eyes on it, then approaches and sniffs without eating. Keep exactly one food serving. End with the nose close to the food.`,
+    2: `The fox catches ${route.scent}, stops, turns its head toward the scent, and follows it carefully at a slow pace. ${foodStage2}`,
+    3: `${foodStage3} Keep exactly one food serving. End with the nose close to the food.`,
     4: `Show natural eating only. ${foodEatingPlan(food)} Keep the final 20–25% remainder visible. End with a tiny light at one ear tip or front paw; no body transformation yet.`,
     5: `The fox steps back from the same 20–25% ${food} remainder as the tiny light slowly travels into the chest fur. Reveal only a first ${colors} reflection; keep moving and do not complete the change.`,
     6: `Build a cumulative 35–50% ${feature}-inspired physical design across chest, upper back, both ear edges, and three tail tips. Every change stays visible; the fox watches one tail in surprise.`,
@@ -321,8 +343,8 @@ function oneMinuteClipPrompt(stage){
   };
   const walk = {
     1: `The fox is ${route.setup} beside its owner, the single person from the supplied human reference. Show both naturally walking in the same frame; the owner is calm and present, not cropped to a hand. The fox takes two soft paw steps, slows, and searches the path ahead. The food is NOT visible yet; do not let the fox walk past, step over, or ignore any food. ${ownerLock} End while the searching action continues.`,
-    2: `The fox catches ${route.scent}, stops, turns its head toward the scent, and carefully follows it while the referenced owner follows naturally. During seconds 0–3, no food is visible. During seconds 3–8, the fox and camera make one continuous small curved move around an already-visible foreground stone, leaf, planter, or path edge. As a result of that move, one prepared serving of ${food} gradually enters from behind that existing foreground object: first only its dish or wrapper edge, then the full same serving by the final frame. It must be revealed by occlusion and parallax, never pop into an empty area, dissolve in, or replace an existing object. The fox has not noticed it yet; end with both front paws planted while its nose and eyes still track the scent. ${ownerLock}`,
-    3: `Continue from the exact clip-2 final frame where the same one prepared serving of ${food} is already visibly resting ${route.discovery}. Do not create, reveal, replace, resize, or move the food at the start of this clip. Within the first second, the fox finally notices the already-present food and comes to a complete stop before reaching it, then sniffs without eating. The referenced owner stands naturally nearby, looks down at the food, and gives one small pointing gesture. The owner quietly says “어, 그건 어디서 났지?” ${ownerLock} Keep exactly one food serving.`,
+    2: `The fox catches ${route.scent}, stops, turns its head toward the scent, and carefully follows it while the referenced owner follows naturally. ${foodStage2} ${ownerLock}`,
+    3: `${foodStage3} The referenced owner stands naturally nearby and looks down at the food. The owner quietly says “어, 그건 어디서 났지?” ${ownerLock} Keep exactly one food serving.`,
     4: `Show natural eating only. ${foodEatingPlan(food)} Keep the final 20–25% remainder visible. The referenced owner remains naturally in the same scene, watching without blocking the fox or food. End with a tiny light at one ear tip or front paw. ${ownerLock}`,
     5: `The tiny light travels into the fox’s chest fur while the same 20–25% ${food} remainder stays in place. The referenced owner notices it, takes one small concerned half-step, then stops without touching the fox. One short Korean line: “아이고, 또 먹었네.” ${ownerLock} Reveal only a first ${colors} reflection.`,
     6: `Build a cumulative 35–50% ${feature}-inspired physical design across chest, upper back, both ear edges, and three tail tips. The fox takes one surprised backward step. The referenced owner stays naturally in the background or kneels at the edge of frame, watching the fox without covering any changed area. ${ownerLock}`,
@@ -356,10 +378,14 @@ function oneMinuteFirstImagePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const route = current?.storyRoute || oneMinuteRoutes[3];
-  const ownerSetup = route.owner
-    ? 'The unseen owner is only implied by the setting; do not show any human hand, face, body, reflection, shadow, or text in this first image.'
-    : 'The fox is alone; do not show any person, hand, reflection, shadow, or companion.';
-  return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and bright ethereal pastel illustration style while creating a new vertical composition. Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. The food has NOT been discovered yet: do not show any food, plate, wrapper, crumbs, or food-like prop in this first image. The fox must be looking ahead as if it is about to notice a scent, not walking past something it has already seen. ${ownerSetup}\n\nUse the fox reference’s soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy fantasy rendering across both character and background. No transformation, no glow on the body, no bite mark, no food, no plate, no wrapper, no duplicate prop, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no human figure, no photorealism, and no dark style.`;
+  const introduction = current?.foodIntroduction || episodeFoodIntroduction(route);
+  if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
+  const humanSetup = route.owner
+    ? `Also attach the user’s separate human reference image as a Reference/Ingredient. Show only the single referenced owner walking naturally beside the fox; preserve the person’s face, hairstyle, hair ornaments, and costume. ${introduction.id === 'owner-gives' ? 'Include one small CLOSED carry pouch held by the owner; it contains nothing visible yet and is not a food prop.' : ''}`
+    : introduction.id === 'passerby-gives'
+      ? 'Show one single friendly passerby far in the background on the same path, small but visible enough to remain the same person in the next clip. The passerby carries no visible food yet.'
+      : 'The fox is alone; do not show any person, hand, reflection, shadow, or companion.';
+  return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and bright ethereal pastel illustration style while creating a new vertical composition. Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. The food has NOT been discovered yet: do not show any food, plate, wrapper, crumbs, or food-like prop in this first image. The fox must be looking ahead as if it is about to notice a scent, not walking past something it has already seen. ${humanSetup}\n\nUse the fox reference’s soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy fantasy rendering across both character and background. No transformation, no glow on the body, no bite mark, no food, no plate, no wrapper, no duplicate prop, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no extra person beyond any person explicitly requested above, no photorealism, and no dark style.`;
 }
 function stagePrompt(storyboard, stage){
   if (current?.oneMinute && stage === 0) return oneMinuteFirstImagePrompt();
@@ -460,10 +486,11 @@ function buildPrompt(data){
   const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : randomFoodData(usedFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
   const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes), bgm = pick(bgmCues);
+  const foodIntroduction = episodeFoodIntroduction(storyRoute);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
   const [food, feature, colors] = foodData;
-  const signature = [normalize(food), normalize(place), method[0], ending, data.lengthMode || 'short', storyRoute.id, bgm.title].join('|');
+  const signature = [normalize(food), normalize(place), method[0], ending, data.lengthMode || 'short', storyRoute.id, foodIntroduction.id, bgm.title].join('|');
   const title = `${food} · ${place}`;
   const notes = data.notes ? `사용자 지정 조건: ${data.notes}\n` : '';
   const masterContract = masterContinuityContract(food, feature, colors, place);
@@ -488,7 +515,7 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, bgm, summary: `${place} · ${method[0]} · ${ending} · BGM: ${bgm.title}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
