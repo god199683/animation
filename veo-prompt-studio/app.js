@@ -303,8 +303,16 @@ function foxVoiceInstruction(stage){
   };
   return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing. Never bark, yelp, howl, growl, pant, whine like a dog, or make any dog-like sound.`;
 }
+function pickHumanDialogue(owner){
+  const lines = owner
+    ? ['저… 제가 사람이 된 건가요?', '이 목소리… 제 목소리예요?', '주인님, 저를 알아보시겠어요?', '저, 이제 손이 생겼어요.', '이상해요… 그런데 무섭지는 않아요.']
+    : ['나… 정말 사람이 된 거야?', '이 목소리, 내 목소리야?', '손이… 사람 손이 됐어.', '낯설지만, 이상하게 따뜻해.', '이제 혼자서도 말할 수 있어.'];
+  return pick(lines);
+}
 function humanVoiceInstruction(owner){
-  const line = owner ? '저… 제가 사람이 된 건가요?' : '나… 정말 사람이 된 거야?';
+  // One line is selected for each generated episode and retained in its saved record.
+  const line = current?.humanDialogue || pickHumanDialogue(owner);
+  if (current && !current.humanDialogue) current.humanDialogue = line;
   return `Character voice: speak exactly one short natural Korean line, “${line}” in a clear, gentle young-adult human voice with accurate visible lip-sync from the transformed human mouth. This is spoken human dialogue, not a fox chirp, trill, animal sound, narration, or singing. No barking, yelping, howling, growling, panting, or dog-like sound.`;
 }
 function oneMinuteClipPrompt(stage){
@@ -535,7 +543,7 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
