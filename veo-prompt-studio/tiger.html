@@ -18,7 +18,6 @@
         <div class="panel-heading"><p class="eyebrow">BABY TIGER FOOD STORY</p><h2>음식 만들기·판매 에피소드</h2><p>스토리보드를 먼저 확인한 뒤, 8개 클립 프롬프트를 만듭니다.</p></div>
         <label>음식 <input id="theme" placeholder="비워두면 제한 없이 랜덤" /></label>
         <label>장소 <input id="place" placeholder="비워두면 랜덤 장소" /></label>
-        <label>이야기 방식 <select id="mode"><option value="random">랜덤 · 만들기 또는 판매</option><option value="make">음식 만들기</option><option value="sell">음식 판매</option></select></label>
         <label>추가 조건 <textarea id="notes" rows="4" placeholder="원하는 분위기, 행동, 소품"></textarea></label>
         <button id="generate" class="primary">스토리보드 생성</button>
         <p class="hint">Google Flow에서 클립 1부터 순서대로 만들고, 매번 이전 클립의 마지막 프레임을 다음 Start Frame으로 사용하세요.</p>
@@ -29,6 +28,6 @@
       </section>
     </section>
   </main>
-  <script src="tiger-food.js"></script><script>window.addEventListener('load',()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=()=>window.connectTigerSupabase?.();document.head.appendChild(s);});</script>
+  <script src="tiger-food-v2.js"></script><script>window.addEventListener('load',()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=()=>window.connectTigerSupabase?.();document.head.appendChild(s);});</script>
 </body>
 </html>
