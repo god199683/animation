@@ -20,6 +20,9 @@
       "archive.js",
       "tiger.html",
       "tiger.js",
+      "tiger-food.js",
+      "tiger-archive.html",
+      "tiger-archive.js",
       "main.js",
       "preload.js",
       "package.json"
