@@ -468,6 +468,7 @@ function oneMinuteFirstImagePrompt(){
   return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and bright ethereal pastel illustration style while creating a new vertical composition. Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. The food has NOT been discovered yet: do not show any food, plate, wrapper, crumbs, or food-like prop in this first image. The fox must be looking ahead as if it is about to notice a scent, not walking past something it has already seen. ${humanSetup}\n\nUse the fox reference’s soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy fantasy rendering across both character and background. No transformation, no glow on the body, no bite mark, no food, no plate, no wrapper, no duplicate prop, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no extra person beyond any person explicitly requested above, no photorealism, and no dark style.`;
 }
 function stagePrompt(storyboard, stage){
+  if (current?.oneMinute && current.clipPrompts?.[stage]) return current.clipPrompts[stage];
   if (current?.oneMinute && stage === 0) return oneMinuteFirstImagePrompt();
   if (current?.oneMinute && stage >= 1 && stage <= 8) return oneMinuteClipPrompt(stage);
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
@@ -501,6 +502,13 @@ function stagePrompt(storyboard, stage){
   const finalReference = stage === 4 ? 'If a generated “clip 4 final-transformation reference image” is attached as an additional Ingredient, match its completed materials exactly. Keep the saved final frame of clip 3 as the only Start Frame; do not replace it with the reference image. The clip-3 partial reference is not needed for clip 4.' : '';
   return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, humanCameoDirection, motion].filter(Boolean).join('\n\n');
 }
+function cacheEpisodeClipPrompts(){
+  if(!current?.oneMinute) return;
+  current.clipPrompts ||= [];
+  for(let stage=0;stage<=8;stage++){
+    if(!current.clipPrompts[stage]) current.clipPrompts[stage]=stage===0?oneMinuteFirstImagePrompt():oneMinuteClipPrompt(stage);
+  }
+}
 async function copyText(text){
   try{
     if(window.desktopClipboard?.writeText){
@@ -524,17 +532,20 @@ async function copyText(text){
   }
 }
 async function copyStage(stage){
-  const storyboard = current?.storyboard || savedStoryboard(current);
-  const text = stagePrompt(storyboard, stage);
-  if (!text) return alert('이 단계의 복사할 프롬프트를 찾지 못했습니다. 스토리보드를 다시 생성해 주세요.');
   const button = document.querySelector(`#stage-copy-actions [data-stage="${stage}"]`);
   const label=button?.textContent;
   try{
+    if(button) button.textContent='복사 중…';
+    if(current?.oneMinute) cacheEpisodeClipPrompts();
+    const storyboard = current?.storyboard || savedStoryboard(current);
+    const text = current?.oneMinute ? current.clipPrompts?.[stage] : stagePrompt(storyboard, stage);
+    if (!text) throw new Error('이 단계의 프롬프트를 만들지 못했습니다.');
     await copyText(text);
     if(button){button.textContent='복사됨';setTimeout(()=>button.textContent=label,1200)}
-  }catch{
+  }catch(error){
+    console.error('클립 프롬프트 복사 실패:', error);
     if(button){button.textContent='복사 실패';setTimeout(()=>button.textContent=label,1600)}
-    alert('클립 프롬프트를 클립보드에 복사하지 못했습니다. 다시 눌러 주세요.');
+    alert(`클립 프롬프트 복사에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
   }
 }
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
@@ -767,7 +778,7 @@ $('generate').onclick = async () => {
   button.disabled = true; button.textContent = '보관함 중복 확인 중…';
   try {
     if (dbClient && userId) await loadArchive();
-    current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('episode-preview').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
+    current = buildPrompt(selectedInputs()); if(current.oneMinute) cacheEpisodeClipPrompts(); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('episode-preview').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
     if (current.oneMinute) await $('storyboard').onclick();
   } catch (error) { alert(error?.message || '보관함 중복 확인 중 오류가 발생했습니다.'); }
   finally { button.disabled = false; button.textContent = previousText; }
