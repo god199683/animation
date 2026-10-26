@@ -893,7 +893,8 @@ $('episode-preview').onclick = () => {
   if(!current) return;
   $('result-title').textContent = `${current.title || '생성 결과'} · 영상 흐름 미리보기`;
   $('output').textContent = episodePreviewText();
-  setStageCopyActions(false);
+  // The preview is only a different view of the same generated episode; keep its clip-copy controls available.
+  setStageCopyActions(Boolean(current.oneMinute));
   $('copy').disabled = false;
 };
 $('archive').onclick = archiveCurrent;
