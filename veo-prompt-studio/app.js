@@ -224,17 +224,19 @@ function episodePreviewText(){
   if(!current.foodIntroduction) current.foodIntroduction=introduction;
   const [,feature,colors]=foodProfile(food);
   const humanDesign=foodHumanizationDesign(food,feature,colors);
-  const companion=route.owner
-    ? '첨부한 사람 기준 이미지의 같은 주인 캐릭터가 처음부터 끝까지 등장합니다. 여우의 외형에는 영향을 주지 않습니다.'
-    : introduction.id==='passerby-gives'
-      ? '행인 한 명이 같은 장소에서 자연스럽게 다가와 음식을 건네고, 전달 뒤에는 장면 밖으로 나갑니다.'
-      : '여우가 혼자 탐험하는 이야기입니다.';
-  const foodArrival=introduction.id==='owner-gives'
-    ? '주인이 첫 이미지부터 들고 있던 닫힌 파우치를 열어 음식을 꺼냅니다.'
-    : introduction.id==='passerby-gives'
-      ? '처음부터 멀리 보이던 행인이 걸어와 손으로 음식을 건넵니다.'
-      : '돌·잎·화분 같은 이미 보이던 전경 뒤에서 카메라 이동과 함께 음식이 서서히 드러납니다.';
-  return `[에피소드 영상 미리보기 · 약 64초 / 8클립]\n\n한 줄 이야기: ${place}을(를) 걷던 흰 아홉꼬리 여우가 ${food}을(를) 발견해 조금만 먹고, 그 음식의 색·질감에서 영감을 받은 인간 여성 모습으로 자연스럽게 변하는 한 편의 짧은 애니메이션입니다.\n\n[등장 방식]\n${companion}\n음식은 처음 이미지와 클립 1에서는 절대 보이지 않습니다. 클립 2에서만 ${foodArrival}\n\n[실제 화면의 흐름]\n1. 0–8초 · 산책 또는 탐험 — 주인과 산책하거나 혼자 같은 장소를 탐험하며, 낯선 향기에 반응합니다. 음식은 아직 화면에 없습니다.\n2. 8–16초 · 음식으로 향함 — 주인이 음식을 자연스럽게 건네거나, 여우가 향기를 따라 음식이 있는 곳으로 갑니다. 음식은 갑자기 나타나지 않습니다.\n3. 16–24초 · 냄새 맡기 — 이미 놓이거나 건네진 음식 앞에서 멈춰 서서 냄새를 맡습니다. 아직 먹지 않습니다.\n4. 24–32초 · 조금만 섭취 — 같은 음식 한 개의 20–25%만 자연스럽게 먹고, 75–80%는 같은 접시·포장지에 남깁니다. 귀 끝 또는 앞발에서 아주 작은 빛이 시작됩니다.\n5. 32–40초 · 인간화 시작 — 남은 음식은 그대로 둔 채, 가슴 털·머리카락 빛·앞발과 얼굴 윤곽에서 첫 인간화 징후가 시작됩니다.\n6. 40–48초 · 사람 형태 등장 — 사람 피부·사람 손·사람 얼굴 윤곽이 나타나고, 음식에 어울리는 랜덤한 완성 의상을 이미 입은 상태가 됩니다. 여우 귀와 정확히 아홉 꼬리는 유지합니다.\n7. 48–56초 · 음식 기반 디자인 완성 중 — 인간 여성 얼굴이 안정되고, 음식 기반 헤어·눈·의상 색·장식이 50–70%까지 뚜렷하게 갖춰집니다.\n8. 56–64초 · 결말 — 우유빛 피부의 완전한 젊은 성인 인간 여성으로 완성됩니다. 여우 귀 2개와 아홉 꼬리, 이마 꽃문양·목걸이·펜던트만 남깁니다. 랜덤한 짧은 한국어 대사와 자연스러운 포즈로 끝나며, 주인 에피소드라면 주인과 짧은 대사·손잡기·미소 같은 상호작용도 합니다.\n\n[변화 디자인]\n${food}의 특징인 ${feature}와 ${colors}을(를) 바탕으로, ${humanDesign} 방향의 헤어·눈·의상·장식으로 완성됩니다.\n\n[이어짐 원칙]\n첫 이미지를 만든 뒤 클립 1을 만들고, 클립 2~8은 반드시 바로 전 영상의 마지막 저장 프레임을 유일한 Start Frame으로 사용합니다. 배경·조명·카메라는 장면 전환 없이 실제 이동과 시차로만 변합니다. BGM은 64초짜리 한 곡을 여덟 구간으로 나눈 같은 음악입니다.`;
+  const clip1=route.owner ? '첨부한 사람 기준 이미지의 같은 주인과 나란히 산책하며 향기에 반응합니다.' : '아무 사람 없이 혼자 같은 장소를 탐험하며 향기에 반응합니다.';
+  const clip2=route.owner && introduction.id==='owner-gives'
+    ? `주인이 닫힌 파우치를 열어 ${food} 한 개를 꺼내 여우 눈높이로 건넵니다.`
+    : `여우가 ${route.scent}을(를) 따라가고, 카메라 이동 중 전경 뒤에서 ${food} 한 개가 서서히 드러납니다.`;
+  const clip3=route.owner && introduction.id==='owner-gives'
+    ? `주인이 ${food}을(를) 같은 접시·바닥에 내려놓은 뒤, 여우가 멈춰 냄새만 맡습니다.`
+    : `이미 보이게 된 ${food} 앞에서 멈춰 냄새만 맡습니다.`;
+  const womanLine=current.humanDialogue||pickHumanDialogue(Boolean(route.owner));
+  if(!current.humanDialogue) current.humanDialogue=womanLine;
+  const ownerLine=route.owner ? (current.ownerDialogue||pickOwnerEndingDialogue()) : '';
+  if(route.owner&&!current.ownerDialogue) current.ownerDialogue=ownerLine;
+  const endingAction=route.owner ? ownerEndingActionInfo().ko : '혼자 한 번 숨을 고르고 부드러운 꼬리 움직임과 함께 자연스럽게 포즈를 마무리하기';
+  return `[이 프롬프트로 만들어질 영상 흐름 · 약 64초 / 8클립]\n\n작품: ${current.title}\n장소: ${place}\n음식: ${food}\n음식 기반 인간화 디자인: ${humanDesign}\n\n1. 0–8초 · ${clip1}\n2. 8–16초 · ${clip2}\n3. 16–24초 · ${clip3}\n4. 24–32초 · ${food}의 20–25%만 먹고, 같은 접시·포장지에 75–80%를 남깁니다. 귀 끝 또는 앞발에서 작은 변화 빛이 시작됩니다.\n5. 32–40초 · 남은 음식은 그대로 둔 채, 가슴·머리카락 빛·앞발과 얼굴 윤곽에서 인간화가 시작됩니다.\n6. 40–48초 · 사람 피부·사람 손·사람 얼굴 윤곽이 나타나며, 위 음식 디자인에 맞는 완성 의상을 이미 입고 있습니다. 여우 귀 2개와 아홉 꼬리는 유지합니다.\n7. 48–56초 · 인간 여성 얼굴이 안정되고, 위 디자인의 헤어·눈·의상 색·장식이 50–70%까지 고정됩니다.\n8. 56–64초 · 완전한 인간 여성으로 마무리합니다. 캐릭터 대사: “${womanLine}”${route.owner ? ` / 주인 대사: “${ownerLine}” / 마지막 상호작용: ${endingAction}` : ` / 마지막 행동: ${endingAction}`}.\n\n[연결 방식]\n첫 이미지를 만든 뒤 클립 1을 만들고, 클립 2~8은 바로 전 영상의 마지막 저장 프레임만 Start Frame으로 사용합니다. 이 결과의 BGM은 64초짜리 한 곡을 8개 구간으로 나눈 동일한 음악입니다.`;
 }
 function thirdKeyframePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -353,6 +355,19 @@ function humanVoiceInstruction(owner){
 function pickOwnerEndingDialogue(){
   return pick(['그래도 네가 맞구나.', '많이 놀랐지? 괜찮아.', '이제 네 마음을 들을 수 있네.', '어떤 모습이어도 내 곁에 있어.', '천천히 이야기해 줘.', '드디어 네 목소리를 들었어.', '손을 잡아도 될까?', '다음 산책도 같이 가자.']);
 }
+function pickOwnerEndingAction(){
+  return pick([
+    { ko:'주인이 내민 손을 조심스럽게 잡고 함께 미소 짓기', en:'she gently accepts the owner’s offered hand and they share one warm smile' },
+    { ko:'주인이 어깨를 다정히 감싸고 서로 마주 보기', en:'the owner gives her one careful shoulder touch and they look at one another warmly' },
+    { ko:'주인이 손등을 가볍게 쓰다듬고 고개를 끄덕이기', en:'the owner lightly strokes the back of her human hand and nods reassuringly' },
+    { ko:'나란히 한 걸음 걸으며 같은 방향을 바라보기', en:'they take one small step side by side and look ahead together' }
+  ]);
+}
+function ownerEndingActionInfo(){
+  const action=current?.ownerEndingAction||pickOwnerEndingAction();
+  if(current&&!current.ownerEndingAction) current.ownerEndingAction=action;
+  return action;
+}
 function ownerEndingVoiceInstruction(owner){
   if(!owner) return '';
   const line=current?.ownerDialogue||pickOwnerEndingDialogue();
@@ -387,6 +402,7 @@ function oneMinuteClipPrompt(stage){
   const ownerLock = 'HUMAN REFERENCE RULE: For this owner episode, attach the user’s separate human reference image as an additional Ingredient in every clip. Show the single human character from that reference when the action calls for the owner: preserve that person’s recognizable face, hairstyle, hair ornaments, costume silhouette, sleeve colors, and gentle storybook style. Use the human reference ONLY for the person; never use it to alter the fox, food, setting, camera, or background. Ignore any text, logos, and any animal visible in the human reference. Never add a second person, replace the referenced person, or change their outfit between clips. Any spoken line is one short natural Korean line only.';
   const introduction = introductionForRoute(route,current?.foodIntroduction);
   if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
+  const ownerEndingAction = owner ? ownerEndingActionInfo() : null;
   const foundStage2 = `During seconds 0–3, no food is visible. During seconds 3–8, the fox and camera make one continuous small curved move around an already-visible foreground stone, leaf, planter, or path edge. As a result of that move, one prepared serving of ${food} gradually enters from behind that existing foreground object: first only its dish or wrapper edge, then the full same serving by the final frame. It must be revealed by occlusion and parallax, never pop into an empty area, dissolve in, or replace an existing object. The fox has not noticed it yet; end with both front paws planted while its nose and eyes still track the scent.`;
   const foundStage3 = `Continue from the exact clip-2 final frame where the same one prepared serving of ${food} is already visibly resting ${route.discovery}. Do not create, reveal, replace, resize, or move the food at the start of this clip. Within the first second, the fox finally notices the already-present food and comes to a complete stop before reaching it. The fox focuses its eyes on it, then approaches and sniffs without eating.`;
   const ownerGiveStage2 = `During seconds 0–3, no food is visible. The referenced owner notices the fox tracking a scent, then naturally opens the same small closed carry pouch already visible in the Start Frame. During seconds 3–8, the owner slowly takes out exactly one prepared serving of ${food} and holds it at the fox’s eye level. The food must emerge continuously from the opened pouch through the owner’s hand, never pop into empty space or replace any object. The fox has not eaten yet and watches the owner’s hand.`;
@@ -413,7 +429,7 @@ function oneMinuteClipPrompt(stage){
     5: `The tiny light travels into the fox’s chest fur while the same 75–80% remaining ${food} serving stays in place. Begin only the first clear fox-to-human change: soft ${colors} hair glints, a hand-like front-paw silhouette, and a visibly more human facial outline. The referenced owner notices it and takes one small concerned half-step, then stops without touching the fox. ${ownerLock}`,
     6: `Build a cumulative 35–50% food-inspired fox-human form. The character rises partway upright with two human hands and a visibly humanizing face with smooth milky-pale skin, human nose, lips, and jawline; never retain a complete fox face. She is ALREADY wearing one complete, modest, coherent food-inspired fantasy outfit—not bare skin, not floating fabric, and not food pieces—with this randomly selected food-based design: ${humanDesign}. Keep two fox ears, forehead flower marking, necklace, pendant, and exactly NINE distinct full-size fluffy tails continuously visible. The referenced owner stays naturally in the background or kneels at the edge of frame, watching without covering any changed area. ${ownerLock}`,
     7: `Continue to a stable 50–70% fox-human state. The face is now an unmistakably beautiful young-adult HUMAN face with smooth luminous milky-pale skin, human forehead, cheekbones, nose, lips, jawline, and human-shaped eyes. Refine the FOOD-BASED DESIGN now: visibly establish the ${humanDesign} hair color, eye color, outfit palette, trim, and matching hair or clothing ornaments. These are physical, persistent details; do not flicker, replace, hide, or revert them. Keep the upright partial human body, two fox ears, forehead flower marking, necklace, pendant, and exactly NINE distinct full-size fluffy tails visible and unchanged. The referenced owner reacts quietly with a softened expression. ${ownerLock}`,
-    8: `FINAL FORM — HIGHEST PRIORITY: complete the transformation into ONE beautiful young-adult HUMAN WOMAN, not an anthropomorphic fox, not an animal girl with a fox head, and not a chibi creature. Her entire face is human female anatomy: luminous milky-pale human skin, feminine human forehead, temples, cheekbones, human eyebrows, normal human nose and nostrils, human lips, human chin and jawline, and human-shaped eyes in the food-inspired eye color. Her body is a fully upright feminine human body with human shoulders, arms, hands, torso, legs, and feet; do not leave paws, a muzzle, fur-covered skin, or animal proportions. The ONLY fox traits allowed are exactly two fox ears and exactly nine fluffy tails, plus the forehead flower marking, necklace, and pendant. Complete the food-inspired hairstyle and fully formed outfit from this design: ${humanDesign}. The transformed woman speaks her short Korean line, then shares one gentle natural final interaction with the referenced owner—such as accepting the owner’s offered hand, lightly holding hands, smiling together, or receiving a careful shoulder touch—while the owner replies with the selected short Korean line. Do not use the same ending gesture every episode. ${ownerLock} Finish in a natural relaxed pose with a gentle tail movement.`
+    8: `FINAL FORM — HIGHEST PRIORITY: complete the transformation into ONE beautiful young-adult HUMAN WOMAN, not an anthropomorphic fox, not an animal girl with a fox head, and not a chibi creature. Her entire face is human female anatomy: luminous milky-pale human skin, feminine human forehead, temples, cheekbones, human eyebrows, normal human nose and nostrils, human lips, human chin and jawline, and human-shaped eyes in the food-inspired eye color. Her body is a fully upright feminine human body with human shoulders, arms, hands, torso, legs, and feet; do not leave paws, a muzzle, fur-covered skin, or animal proportions. The ONLY fox traits allowed are exactly two fox ears and exactly nine fluffy tails, plus the forehead flower marking, necklace, and pendant. Complete the food-inspired hairstyle and fully formed outfit from this design: ${humanDesign}. The transformed woman speaks her short Korean line, then performs this exact final interaction with the referenced owner: ${ownerEndingAction.en}. The owner replies with the selected short Korean line. ${ownerLock} Finish in a natural relaxed pose with a gentle tail movement.`
   };
   const action = (owner ? walk : solo)[stage];
   const sound = `${bgmSegmentInstruction(stage, 8)} ${stage === 8 ? `${humanVoiceInstruction(owner)} ${ownerEndingVoiceInstruction(owner)}` : foxVoiceInstruction(stage)} Use only soft synchronized foley and the same ${place} ambience.`;
@@ -592,7 +608,7 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingDialogue() : '', summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
+  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingDialogue() : '', ownerEndingAction: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingAction() : null, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
