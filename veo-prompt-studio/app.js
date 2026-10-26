@@ -213,6 +213,30 @@ const INGESTION_PROGRESS_SUFFIXES = [
   '', ''
 ];
 function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; document.querySelectorAll('[data-long]').forEach(button => { button.hidden = !current?.oneMinute; }); }
+function episodePreviewText(){
+  if(!current) return '';
+  const food=current.food||current.title?.split(' · ')[0]||'선택한 음식';
+  const place=current.title?.split(' · ')[1]||'선택한 장소';
+  if(!current.oneMinute){
+    return `[영상 흐름 미리보기 · 32초 / 4클립]\n\n이 버전은 음식을 발견하고, 자연스럽게 먹은 뒤, 음식에서 얻은 장식·색·질감으로 같은 아홉꼬리 여우가 변화하는 짧은 이야기입니다.\n\n1. 0–8초 — ${place}에서 ${food}을(를) 발견하고 냄새를 탐색합니다.\n2. 8–16초 — 같은 음식 한 개를 자연스럽게 먹고, 마지막에 작은 변화 빛이 시작됩니다.\n3. 16–24초 — 빛이 털·귀·꼬리로 번지며 중간 변화 상태가 됩니다.\n4. 24–32초 — 앞 단계의 변화를 유지한 채 남은 디자인을 완성하고, 자연스러운 마지막 행동으로 마무리합니다.\n\n연결 방식: 첫 이미지를 만든 뒤 클립 1을 만들고, 매번 바로 전 클립의 마지막 저장 프레임만 다음 클립 Start Frame으로 사용합니다.`;
+  }
+  const route=current.storyRoute||oneMinuteRoutes[3];
+  const introduction=current.foodIntroduction||episodeFoodIntroduction(route);
+  if(!current.foodIntroduction) current.foodIntroduction=introduction;
+  const [,feature,colors]=foodProfile(food);
+  const humanDesign=foodHumanizationDesign(food,feature,colors);
+  const companion=route.owner
+    ? '첨부한 사람 기준 이미지의 같은 주인 캐릭터가 처음부터 끝까지 등장합니다. 여우의 외형에는 영향을 주지 않습니다.'
+    : introduction.id==='passerby-gives'
+      ? '행인 한 명이 같은 장소에서 자연스럽게 다가와 음식을 건네고, 전달 뒤에는 장면 밖으로 나갑니다.'
+      : '여우가 혼자 탐험하는 이야기입니다.';
+  const foodArrival=introduction.id==='owner-gives'
+    ? '주인이 첫 이미지부터 들고 있던 닫힌 파우치를 열어 음식을 꺼냅니다.'
+    : introduction.id==='passerby-gives'
+      ? '처음부터 멀리 보이던 행인이 걸어와 손으로 음식을 건넵니다.'
+      : '돌·잎·화분 같은 이미 보이던 전경 뒤에서 카메라 이동과 함께 음식이 서서히 드러납니다.';
+  return `[에피소드 영상 미리보기 · 약 64초 / 8클립]\n\n한 줄 이야기: ${place}을(를) 걷던 흰 아홉꼬리 여우가 ${food}을(를) 발견해 먹고, 그 음식의 색·질감에서 영감을 받은 인간 여성 모습으로 자연스럽게 변하는 한 편의 짧은 애니메이션입니다.\n\n[등장 방식]\n${companion}\n음식은 처음 이미지와 클립 1에서는 절대 보이지 않습니다. 클립 2에서만 ${foodArrival}\n\n[실제 화면의 흐름]\n1. 0–8초 · 탐색 — 여우가 같은 장소를 천천히 걷다가 낯선 향기에 반응합니다. 음식은 아직 화면에 없습니다.\n2. 8–16초 · 향기를 따라감 — 고개와 귀를 돌려 향기를 따라가며, 음식이 갑자기 나타나지 않고 자연스럽게 화면 안으로 들어옵니다.\n3. 16–24초 · 발견 — 이미 놓이거나 건네진 음식 앞에서 멈춰 서서 냄새를 맡습니다. 아직 먹지 않습니다.\n4. 24–32초 · 섭취 — 같은 음식 한 개를 실제 동작처럼 먹고, 마지막에 20–25%만 남깁니다. 귀 끝 또는 앞발에서 아주 작은 빛이 시작됩니다.\n5. 32–40초 · 변화의 시작 — 남은 음식은 그대로 둔 채, 가슴 털·머리카락 빛·앞발에서 첫 인간화 징후가 시작됩니다.\n6. 40–48초 · 중간 인간화 — 피부와 얼굴 윤곽이 사람 형태로 바뀌고, 사람 손과 부분 의상이 나타납니다. 아홉 꼬리는 정확히 9개를 계속 유지합니다.\n7. 48–56초 · 거의 완성 — 아름다운 인간 여성 얼굴, 음식색 머리·눈·의상이 50–70%까지 안정적으로 완성됩니다. 여우 주둥이로 되돌아가지 않습니다.\n8. 56–64초 · 완성 결말 — 우유빛 피부의 완전한 젊은 성인 인간 여성으로 완성됩니다. 여우 귀 2개와 아홉 꼬리, 이마 꽃문양·목걸이·펜던트만 남기고, 한 줄의 자연스러운 한국어 대사와 함께 부드럽게 마무리합니다.\n\n[변화 디자인]\n${food}의 특징인 ${feature}와 ${colors}을(를) 바탕으로, ${humanDesign} 방향의 헤어·눈·의상으로 완성됩니다.\n\n[이어짐 원칙]\n첫 이미지를 만든 뒤 클립 1을 만들고, 클립 2~8은 반드시 바로 전 영상의 마지막 저장 프레임을 유일한 Start Frame으로 사용합니다. 배경·조명·카메라는 장면 전환 없이 실제 이동과 시차로만 변합니다. BGM은 64초짜리 한 곡을 여덟 구간으로 나눈 같은 음악입니다.`;
+}
 function thirdKeyframePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
@@ -686,7 +710,7 @@ $('generate').onclick = async () => {
   button.disabled = true; button.textContent = '보관함 중복 확인 중…';
   try {
     if (dbClient && userId) await loadArchive();
-    current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
+    current = buildPrompt(selectedInputs()); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('episode-preview').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
     if (current.oneMinute) await $('storyboard').onclick();
   } catch (error) { alert(error?.message || '보관함 중복 확인 중 오류가 발생했습니다.'); }
   finally { button.disabled = false; button.textContent = previousText; }
@@ -836,6 +860,13 @@ $('flow-prompt').onclick = () => {
   setStageCopyActions(false);
   $('copy').disabled = false;
 };
+$('episode-preview').onclick = () => {
+  if(!current) return;
+  $('result-title').textContent = `${current.title || '생성 결과'} · 영상 흐름 미리보기`;
+  $('output').textContent = episodePreviewText();
+  setStageCopyActions(false);
+  $('copy').disabled = false;
+};
 $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
@@ -859,6 +890,7 @@ function restoreOpenedArchive(){
     setStageCopyActions(isExtendStoryboard || isLongStoryboard);
     $('original-prompt').disabled = false;
     $('flow-prompt').disabled = false;
+    $('episode-preview').disabled = false;
     $('storyboard').disabled = false;
     $('regenerate-storyboard').disabled = Boolean(isExtendStoryboard && !isLongStoryboard);
     $('copy').disabled = false;
