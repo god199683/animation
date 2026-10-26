@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -52,6 +52,10 @@ ipcMain.handle('updater:apply', async () => {
   spawn(process.env.SystemRoot + '\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
   setTimeout(() => app.quit(), 200);
   return { started: true };
+});
+ipcMain.handle('clipboard:write', (_event, text) => {
+  clipboard.writeText(String(text || ''));
+  return true;
 });
 
 const createWindow = () => {

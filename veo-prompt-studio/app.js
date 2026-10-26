@@ -503,6 +503,10 @@ function stagePrompt(storyboard, stage){
 }
 async function copyText(text){
   try{
+    if(window.desktopClipboard?.writeText){
+      await window.desktopClipboard.writeText(text);
+      return true;
+    }
     await navigator.clipboard.writeText(text);
     return true;
   }catch{
