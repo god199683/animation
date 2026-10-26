@@ -131,16 +131,15 @@ const oneMinuteRoutes = [
   { id: 'solo-lantern', owner: false, setup: 'following lantern light along a twilight path alone', scent: 'a gentle scent carried on the evening breeze', discovery: 'near a small stone lantern' }
 ];
 function episodeFoodIntroduction(route){
-  const modes = route?.owner
-    ? [
-        { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
-        { id: 'owner-gives', label: '주인이 자연스럽게 음식을 꺼내 건넴' }
-      ]
-    : [
-        { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
-        { id: 'passerby-gives', label: '행인이 자연스럽게 음식을 건넴' }
-      ];
-  return pick(modes);
+  if(!route?.owner) return { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
+  return pick([
+    { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
+    { id: 'owner-gives', label: '주인이 자연스럽게 음식을 꺼내 건넴' }
+  ]);
+}
+function introductionForRoute(route, savedIntroduction){
+  // A solo episode must remain solo even when an older saved record used a passerby route.
+  return route?.owner ? (savedIntroduction || episodeFoodIntroduction(route)) : { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
 }
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
@@ -221,7 +220,7 @@ function episodePreviewText(){
     return `[영상 흐름 미리보기 · 32초 / 4클립]\n\n이 버전은 음식을 발견하고, 자연스럽게 먹은 뒤, 음식에서 얻은 장식·색·질감으로 같은 아홉꼬리 여우가 변화하는 짧은 이야기입니다.\n\n1. 0–8초 — ${place}에서 ${food}을(를) 발견하고 냄새를 탐색합니다.\n2. 8–16초 — 같은 음식 한 개를 자연스럽게 먹고, 마지막에 작은 변화 빛이 시작됩니다.\n3. 16–24초 — 빛이 털·귀·꼬리로 번지며 중간 변화 상태가 됩니다.\n4. 24–32초 — 앞 단계의 변화를 유지한 채 남은 디자인을 완성하고, 자연스러운 마지막 행동으로 마무리합니다.\n\n연결 방식: 첫 이미지를 만든 뒤 클립 1을 만들고, 매번 바로 전 클립의 마지막 저장 프레임만 다음 클립 Start Frame으로 사용합니다.`;
   }
   const route=current.storyRoute||oneMinuteRoutes[3];
-  const introduction=current.foodIntroduction||episodeFoodIntroduction(route);
+  const introduction=introductionForRoute(route,current.foodIntroduction);
   if(!current.foodIntroduction) current.foodIntroduction=introduction;
   const [,feature,colors]=foodProfile(food);
   const humanDesign=foodHumanizationDesign(food,feature,colors);
@@ -386,7 +385,7 @@ function oneMinuteClipPrompt(stage){
     : characterReferenceRule(stage);
   const common = `Generate one 8-second vertical 9:16 video from ${start}. ${startRule} ${characterRule} ${frameContinuity} ${foodAbsence} ${stage >= 2 ? `FOOD VISUAL IDENTITY LOCK: ${foodVisual}` : ''} Preserve the same setting, lighting, camera axis, forehead flower marking, necklace, aqua pendant, and exactly nine tails throughout the story.`;
   const ownerLock = 'HUMAN REFERENCE RULE: For this owner episode, attach the user’s separate human reference image as an additional Ingredient in every clip. Show the single human character from that reference when the action calls for the owner: preserve that person’s recognizable face, hairstyle, hair ornaments, costume silhouette, sleeve colors, and gentle storybook style. Use the human reference ONLY for the person; never use it to alter the fox, food, setting, camera, or background. Ignore any text, logos, and any animal visible in the human reference. Never add a second person, replace the referenced person, or change their outfit between clips. Any spoken line is one short natural Korean line only.';
-  const introduction = current?.foodIntroduction || episodeFoodIntroduction(route);
+  const introduction = introductionForRoute(route,current?.foodIntroduction);
   if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
   const foundStage2 = `During seconds 0–3, no food is visible. During seconds 3–8, the fox and camera make one continuous small curved move around an already-visible foreground stone, leaf, planter, or path edge. As a result of that move, one prepared serving of ${food} gradually enters from behind that existing foreground object: first only its dish or wrapper edge, then the full same serving by the final frame. It must be revealed by occlusion and parallax, never pop into an empty area, dissolve in, or replace an existing object. The fox has not noticed it yet; end with both front paws planted while its nose and eyes still track the scent.`;
   const foundStage3 = `Continue from the exact clip-2 final frame where the same one prepared serving of ${food} is already visibly resting ${route.discovery}. Do not create, reveal, replace, resize, or move the food at the start of this clip. Within the first second, the fox finally notices the already-present food and comes to a complete stop before reaching it. The fox focuses its eyes on it, then approaches and sniffs without eating.`;
@@ -443,7 +442,7 @@ function oneMinuteFirstImagePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const route = current?.storyRoute || oneMinuteRoutes[3];
-  const introduction = current?.foodIntroduction || episodeFoodIntroduction(route);
+  const introduction = introductionForRoute(route,current?.foodIntroduction);
   if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
   const humanSetup = route.owner
     ? `Also attach the user’s separate human reference image as a Reference/Ingredient. Show only the single referenced owner walking naturally beside the fox; preserve the person’s face, hairstyle, hair ornaments, and costume. ${introduction.id === 'owner-gives' ? 'Include one small CLOSED carry pouch held by the owner; it contains nothing visible yet and is not a food prop.' : ''}`
@@ -742,7 +741,7 @@ $('storyboard').onclick = async () => {
   }
   if (current.oneMinute) {
     const route = current.storyRoute || oneMinuteRoutes[3];
-    const introduction = current.foodIntroduction || episodeFoodIntroduction(route);
+    const introduction = introductionForRoute(route,current.foodIntroduction);
     if (!current.foodIntroduction) current.foodIntroduction = introduction;
     const cue = current.bgm || bgmCues[0];
     const longStoryboard = `[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]\n\n[이번 에피소드]\n${route.setup}. 음식 등장 방식: ${introduction.label}. 음식 발견 → 자연스러운 섭취 → 음식 특성 기반 여우 인간화 → 자연스러운 결말의 작은 이야기입니다.${route.owner ? ' 첨부한 사람 기준 이미지의 주인 캐릭터가 여우와 함께 등장합니다.' : introduction.id === 'passerby-gives' ? ' 행인이 음식 전달 장면에서 자연스럽게 등장합니다.' : ' 캐릭터는 혼자 탐험합니다.'}\n\n[선택된 BGM 한 곡]\n“${cue.title}” — ${cue.prompt}. 64초짜리 한 곡으로 만들고, 클립 1~8은 각각 0–8초부터 56–64초까지의 연속 구간으로 나눕니다. 최종 편집에서 이 BGM 파일을 전체 타임라인에 한 번만 올리세요.\n\n[제작 방법]\n0 첫 이미지를 만든 뒤, 클립 1~8을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16입니다. 다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.\n\n[복사 순서]\n클립 1~8 버튼을 순서대로 누르세요. 각 프롬프트에는 해당 장면의 행동·효과음·여우 울음·BGM 구간이 포함됩니다. 클립 5~7은 중간 인간화, 클립 8은 음식별 머리색·눈색·의상이 완성된 인간형 결말입니다.`;
