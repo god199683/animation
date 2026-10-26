@@ -511,13 +511,16 @@ function cacheEpisodeClipPrompts(){
 }
 async function copyText(text){
   try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch{}
+  try{
     if(window.desktopClipboard?.writeText){
       await window.desktopClipboard.writeText(text);
       return true;
     }
-    await navigator.clipboard.writeText(text);
-    return true;
-  }catch{
+  }catch{}
+  try{
     const fallback=document.createElement('textarea');
     fallback.value=text;
     fallback.setAttribute('readonly','');
@@ -529,6 +532,8 @@ async function copyText(text){
     fallback.remove();
     if(!copied) throw new Error('clipboard unavailable');
     return true;
+  }catch(error){
+    throw error;
   }
 }
 async function copyStage(stage){
