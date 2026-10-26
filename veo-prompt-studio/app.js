@@ -501,13 +501,37 @@ function stagePrompt(storyboard, stage){
   const finalReference = stage === 4 ? 'If a generated “clip 4 final-transformation reference image” is attached as an additional Ingredient, match its completed materials exactly. Keep the saved final frame of clip 3 as the only Start Frame; do not replace it with the reference image. The clip-3 partial reference is not needed for clip 4.' : '';
   return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, humanCameoDirection, motion].filter(Boolean).join('\n\n');
 }
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch{
+    const fallback=document.createElement('textarea');
+    fallback.value=text;
+    fallback.setAttribute('readonly','');
+    fallback.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(fallback);
+    fallback.select();
+    fallback.setSelectionRange(0,fallback.value.length);
+    const copied=document.execCommand('copy');
+    fallback.remove();
+    if(!copied) throw new Error('clipboard unavailable');
+    return true;
+  }
+}
 async function copyStage(stage){
   const storyboard = current?.storyboard || savedStoryboard(current);
   const text = stagePrompt(storyboard, stage);
   if (!text) return alert('이 단계의 복사할 프롬프트를 찾지 못했습니다. 스토리보드를 다시 생성해 주세요.');
-  await navigator.clipboard.writeText(text);
   const button = document.querySelector(`#stage-copy-actions [data-stage="${stage}"]`);
-  if (button) { const label = button.textContent; button.textContent = '복사됨'; setTimeout(() => button.textContent = label, 1200); }
+  const label=button?.textContent;
+  try{
+    await copyText(text);
+    if(button){button.textContent='복사됨';setTimeout(()=>button.textContent=label,1200)}
+  }catch{
+    if(button){button.textContent='복사 실패';setTimeout(()=>button.textContent=label,1600)}
+    alert('클립 프롬프트를 클립보드에 복사하지 못했습니다. 다시 눌러 주세요.');
+  }
 }
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 function foodProfile(food){
@@ -899,8 +923,8 @@ $('episode-preview').onclick = () => {
 };
 $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
-$('copy').onclick = async () => { await navigator.clipboard.writeText($('output').textContent); $('copy').textContent = '복사됨'; setTimeout(()=>$('copy').textContent='복사',1300); };
-$('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; await navigator.clipboard.writeText(storyboard); const button = $('copy-full-storyboard'); button.textContent = '전체 복사됨'; setTimeout(() => button.textContent = '전체 스토리보드', 1200); };
+$('copy').onclick = async () => { try{await copyText($('output').textContent);$('copy').textContent='복사됨';setTimeout(()=>$('copy').textContent='복사',1300)}catch{alert('복사에 실패했습니다. 다시 눌러 주세요.')}};
+$('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; const button = $('copy-full-storyboard'); try{await copyText(storyboard);button.textContent='전체 복사됨';setTimeout(()=>button.textContent='전체 스토리보드',1200)}catch{alert('전체 스토리보드 복사에 실패했습니다. 다시 눌러 주세요.')}};
 document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
