@@ -24,6 +24,29 @@ create policy "Users manage own VEO archive" on public.veo_prompt_archive
 grant select, insert, update, delete on public.veo_prompt_archive to authenticated;
 create index if not exists veo_prompt_archive_owner_created_idx on public.veo_prompt_archive (user_id, created_at desc);
 
+-- 아기 백호 음식 영상 전용 보관함. 일반 영상 보관함과 물리적으로 분리됩니다.
+create table if not exists public.tiger_food_archive (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  food text not null,
+  signature text not null,
+  prompt text not null,
+  flow_prompt text,
+  summary text,
+  storyboard text,
+  created_at timestamptz not null default now(),
+  unique (user_id, signature)
+);
+alter table public.tiger_food_archive enable row level security;
+revoke all on table public.tiger_food_archive from anon, authenticated;
+grant select, insert, update, delete on table public.tiger_food_archive to authenticated;
+drop policy if exists "Users manage own tiger food archive" on public.tiger_food_archive;
+create policy "Users manage own tiger food archive" on public.tiger_food_archive
+  for all to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+create index if not exists tiger_food_archive_owner_created_idx on public.tiger_food_archive (user_id, created_at desc);
+
 -- Flow Music 전용 보관함. 영상·드라마 보관함과 섞이지 않습니다.
 create table if not exists public.music_prompt_archive (
   id uuid primary key default gen_random_uuid(),
