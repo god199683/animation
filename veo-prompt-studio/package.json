@@ -24,6 +24,7 @@
       "tiger-food-v2.js",
       "tiger-food-v3.js",
       "tiger-regenerate.js",
+      "tiger-first-image.js",
       "tiger-storage-isolation.js",
       "tiger-storage-archive-isolation.js",
       "tiger-archive.html",
