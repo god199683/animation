@@ -23,13 +23,13 @@
         <p class="hint">Flow에서는 반드시 ① 원본 여우 이미지 ② 이번에 올린 주인 캐릭터 이미지를 함께 참조로 넣으세요. 주인 이미지의 글자·기존 여우·배경은 참조하지 않습니다.</p>
       </aside>
       <section class="result-panel">
-        <div class="result-head"><div><p class="eyebrow" id="view-label">STORYBOARD · FIRST</p><h2 id="title">노베의 요리 이야기 준비 완료</h2></div><div class="result-actions"><button id="show-storyboard" disabled>스토리보드</button><button id="regenerate" disabled>재생성</button><button id="show-prompts" disabled>클립 프롬프트</button><button id="copy-all" disabled>전체 복사</button><button id="archive" class="accent" disabled>보관</button></div></div>
+        <div class="result-head"><div><p class="eyebrow" id="view-label">STORYBOARD · FIRST</p><h2 id="title">노베의 요리 이야기 준비 완료</h2></div><div class="result-actions"><button id="tiktok-description" disabled>TikTok 소개글</button><button id="show-storyboard" disabled>스토리보드</button><button id="regenerate" disabled>재생성</button><button id="show-prompts" disabled>클립 프롬프트</button><button id="copy-all" disabled>전체 복사</button><button id="archive" class="accent" disabled>보관</button></div></div>
         <div id="clip-actions" class="stage-copy-actions" hidden><span>FLOW 클립별 복사</span><button data-clip="0" disabled>0 첫 이미지</button><button data-clip="1" disabled>1 클립 1</button><button data-clip="2" disabled>2 클립 2</button><button data-clip="3" disabled>3 클립 3</button><button data-clip="4" disabled>4 클립 4</button><button data-clip="5" disabled>5 클립 5</button><button data-clip="6" disabled>6 클립 6</button><button data-clip="7" disabled>7 클립 7</button><button data-clip="8" disabled>8 클립 8</button></div>
         <pre id="output">왼쪽에서 조건을 입력하거나 그대로 “스토리보드 생성”을 눌러 시작하세요.</pre>
       </section>
     </section>
   </main>
-  <script src="fox-chef.js"></script>
+  <script src="fox-chef.js"></script><script src="tiktok-description.js"></script>
   <script>window.addEventListener('load',()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.async=true;s.onload=()=>window.connectFoxChefSupabase?.();document.head.appendChild(s);});</script>
 </body>
 </html>
