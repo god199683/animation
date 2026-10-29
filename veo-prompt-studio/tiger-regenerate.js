@@ -6,7 +6,25 @@
   new MutationObserver(update).observe(document.getElementById('output'), { childList:true, characterData:true, subtree:true });
   button.addEventListener('click', () => {
     if (!current) return;
-    current.prompts = Array.from({length:8}, (_, i) => `${finalSalePrompt(current, i + 1)}${identity}`);
+    const stages = tigerCookingStages(current.food);
+    current.prompts = Array.from({length:8}, (_, i) => {
+      const clip = i + 1;
+      let prompt = finalSalePrompt(current, clip)
+        .replaceAll('제가 직접 만들었어요!', '')
+        .replaceAll('예쁘게 담아 드릴게요.', '')
+        .replaceAll('I made it myself!', '');
+      if (clip === 1) {
+        prompt = prompt.replace(/DIALOGUE: speak exactly one short Korean line, “[^”]*”\./, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
+        prompt += `\n\nCLIP 1 DIALOGUE OVERRIDE — HIGHEST PRIORITY: Speak only the quoted menu-introduction sentence once. Never say “제가 직접 만들었어요” or any generic introduction.`;
+      } else if (stages[clip]) {
+        const stage = stages[clip];
+        prompt = prompt
+          .replace(/ACTION: the baby tiger [^\n]*/, `ACTION: the baby tiger ${stage.action}.`)
+          .replace(/DIALOGUE: speak exactly one short Korean line, “[^”]*”\./, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
+        prompt += `\n\nCOOKING-STAGE OVERRIDE — HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and explains exactly the quoted food-specific cooking step. Never say “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, a greeting, serving line, invitation, or any generic dialogue in clips 2–4.`;
+      }
+      return `${prompt}${identity}`;
+    });
     view = 'prompts';
     render();
   });
