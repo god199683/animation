@@ -21,7 +21,7 @@
         prompt = prompt
           .replace(/ACTION: the baby tiger [^\n]*/, `ACTION: the baby tiger ${stage.action}.`)
           .replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
-        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and says exactly the one quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, or any generic dialogue in clips 2–4. If the exact quoted cooking sentence cannot be spoken clearly, use silence instead of substituting any other Korean words.`;
+        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, or any generic dialogue in clips 2–4. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.`;
       }
       return `${prompt}${identity}`;
     });
