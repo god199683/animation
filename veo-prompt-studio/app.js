@@ -331,6 +331,25 @@ function foxVoiceInstruction(stage){
   return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing. Never bark, yelp, howl, growl, pant, whine like a dog, or make any dog-like sound.`;
 }
 function fourClipFoxVocal(stage){const sounds={1:'one short, soft curious “mrrp?” immediately after sniffing',2:'one short, quiet satisfied “rru…” immediately after tasting',3:'one short, breathy surprised “nyu?” exactly when the light is noticed',4:'one short final fox-kit chirp: a light airy rising-then-softly-falling breathy squeak, never pronounce letters or words'};return `MANDATORY AUDIO-TRACK OUTPUT AND FOX VOCAL — CLIP ${stage}: Render an actual synchronized audio track for this video; never output a silent clip or a video with ambience-only audio. Include ${sounds[stage]}. Render the written cue as a real small fox’s brief nonverbal vocal quality, not literal cartoon speech. This is a required foreground SFX event lasting only 0.25–0.35 seconds, mixed clearly above room ambience and foley at approximately voice-level loudness, synchronized to the fox’s visible mouth and ear reaction, and unmistakably audible in the final video. It is not optional, not a breath, sniff, pant, dog bark, dog yelp, dog whine, howl, growl, cat meow, cat purr, cat trill, kitten squeak, human word, narration, song, or a hidden background sound. Generate a small fox-only vocal with a lightly raspy, airy fox timbre. For clip 4 specifically, use one airy two-tone fox-kit chirp with no sustained note, no rolled R, no purr, no trill, and no low chest resonance.`}
+
+// A compact final-clip prompt keeps the previous frame's visual state ahead of every audio request.
+function focusedFourthClipPrompt(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the same established setting';
+  const [,feature,colors]=foodProfile(food);
+  const finalPose=current.finalClipPose ||= pick(finalPoses);
+  return `Generate ONE 8-second vertical 9:16 video from the supplied saved final frame of clip 3. This supplied frame is the ONLY Start Frame and the complete visual ground truth. Do not attach the original character image or any other image for this clip.
+
+FRAME-1 MATCH — HIGHEST PRIORITY: frame 1 must exactly reproduce the supplied clip-3 final frame: same white nine-tailed fox, same face, lavender-blue eyes, forehead flower marking, blue flower necklace, aqua pendant, body size, ground position, paw positions, body angle, head direction, all NINE separate tail positions, bitten ${food} remainder, ${place}, background objects, lighting, lens, and camera axis. Nothing may be cleaned, redrawn, simplified, restored, or replaced at frame 1.
+
+TRANSFORMATION HANDOFF — ABSOLUTE PRIORITY: every food-derived material or ornament already visible in the Start Frame is permanent physical design. Keep it visible in every frame: chest/upper-back texture, both ear trims, each already changed tail tip, forehead-side ornament, and pendant filigree. Completion is additive only. During seconds 1–6, finish ONLY the visibly unfinished edges with the same ${feature}-inspired ${colors} material. Never restart the transformation, show original clean fur, make a before/after reveal, erase a detail, move a detail to another tail, fade it into light, or let any tail/ornament disappear. By second 6, show one completed unified design with all nine tails, face, chest, forehead ornament, and pendant simultaneously visible.
+
+MOTION AND CAMERA: keep the exact Start Frame location and composition. Use only a tiny eye-line shift, calm breathing, and a small in-place root sway of the separated tail fan; no step, turn, sit, stand, new pose, camera cut, zoom, orbit, backdrop change, or food movement. In seconds 7–8, reach this final pose through one continuous small motion only: ${finalPose}. Do not change body scale or tail count.
+
+AUDIO IS SECONDARY TO THE VISUAL HANDOFF: preserve the same quiet ambience. At about second 6, produce exactly one very short 0.25-second airy, light, rising-then-softly-falling nonverbal fox-kit chirp. It is an audio-only SFX cue: do not change the fox’s pose, face, mouth shape, transformation, camera, or any visual state to make the sound. Never use dog, wolf, cat, human, spoken, sung, purring, trilling, or sustained sounds.
+
+No new food, character, clothing, fairy, text, logo, watermark instruction, fade, freeze, visual reset, or repeated transformation.`;
+}
 function pickHumanDialogue(owner){
   const lines = owner
     ? [
