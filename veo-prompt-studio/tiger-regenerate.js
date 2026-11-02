@@ -13,6 +13,8 @@
       let prompt = finalSalePrompt(current, clip)
         .replaceAll('제가 직접 만들었어요!', '')
         .replaceAll('예쁘게 담아 드릴게요.', '')
+        .replaceAll('맛있다는 말을 들으면 힘이 나요.', '')
+        .replaceAll('따뜻할 때 드셔 보세요.', '')
         .replaceAll('I made it myself!', '');
       if (clip === 1) {
         prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
@@ -22,7 +24,7 @@
         prompt = prompt
           .replace(/ACTION: the baby tiger [^\n]*/, `ACTION: the baby tiger ${stage.action}.`)
           .replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
-        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, or any generic dialogue in cooking clips. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.`;
+        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “맛있다는 말을 들으면 힘이 나요”, “따뜻할 때 드셔 보세요”, “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, praise, reaction, or any generic dialogue in cooking clips. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.`;
       }
       return `${prompt}${identity}`;
     });
