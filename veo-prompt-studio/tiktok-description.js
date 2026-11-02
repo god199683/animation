@@ -3,6 +3,13 @@
   const output = document.getElementById('output');
   const title = document.getElementById('result-title') || document.getElementById('title');
   if (!button || !output || !title) return;
+  const copyButton = document.createElement('button');
+  copyButton.id = 'copy-tiktok-description';
+  copyButton.type = 'button';
+  copyButton.textContent = '소개글 복사';
+  copyButton.disabled = true;
+  button.insertAdjacentElement('afterend', copyButton);
+  let latestDescription = '';
   const initialOutput = output.textContent.trim();
   const copy = async text => {
     try { await navigator.clipboard?.writeText(text); return true; } catch {}
@@ -20,6 +27,7 @@
   const refresh = () => { button.disabled = output.textContent.trim() === initialOutput && /준비 완료/.test(title.textContent); };
   new MutationObserver(refresh).observe(output, { childList:true, characterData:true, subtree:true });
   new MutationObserver(refresh).observe(title, { childList:true, characterData:true, subtree:true });
-  button.addEventListener('click', async () => { const text = generate(); output.textContent = `[TikTok 업로드 소개글]\n\n${text}`; const ok = await copy(text); button.textContent = ok ? '소개글 복사됨' : 'TikTok 소개글'; setTimeout(() => { button.textContent = 'TikTok 소개글'; }, 1400); });
+  button.addEventListener('click', () => { latestDescription = generate(); output.textContent = `[TikTok 업로드 소개글]\n\n${latestDescription}`; copyButton.disabled = false; button.textContent = '소개글 생성됨'; setTimeout(() => { button.textContent = 'TikTok 소개글'; }, 1400); });
+  copyButton.addEventListener('click', async () => { if (!latestDescription) return; const ok = await copy(latestDescription); copyButton.textContent = ok ? '복사됨' : '복사 실패'; setTimeout(() => { copyButton.textContent = '소개글 복사'; }, 1400); });
   refresh();
 })();
