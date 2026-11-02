@@ -17,6 +17,7 @@
         .replaceAll('예쁘게 담아 드릴게요.', '')
         .replaceAll('맛있다는 말을 들으면 힘이 나요.', '')
         .replaceAll('따뜻할 때 드셔 보세요.', '')
+        .replaceAll('손님, 달콤한 하루 되세요!', '')
         .replaceAll('I made it myself!', '');
       if (clip === 1) {
         prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
