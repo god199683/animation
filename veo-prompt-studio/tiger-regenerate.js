@@ -18,7 +18,7 @@
         .replaceAll('I made it myself!', '');
       if (clip === 1) {
         prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
-        prompt += `\n\nCLIP 1 DIALOGUE OVERRIDE — HIGHEST PRIORITY: Speak only the quoted menu-introduction sentence once. Never say “제가 직접 만들었어요” or any generic introduction.`;
+        prompt += `\n\nCLIP 1 DIALOGUE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: Speak only the quoted menu-introduction sentence once, then silently prepare ingredients. Never say “제가 만들었어요”, “제가 직접 만들었어요”, “완성됐어요”, “맛있다는 말을 들으면 힘이 나요”, or any generic introduction, praise, invitation, serving, or ending line.`;
       } else if (stages[clip]) {
         const stage = stages[clip];
         prompt = prompt
