@@ -6,8 +6,10 @@
   new MutationObserver(update).observe(document.getElementById('output'), { childList:true, characterData:true, subtree:true });
   button.addEventListener('click', () => {
     if (!current) return;
-    const stages = tigerCookingStages(current.food);
-    const clipCount = current.clipCount || episodeClipCount(current.food);
+    const plan = tigerCookingPlan(current.food);
+    const cookingEnd = plan.length + 1;
+    const clipCount = cookingEnd + 4;
+    current.clipCount = clipCount;
     current.prompts = Array.from({length:clipCount}, (_, i) => {
       const clip = i + 1;
       let prompt = finalSalePrompt(current, clip)
@@ -19,12 +21,12 @@
       if (clip === 1) {
         prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
         prompt += `\n\nCLIP 1 DIALOGUE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: Speak only the quoted menu-introduction sentence once, then silently prepare ingredients. Never say “제가 만들었어요”, “제가 직접 만들었어요”, “완성됐어요”, “맛있다는 말을 들으면 힘이 나요”, or any generic introduction, praise, invitation, serving, or ending line.`;
-      } else if (stages[clip]) {
-        const stage = clip === 2 ? tigerPreparationStage(current.food) : stages[clip];
+      } else if (clip >= 2 && clip <= cookingEnd) {
+        const stage = plan[clip - 2];
         prompt = prompt
           .replace(/ACTION: the baby tiger [^\n]*/, `ACTION: the baby tiger ${stage.action}.`)
           .replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
-        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. ${clip===2?'First visibly prepare the raw ingredients, then begin the stated cooking action.':''} Delete and ignore every older dialogue instruction. Never say “맛있다는 말을 들으면 힘이 나요”, “따뜻할 때 드셔 보세요”, “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, praise, reaction, or any generic dialogue in cooking clips. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.`;
+        prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking step ${clip-1} of ${plan.length}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “맛있다는 말을 들으면 힘이 나요”, “따뜻할 때 드셔 보세요”, “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, praise, reaction, or any generic dialogue in cooking clips. No guest, tasting, plating, packaging, selling, or ending may appear until all ${plan.length} cooking steps are complete. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.`;
       }
       return `${prompt}${identity}`;
     });
