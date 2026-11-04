@@ -213,7 +213,7 @@ const INGESTION_PROGRESS_SUFFIXES = [
   'GRADUAL INGESTION TIMELINE FOR CLIP 2: The single food prop must visibly shrink by physical eating, never vanish, dissolve, jump-cut, or get replaced. Seconds 0–2: keep 85–90% of the original food visible and make one small bite mark. Seconds 2–4: chew while the same prop remains clearly 60–70% of its original volume. Seconds 4–6: take the second small bite and leave 40–50% visibly attached to the same prop. Seconds 6–7: take one final small third bite and leave a clear 20–25% final portion on the same plate or wrapper. Seconds 7–8: do not eat more; keep that remainder visible while a faint first transformation light begins at one ear tip or front paw. Do NOT finish eating in this clip and do NOT reveal an empty plate yet. Keep the food, mouth, paw, and plate in one continuous shot with no camera cut, no occlusion hiding a swap, no duplicate food, no separate bite piece, and no magic disappearance.',
   '', ''
 ];
-function setStageCopyActions(visible){ $('stage-copy-actions').hidden = !visible; document.querySelectorAll('[data-long]').forEach(button => { button.hidden = !current?.oneMinute; }); }
+function setStageCopyActions(visible){ const long = Boolean(current?.oneMinute || current?.oneMinuteFox); $('stage-copy-actions').hidden = !visible; document.querySelectorAll('[data-long]').forEach(button => { button.hidden = !long; }); }
 function episodePreviewText(){
   if(!current) return '';
   const food=current.food||current.title?.split(' · ')[0]||'선택한 음식';
@@ -601,9 +601,9 @@ async function copyStage(stage){
   const label=button?.textContent;
   try{
     if(button) button.textContent='복사 중…';
-    if(current?.oneMinute) cacheEpisodeClipPrompts();
+    if(current?.oneMinute || current?.oneMinuteFox) cacheEpisodeClipPrompts();
     const storyboard = current?.storyboard || savedStoryboard(current);
-    const text = current?.oneMinute ? current.clipPrompts?.[stage] : stagePrompt(storyboard, stage);
+    const text = (current?.oneMinute || current?.oneMinuteFox) ? current.clipPrompts?.[stage] : stagePrompt(storyboard, stage);
     if (!text) throw new Error('이 단계의 프롬프트를 만들지 못했습니다.');
     await copyText(text);
     if(button){button.textContent='복사됨';setTimeout(()=>button.textContent=label,1200)}
