@@ -5,6 +5,22 @@ const CONFIG = {
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 const $ = id => document.getElementById(id);
 let dbClient = null, userId = null, archive = [];
+const archiveType = new URLSearchParams(window.location.search).get('type') === 'long' ? 'long' : 'four';
+function isOneMinuteItem(item) {
+  const signature = String(item?.signature || '');
+  const storyboard = String(item?.storyboard || '');
+  return item?.oneMinute === true || item?.oneMinuteFox === true
+    || signature.split('|').includes('one-minute') || signature.split('|').includes('one-minute-fox')
+    || storyboard.includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]')
+    || storyboard.includes('[Google Flow · 약 1분 구미호 변신 에피소드 · 8클립]');
+}
+function belongsInThisArchive(item) { return archiveType === 'long' ? isOneMinuteItem(item) : !isOneMinuteItem(item); }
+function setArchiveHeading() {
+  const long = archiveType === 'long';
+  document.title = long ? 'Tailframe · 1분 여우 보관함' : 'Tailframe · 4클립 여우 보관함';
+  $('archive-kind').textContent = long ? 'SAVED PROMPTS · ONE MINUTE FOX' : 'SAVED PROMPTS · 4 CLIPS';
+  $('archive-title').innerHTML = `${long ? '1분 여우 영상 보관함' : '4클립 여우 영상 보관함'} <span id="archive-count">0</span>`;
+}
 function setSync(message, online = false) { $('sync-status').textContent = message; $('sync-status').parentElement.classList.toggle('online', online); }
 function localArchiveKey() { return `veo-prompt-archive:${userId || 'signed-out'}`; }
 function readLocalArchive() { try { const saved = JSON.parse(localStorage.getItem(localArchiveKey()) || '[]'); return Array.isArray(saved) ? saved.map(item => ({ ...item, storage: 'local' })) : []; } catch { return []; } }
@@ -27,14 +43,14 @@ function view(item) {
   localStorage.setItem('tailframe-opened-archive', JSON.stringify(item));
   window.location.href = 'index.html?opened=archive';
 }
-function loadLocalArchive() { archive = readLocalArchive(); renderArchive(); }
+function loadLocalArchive() { archive = readLocalArchive().filter(belongsInThisArchive); renderArchive(); }
 async function loadArchive() {
   if (!dbClient || !userId) return loadLocalArchive();
   const { data, error } = await dbClient.from('veo_prompt_archive').select('*').order('created_at', { ascending: false });
   if (error) { setSync('이 기기의 보관함 사용 중'); return loadLocalArchive(); }
   const cloud = (data || []).map(item => ({ ...item, storage: 'cloud' }));
   const localOnly = readLocalArchive().filter(local => !cloud.some(remote => remote.id === local.id || remote.signature === local.signature));
-  archive = [...cloud, ...localOnly].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)); renderArchive();
+  archive = [...cloud, ...localOnly].filter(belongsInThisArchive).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)); renderArchive();
 }
 async function removeArchive(id) {
   if (!confirm('이 보관 결과를 삭제할까요? 삭제하면 중복 방지 이력에서도 제외됩니다.')) return;
@@ -59,4 +75,5 @@ async function initSupabase() {
 }
 $('refresh').onclick = loadArchive;
 window.connectSupabase = initSupabase;
+setArchiveHeading();
 loadLocalArchive();
