@@ -146,8 +146,9 @@ let dbClient = null, userId = null, archive = [], current = null;
 const STORYBOARD_CACHE_KEY = 'tailframe-storyboard-cache-v1';
 const LOGIN_EMAIL_DOMAIN = 'tailframe.local';
 function isOneMinuteItem(item){
-  return item?.oneMinute === true
+  return item?.oneMinute === true || item?.oneMinuteFox === true
     || String(item?.signature || '').split('|').includes('one-minute')
+    || String(item?.signature || '').split('|').includes('one-minute-fox')
     || String(item?.storyboard || '').includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]');
 }
 function accountEmail(loginId){ return `${loginId.trim().toLowerCase()}@${LOGIN_EMAIL_DOMAIN}`; }
@@ -216,7 +217,7 @@ function episodePreviewText(){
   if(!current) return '';
   const food=current.food||current.title?.split(' · ')[0]||'선택한 음식';
   const place=current.title?.split(' · ')[1]||'선택한 장소';
-  if(!current.oneMinute){
+  if(!current.oneMinute && !current.oneMinuteFox){
     return `[영상 흐름 미리보기 · 32초 / 4클립]\n\n이 버전은 음식을 발견하고, 자연스럽게 먹은 뒤, 음식에서 얻은 장식·색·질감으로 같은 아홉꼬리 여우가 변화하는 짧은 이야기입니다.\n\n1. 0–8초 — ${place}에서 ${food}을(를) 발견하고 냄새를 탐색합니다.\n2. 8–16초 — 같은 음식 한 개를 자연스럽게 먹고, 마지막에 작은 변화 빛이 시작됩니다.\n3. 16–24초 — 빛이 털·귀·꼬리로 번지며 중간 변화 상태가 됩니다.\n4. 24–32초 — 앞 단계의 변화를 유지한 채 남은 디자인을 완성하고, 자연스러운 마지막 행동으로 마무리합니다.\n\n연결 방식: 첫 이미지를 만든 뒤 클립 1을 만들고, 매번 바로 전 클립의 마지막 저장 프레임만 다음 클립 Start Frame으로 사용합니다.`;
   }
   const route=current.storyRoute||oneMinuteRoutes[3];
@@ -490,8 +491,38 @@ function oneMinuteFirstImagePrompt(){
       : 'The fox is alone; do not show any person, hand, reflection, shadow, or companion.';
   return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and bright ethereal pastel illustration style while creating a new vertical composition. Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. The food has NOT been discovered yet: do not show any food, plate, wrapper, crumbs, or food-like prop in this first image. The fox must be looking ahead as if it is about to notice a scent, not walking past something it has already seen. ${humanSetup}\n\nUse the fox reference’s soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy fantasy rendering across both character and background. No transformation, no glow on the body, no bite mark, no food, no plate, no wrapper, no duplicate prop, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no extra person beyond any person explicitly requested above, no photorealism, and no dark style.`;
 }
+function referenceVideoFoxVocal(stage){
+  const contour={1:'a curious soft “mrrp?” after scenting',2:'a quiet curious “mrrp?” while following the scent',3:'a tiny alert “nyu?” at discovery',4:'a gentle interested “mrrp?” while inspecting',5:'a quiet satisfied “rru…” after tasting',6:'a breathy surprised “nyu?” when the first light appears',7:'a soft amazed “nyu?” during the continuing change',8:'a warm content “mrrp.” after the transformation settles'}[stage];
+  return `FOX VOCAL REFERENCE — HIGHEST PRIORITY FOR AUDIO: Use the user-supplied reference video only as the vocal-performance reference. In Google Flow, attach that same reference video as an audio/reference ingredient if the current screen supports it; it controls the fox vocal character only, never the image, character design, camera, or scene. Produce only one short natural ${contour}, matching the reference video’s soft, small, airy fox vocal quality. The written cue is a loose contour, never spoken words or a cartoon effect. It must be organic with a tiny breath and ear reaction, audible but softly blended into ambience. Never create dog barking, yelping, whining, panting, howling, growling, cat sounds, human speech, song, purring, or a sustained artificial sound.`;
+}
+function oneMinuteFoxFirstImagePrompt(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the same established setting';
+  return `Create ONE vertical 9:16 still first-keyframe image for a 64-second eight-clip fox transformation episode. Attach the user’s original white nine-tailed fox image as a Reference/Ingredient. Show the exact same white fox, lavender-blue eyes, forehead flower marking, flower necklace, aqua pendant, and exactly nine fluffy tails in ${place}. The fox is alert and gently exploring a scent path. The ${food} has NOT appeared yet: no food, plate, wrapper, crumbs, bite, glow, transformation, person, text, logo, or watermark. Keep the same bright pastel storybook style, lighting direction, camera axis, and wide enough composition for the fox to walk forward naturally.`;
+}
+function oneMinuteFoxClipPrompt(stage){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the same established setting';
+  const [,feature,colors]=foodProfile(food);
+  const start=stage===1?'the supplied first image':`the supplied saved final frame of clip ${stage-1}`;
+  const actions={
+    1:`continues a calm scent exploration in ${place}; take two small steps and sniff the air. No food is visible yet.`,
+    2:`follows the same scent naturally along the established path; no food is visible yet and no person appears.`,
+    3:`notices the single ${food} already physically placed at the edge of the established path; approach it slowly. The food must enter naturally from the existing scene, never pop into existence.`,
+    4:`inspects the same whole ${food} without eating: circle close, sniff it, and touch its plate or wrapper once with one paw.`,
+    5:`takes two small believable bites from that same ${food}; leave a clear 20–25% bitten remainder attached to the same plate or wrapper.`,
+    6:`keeps the same bitten remainder visible and begins a cumulative food-derived physical transformation: ${feature} and ${colors} first appear across chest, ears, and three visible tail tips.`,
+    7:`continues the exact existing transformation without reset to a stable 70–80% complete physical design; retain every earlier changed detail and add matching detail to seven visible tail tips.`,
+    8:`preserves every transformed detail from the Start Frame and completes only the remaining two tail tips, forehead-side ornament, and pendant filigree; end in one gentle natural finished pose with all nine tails visible.`
+  };
+  const visual=stage>=6?` TRANSFORMATION LOCK: all food-derived details are permanent physical materials. Never erase, clean, hide, flicker, reset, reverse, or replace any changed chest fur, ear trim, tail-tip detail, forehead ornament, or pendant accent. Exactly nine separate tails remain visible.`:'';
+  const foodLock=stage<=2?' No food may appear before clip 3.':stage===3||stage===4?' Exactly one whole food exists; do not duplicate, swap, or eat it.':stage===5?' Exactly one food progressively shrinks only by direct physical bites; do not vanish, dissolve, duplicate, or show an empty plate.':' Keep the same 20–25% bitten remainder and same plate/wrapper visible; do not eat more or restore food.';
+  return `Generate ONE 8-second vertical 9:16 Google Flow video from ${start}. ${stage===1?'Use it as the Start Frame.':'Use it as the ONLY Start Frame; frame 1 must exactly match it.'} Preserve the same white nine-tailed fox, face, eyes, forehead marking, necklace, pendant, ${place}, lighting, lens, camera axis, and all established props. ACTION: the fox ${actions[stage]}${foodLock}${visual}\n\n${referenceVideoFoxVocal(stage)}\n\nUse only one gentle continuous camera move and end with visible ongoing natural motion except clip 8, which may settle naturally only after the completed transformation. No new character, dog, cat, fairy, text, logo, watermark instruction, abrupt cut, background reset, or malformed anatomy.`;
+}
 function stagePrompt(storyboard, stage){
-  if (current?.oneMinute && current.clipPrompts?.[stage]) return current.clipPrompts[stage];
+  if ((current?.oneMinute || current?.oneMinuteFox) && current.clipPrompts?.[stage]) return current.clipPrompts[stage];
+  if (current?.oneMinuteFox && stage === 0) return oneMinuteFoxFirstImagePrompt();
+  if (current?.oneMinuteFox && stage >= 1 && stage <= 8) return oneMinuteFoxClipPrompt(stage);
   if (current?.oneMinute && stage === 0) return oneMinuteFirstImagePrompt();
   if (current?.oneMinute && stage >= 1 && stage <= 8) return oneMinuteClipPrompt(stage);
   const labels = ['[0단계', '[1단계', '[2단계', '[3단계', '[4단계'];
@@ -526,10 +557,10 @@ function stagePrompt(storyboard, stage){
   return [prompt, masterContract, STORY_COMMON_SUFFIX, narrative, foodLock, ingestion, foodDesign, visibility, irreversible, finalHold, finalInventory, finalReference, humanCameoDirection, motion].filter(Boolean).join('\n\n');
 }
 function cacheEpisodeClipPrompts(){
-  if(!current?.oneMinute) return;
+  if(!current?.oneMinute && !current?.oneMinuteFox) return;
   current.clipPrompts ||= [];
   for(let stage=0;stage<=8;stage++){
-    if(!current.clipPrompts[stage]) current.clipPrompts[stage]=stage===0?oneMinuteFirstImagePrompt():oneMinuteClipPrompt(stage);
+    if(!current.clipPrompts[stage]) current.clipPrompts[stage]=stage===0?(current.oneMinuteFox?oneMinuteFoxFirstImagePrompt():oneMinuteFirstImagePrompt()):(current.oneMinuteFox?oneMinuteFoxClipPrompt(stage):oneMinuteClipPrompt(stage));
   }
 }
 async function copyText(text){
@@ -676,7 +707,8 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${foxVocalLock}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${foxVocalLock}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  return { title, food, signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingDialogue() : '', ownerEndingAction: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingAction() : null, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
+  const oneMinuteFox=data.lengthMode==='one-minute-fox';
+  return { title, food, signature: oneMinuteFox?`${signature}|one-minute-fox`:signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', oneMinuteFox, storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingDialogue() : '', ownerEndingAction: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingAction() : null, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
@@ -807,8 +839,8 @@ $('generate').onclick = async () => {
   button.disabled = true; button.textContent = '보관함 중복 확인 중…';
   try {
     if (dbClient && userId) await loadArchive();
-    current = buildPrompt(selectedInputs()); if(current.oneMinute) cacheEpisodeClipPrompts(); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('episode-preview').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
-    if (current.oneMinute) await $('storyboard').onclick();
+    current = buildPrompt(selectedInputs()); if(current.oneMinute||current.oneMinuteFox) cacheEpisodeClipPrompts(); $('result-title').textContent = `${current.title} · Gemini OMNI`; $('output').textContent = current.omniPrompt; setStageCopyActions(false); $('original-prompt').disabled = false; $('flow-prompt').disabled = false; $('episode-preview').disabled = false; $('storyboard').disabled = false; $('regenerate-storyboard').disabled = true; $('copy').disabled = false; $('archive').disabled = false; $('archive').textContent = '보관';
+    if (current.oneMinute||current.oneMinuteFox) await $('storyboard').onclick();
   } catch (error) { alert(error?.message || '보관함 중복 확인 중 오류가 발생했습니다.'); }
   finally { button.disabled = false; button.textContent = previousText; }
 };
@@ -821,6 +853,17 @@ $('storyboard').onclick = async () => {
     setStageCopyActions(true);
     $('regenerate-storyboard').disabled = false;
     $('copy').disabled = false;
+    return;
+  }
+  if (current.oneMinuteFox) {
+    const longStoryboard = `[Google Flow · 약 1분 구미호 변신 에피소드 · 8클립]\n\n[제작 방법]\n0번 첫 이미지를 만든 뒤, 1~8번을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16이며 총 64초입니다. 다음 클립에는 바로 전 클립의 마지막 저장 프레임만 Start Frame으로 넣습니다. 원본 여우 이미지는 클립 1의 외형 기준으로만 사용합니다.\n\n[울음소리 기준]\n첨부한 참조 영상은 여우 울음소리의 유일한 오디오 기준입니다. Flow에서 참조 영상/오디오 Ingredient를 넣을 수 있으면 매 클립에 같은 영상을 오디오 참조로 첨부합니다. 소리는 그 영상처럼 짧고 자연스러운 여우 발성만 사용하며, 개·고양이·사람 소리는 금지합니다.\n\n[8클립 흐름]\n1. 향기 탐색 — 음식은 아직 보이지 않는다.\n2. 향기를 따라 이동 — 음식은 아직 보이지 않는다.\n3. 같은 장소에서 자연스럽게 음식 발견.\n4. 음식 냄새와 상태를 탐색 — 먹지 않는다.\n5. 같은 음식을 자연스럽게 두 입 먹고 20~25%를 남긴다.\n6. 남은 음식을 유지한 채 음식 기반 변화가 시작된다.\n7. 앞 변화가 사라지지 않는 70~80% 중간 변화.\n8. 남은 변화만 완성하고 자연스러운 마무리.\n\n[고정 규칙]\n모든 클립에서 같은 구미호·정확히 9개 꼬리·배경·조명·렌즈·카메라 축·음식 상태를 유지합니다. 변화는 6→7→8에서 누적되며 한 번 생긴 장식·꼬리 디테일은 절대 사라지지 않습니다.`;
+    current.storyboard=longStoryboard;
+    $('result-title').textContent=`${current.title} · 약 1분 구미호 변신 스토리보드`;
+    $('output').textContent=longStoryboard;
+    setStageCopyActions(true);
+    await saveStoryboard(current,longStoryboard);
+    $('regenerate-storyboard').disabled=false;
+    $('copy').disabled=false;
     return;
   }
   if (current.oneMinute) {
@@ -934,7 +977,8 @@ $('regenerate-storyboard').onclick = async () => {
   if (!current) return;
   // Cloud rows from older schema versions do not have a oneMinute column.
   // Restore it from the durable signature before regenerating.
-  current.oneMinute = isOneMinuteItem(current);
+  current.oneMinuteFox = current.oneMinuteFox === true || String(current.signature||'').split('|').includes('one-minute-fox');
+  current.oneMinute = isOneMinuteItem(current) && !current.oneMinuteFox;
   const key = storyboardKey(current);
   const cache = readStoryboardCache();
   current.previousStoryboard = current.storyboard || cache[key] || '';
@@ -962,7 +1006,7 @@ $('episode-preview').onclick = () => {
   $('result-title').textContent = `${current.title || '생성 결과'} · 영상 흐름 미리보기`;
   $('output').textContent = episodePreviewText();
   // The preview is only a different view of the same generated episode; keep its clip-copy controls available.
-  setStageCopyActions(Boolean(current.oneMinute));
+  setStageCopyActions(Boolean(current.oneMinute||current.oneMinuteFox));
   $('copy').disabled = false;
 };
 $('archive').onclick = archiveCurrent;
@@ -979,10 +1023,11 @@ function restoreOpenedArchive(){
     if (!current?.prompt) return;
     current.omniPrompt ||= current.omni_prompt || current.prompt;
     current.flowPrompt ||= current.flow_prompt || current.prompt;
-    current.oneMinute = isOneMinuteItem(current);
+    current.oneMinuteFox = current.oneMinuteFox === true || String(current.signature||'').split('|').includes('one-minute-fox');
+    current.oneMinute = isOneMinuteItem(current) && !current.oneMinuteFox;
     const preservedStoryboard = current.storyboard || savedStoryboard(current);
     const isExtendStoryboard = preservedStoryboard?.includes('[Google Flow · 수동 프레임 연결 · 클립별 제작 v1]');
-    const isLongStoryboard = current.oneMinute || preservedStoryboard?.includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]');
+    const isLongStoryboard = current.oneMinute || current.oneMinuteFox || preservedStoryboard?.includes('[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]') || preservedStoryboard?.includes('[Google Flow · 약 1분 구미호 변신 에피소드 · 8클립]');
     $('result-title').textContent = (isExtendStoryboard || isLongStoryboard) ? `${current.title} · 저장된 스토리보드` : (current.title || '보관된 프롬프트');
     $('output').textContent = (isExtendStoryboard || isLongStoryboard) ? (preservedStoryboard || current.omniPrompt) : current.omniPrompt;
     setStageCopyActions(isExtendStoryboard || isLongStoryboard);
