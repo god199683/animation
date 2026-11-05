@@ -10,7 +10,7 @@
       let clean = prompt;
       blocked.forEach(line => { clean = clean.replaceAll(line, ''); });
       clean = clean.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
-      return `${clean}\n\nCOOKING DIALOGUE FINAL GUARD — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. Speak only “${stage.line}” exactly once because that is the visible food-specific cooking action. Never say “앗, 향기가 간질간질해요”, any scent reaction, praise, plating, serving, tasting, selling, greeting, invitation, farewell, or unrelated reaction.`;
+      return `${clean}\n\nCOOKING DIALOGUE FINAL GUARD — ABSOLUTE HIGHEST PRIORITY: This is cooking clip ${clip}. Speak only “${stage.line}” exactly once because that is the visible food-specific cooking action. Never say “앗, 향기가 간질간질해요”, any scent reaction, praise, plating, serving, tasting, selling, greeting, invitation, farewell, or unrelated reaction.\n\nSPEECH-TRACK LOCK — Use exactly ONE spoken utterance in the entire 8-second clip: the quoted sentence “${stage.line}”, once only, spoken clearly between seconds 1.5 and 4.5 while the matching action is visibly happening. Before and after it, use silence apart from cooking foley and ambience. Do not add a second sentence, ad-lib, inner thought, exclamation, sniff reaction, animal sound, humming, narration, or trailing phrase. Do not mention an itchy nose, ticklish scent, pleasant smell, or any other sensory reaction. If clean pronunciation requires a pause, pause inside the same quoted sentence only; never replace it with new words.`;
     });
   };
   if (typeof finalEpisode === 'function') {
