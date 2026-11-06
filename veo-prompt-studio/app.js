@@ -312,6 +312,21 @@ This is the DIRECT CONTINUATION of that exact image, never a new transformation 
 
 Seconds 0–7: identify only the small areas that are visibly unfinished in the supplied Start Frame, then gently continue those exact edges into the completed ${feature}-inspired ${colors} design: ${design} Do not add, remove, change, or restart any detail that is already visible in the supplied image. By second 7, finish only those visibly incomplete areas while retaining all Start Frame details simultaneously. Keep the Start Frame pose and location with only a small eye-line shift, calm breath, and tiny in-place tail-tip sway. During the final second only, smoothly arrive from that exact pose into this randomly chosen natural final pose: ${finalPose}. It must be one continuous small movement from the supplied image, never a jump, cut, teleport, pose reset, or unrelated body orientation. Use a stable medium three-quarter shot with face, pendant, ornament, chest, and all nine tail tips visible. ${bgmSegmentInstruction(4, 4)} ${fourClipFoxVocal(4)} ${fourClipVisualInventoryLock(4)} Use only one soft completion shimmer and tail rustle. No new food, new character, freeze, fade, text, logo, camera reset, or repeated transformation.`;
 }
+// Keep the two non-negotiable details at the end of each four-clip prompt,
+// where Flow gives them more weight than the long continuity description.
+function requiredFourClipFoxCall(stage){
+  const moments={1:'right after the on-screen sniff',2:'right after the final swallow',3:'as the fox notices the first permanent physical change',4:'during the final natural reaction'};
+  return `FINAL AUDIO REQUIREMENT — CLIP ${stage}: The generated soundtrack is incomplete unless it contains exactly ONE audible, nonverbal juvenile fox contact call ${moments[stage]}. It must be a real short fox-kit vocal, 0.35–0.50 seconds long, synchronized with a visible tiny muzzle and ear reaction. It must be clearly audible above ambience, foley, and BGM; lower or mute every other sound during it. Silence, breathing alone, a sniff, a chime, tail rustle, background ambience, or music is NOT an acceptable substitute. Keep it airy, brief, lightly textured, and naturally rising then softly falling, with no low chest resonance. Never make a dog bark, dog whine, yelp, howl, growl, pant, cat meow, purr, trill, human word, narration, or song.`;
+}
+const focusedFirstClipPromptWithVocal = focusedFirstClipPrompt;
+focusedFirstClipPrompt = function(){return `${focusedFirstClipPromptWithVocal()}\n\n${requiredFourClipFoxCall(1)}`;};
+const focusedSecondClipPromptWithVocal = focusedSecondClipPrompt;
+focusedSecondClipPrompt = function(){return `${focusedSecondClipPromptWithVocal()}\n\n${requiredFourClipFoxCall(2)}`;};
+const focusedThirdClipPromptWithVocal = focusedThirdClipPrompt;
+focusedThirdClipPrompt = function(){return `${focusedThirdClipPromptWithVocal()}\n\nFINAL CLIP-3 PHYSICAL STATE INVARIANT — ABSOLUTE HIGHEST PRIORITY: From second 4 through the final frame, render one identical, stable 50–70% transformed body design. The already revealed chest/back material, both ear trims, the SAME three-to-five individually readable changed tail tips, half-formed forehead ornament, and pendant filigree are solid non-glowing physical materials. They cannot appear only briefly: if one is visible at any instant, it remains visible in every later frame on that same location. Do not replace it with clean white fur, ordinary pink tail tips, a light beam, particles, a flare, or a new version of the fox. No visual reversal, flicker, dissolve, fade-out, glow cover, tail swap, or hidden-tail camera move is permitted after second 4.\n\n${requiredFourClipFoxCall(3)}`;};
+const focusedFourthClipPromptWithVocal = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){return `${focusedFourthClipPromptWithVocal()}\n\n${requiredFourClipFoxCall(4)}`;};
+
 function characterReferenceRule(stage){
   return stage === 1
     ? 'In Google Flow, attach the user’s original character image directly to this prompt as a Reference/Ingredient. Use it to lock the fox identity and illustration style; do not replace the supplied first image.'
