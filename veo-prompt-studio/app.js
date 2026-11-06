@@ -339,17 +339,15 @@ function bgmSegmentInstruction(stage, total){
   return `Shared BGM plan: use one master instrumental cue titled “${cue.title}” (${cue.prompt}). This clip is its ${start}–${end} second segment of a single ${total * 8}-second track; do not restart or replace the music. For exact continuity, add this one completed BGM track once in final editing across all clips. If the current Flow screen supports an audio reference, attach that same BGM file for every clip; otherwise generate only the listed foley and add the master BGM during editing. Any fox vocalization must be one short, natural, breath-led juvenile fox contact call; never a dog bark, yelp, howl, growl, pant, dog-like whine, cat sound, or human voice.${fourClipVocal}`;
 }
 function foxVoiceInstruction(stage){
-  const voices = {
-    1: 'one quiet high-pitched fox chirp with a soft breathy trill under 0.5 seconds',
-    2: 'one soft nasal fox chirrup while scent-tracing under 0.5 seconds',
-    3: 'one tiny bright fox kit chirp under 0.5 seconds',
-    4: 'one muted content fox trill under 0.5 seconds',
-    5: 'one short breathy surprised fox chirp under 0.5 seconds',
-    6: 'one gentle startled fox chirrup under 0.5 seconds',
-    7: 'one quiet airy amazed fox trill under 0.5 seconds',
-    8: 'one warm soft fox chirrup under 0.5 seconds'
+  const moments = {
+    1:'immediately after the first scenting pause', 2:'at seconds 3.0–3.5 while following the scent',
+    3:'immediately after the food is noticed', 4:'immediately after the first small bite',
+    5:'when the first transformation light is noticed', 6:'during the first visible humanization reaction',
+    7:'during the continuing transformation reaction'
   };
-  return `Character voice: ${voices[stage] || voices[1]}. It is a nonverbal fox vocalization only, never spoken dialogue, narration, or singing. Never bark, yelp, howl, growl, pant, whine like a dog, or make any dog-like sound.`;
+  const timing = moments[stage] || moments[1];
+  const clipTwo = stage === 2 ? 'For seconds 3.0–3.5, lower BGM, wind, ambience, and every foley sound to near silence: the fox call is the only foreground sound. ' : '';
+  return `REQUIRED AUDIBLE FOX SOUND — CLIP ${stage}: Render exactly one clearly audible natural juvenile fox contact call ${timing}. ${clipTwo}It lasts 0.35–0.50 seconds with a soft breath-led onset, one brief light rise in pitch, and an immediate gentle falling release. Synchronize it to a small visible muzzle, ear, and breathing reaction. It must be plainly audible, never omitted, replaced by silence, a mere exhale, ambience, BGM, or foley. Lower nearby BGM and foley during the call, while retaining a natural mix. Use a light airy slightly textured fox-kit timbre, with no low chest resonance, dog-like attack, or dog-like whine. Never use a bark, yelp, howl, growl, pant, dog whine, cat sound, human word, narration, or song.`;
 }
 function fourClipFoxVocal(stage){const moments={1:'immediately after scenting',2:'immediately after tasting',3:'exactly when the light is noticed',4:'during the final natural reaction'};return `NATURAL FOX VOCAL DETAIL — CLIP ${stage}, REQUIRED AUDIBLE SOUND: Render exactly one clearly audible, natural nonverbal juvenile fox contact call ${moments[stage]}. It lasts 0.35–0.50 seconds: a breath-led onset, one gentle brief rise in pitch, then a soft falling release. It must be unmistakably present and synchronized to a small muzzle, ear, and breathing reaction; it may never be replaced by silence, a mere exhale, ambience, foley, or music. During this call, lower all BGM and nearby foley so the fox call remains plainly audible, but keep it natural rather than loud or cartoonish. Generate a small fox-only vocal with a light airy, slightly textured fox-kit timbre, no low chest resonance, no dog-like attack, and no dog-like whine. Never use a dog bark, dog yelp, dog whine, howl, growl, pant, cat meow, cat purr, cat trill, kitten squeak, human word, narration, song, or hidden background sound.`}
 
