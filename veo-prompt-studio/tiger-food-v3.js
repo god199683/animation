@@ -63,3 +63,31 @@ finalEpisode=function(data){const x=finalTigerEpisodeWithDynamicCookingPlan(data
 // Post-cooking clips must never inherit a blank or generic cooking dialogue.
 const finalTigerEpisodeWithDynamicPostCookingDialogue=finalEpisode;
 finalEpisode=function(data){const x=finalTigerEpisodeWithDynamicPostCookingDialogue(data),start=guestStart(x),count=x.clipCount||episodeClipCount(x.food);const lines=x.mode==='eat'?['같이 맛보니 더 좋아요.','맛있게 드셨다니 기뻐요.','한입 더 나눠 먹어요.','오늘도 행복해요.']:['완성된 음식이에요.','새 음식으로 정성껏 포장할게요.','조심히 가져가세요.','다음에도 맛있게 만들게요.'];x.prompts=x.prompts.map((prompt,index)=>{const clip=index+1;if(clip<start)return prompt;const line=lines[Math.min(clip-start,lines.length-1)];return prompt.replace(/DIALOGUE:[^\n]*/,`DIALOGUE: the baby white tiger speaks exactly one short Korean line, “${line}”.`)+`\n\nPOST-COOKING DIALOGUE LOCK — HIGHEST PRIORITY: This is post-cooking clip ${clip-start+1} of 4. Speak exactly the quoted complete sentence once; never leave dialogue empty, reuse a cooking instruction, repeat the menu name, or use a generic unrelated phrase. Keep the dialogue matched to the visible action.`});return x};
+
+// The cooking plan can be longer than eight clips.  Build the visible copy controls
+// from the actual plan instead of silently hiding clips 9+ behind the full-copy button.
+var tigerRenderBase = render;
+function renderTigerClipActions(){
+  const actions=document.getElementById('clip-actions'); if(!actions) return;
+  const count=current?.clipCount||current?.prompts?.length||8;
+  [...actions.querySelectorAll('button[data-clip]')].forEach(button=>{
+    if(button.dataset.clip!=='0') button.remove();
+  });
+  for(let clip=1;clip<=count;clip++){
+    const button=document.createElement('button'); button.dataset.clip=String(clip); button.textContent=`${clip} 클립 ${clip}`; button.disabled=!current;
+    button.onclick=()=>current&&cp(current.prompts?.[clip-1],button);
+    actions.append(button);
+  }
+  const header=document.getElementById('view-label');
+  if(header&&view==='prompts') header.textContent=`GOOGLE FLOW · ${count} CLIPS · ${count*8} SECONDS`;
+}
+render=function(){tigerRenderBase();renderTigerClipActions()};
+
+// Sale episodes have exactly one clearly separated tasting sample and one untouched
+// sale portion.  This replaces older mutually contradictory "never taste" wording.
+function finalSalePrompt(x,n){
+  let base=foodPromptWithCustomerCategory(x,n),start=guestStart(x),count=x.clipCount||episodeClipCount(x.food);
+  if(x.mode!=='sell'||n<start)return base;
+  base=base.replace(/SALE LOCK — HIGHEST PRIORITY:[^\n]*/g,'').replace(/SALE-ONLY RULE — HIGHEST PRIORITY:[\s\S]*?shared meal\./g,'');
+  return `${base}\n\nSALE PORTION RULE — HIGHEST PRIORITY, OVERRIDES EVERY EARLIER SALE OR SINGLE-FOOD RULE: There are exactly TWO clearly distinguished portions only during this sale sequence. In clip ${start}, the baby tiger takes exactly one tiny bite from a separately labeled-looking tasting sample, then never tastes again. That sample is never packaged, handed over, or sold. From clip ${start+1}, prepare one new, untouched complete sale portion of the same ${x.food}; it has never been bitten, licked, tasted, or touched by the tiger’s mouth. Pack and hand over only this fresh sale portion in clip ${Math.min(start+2,count)}. The customer may naturally eat only their own purchased portion after receiving it. Never hand over leftovers or the tasting sample, and never add a third portion.`;
+}

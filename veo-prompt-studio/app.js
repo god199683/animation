@@ -747,8 +747,11 @@ function buildPrompt(data){
   const flowPrompt = `${polishedText}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${foxVocalLock}${humanCameoDirection}`;
   const omniPrompt = `${polishedText.replace(effectiveFlowClipLock, omniProductionDirection).replace(finalAudioDirection, omniAudioDirection)}\n\n━━━━━━━━━━━━━━━━━━\n\n${characterChangeDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${qualityDirection}\n\n━━━━━━━━━━━━━━━━━━\n\n${foxVocalLock}${humanCameoDirection}`;
   const combinedPrompt = `[Gemini OMNI 버전]\n\n${omniPrompt}\n\n━━━━━━━━━━━━━━━━━━\n\n[Google Flow 버전]\n\n${flowPrompt}`;
-  const oneMinuteFox=data.lengthMode==='one-minute-fox';
-  return { title, food, signature: oneMinuteFox?`${signature}|one-minute-fox`:signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute: data.lengthMode === 'one-minute', oneMinuteFox, storyRoute, foodIntroduction, bgm, humanDialogue: data.lengthMode === 'one-minute' ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingDialogue() : '', ownerEndingAction: data.lengthMode === 'one-minute' && storyRoute.owner ? pickOwnerEndingAction() : null, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
+  // The visible one-minute choice is the complete fox-to-human episode.  Keep
+  // `oneMinuteFox` only for opening older archived fox-only records unchanged.
+  const oneMinute = data.lengthMode === 'one-minute-fox' || data.lengthMode === 'one-minute';
+  const oneMinuteFox = false;
+  return { title, food, signature: oneMinute?`${signature}|one-minute`:signature, prompt: combinedPrompt, omniPrompt, flowPrompt, humanCameo, oneMinute, oneMinuteFox, storyRoute, foodIntroduction, bgm, humanDialogue: oneMinute ? pickHumanDialogue(Boolean(storyRoute.owner)) : '', ownerDialogue: oneMinute && storyRoute.owner ? pickOwnerEndingDialogue() : '', ownerEndingAction: oneMinute && storyRoute.owner ? pickOwnerEndingAction() : null, summary: `${place} · ${method[0]} · ${foodIntroduction.label} · ${ending} · BGM: ${bgm.title}` };
 }
 
 async function initSupabase(){
