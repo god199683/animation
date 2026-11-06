@@ -15,6 +15,7 @@
     "files": [
       "index.html",
       "styles.css",
+      "ui.css",
       "app.js",
       "archive.html",
       "archive.js",
