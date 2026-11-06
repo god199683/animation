@@ -1020,8 +1020,19 @@ $('regenerate-storyboard').onclick = async () => {
   if (!current) return;
   // Cloud rows from older schema versions do not have a oneMinute column.
   // Restore it from the durable signature before regenerating.
-  current.oneMinuteFox = current.oneMinuteFox === true || String(current.signature||'').split('|').includes('one-minute-fox');
-  current.oneMinute = isOneMinuteItem(current) && !current.oneMinuteFox;
+  const legacyOneMinuteFox = current.oneMinuteFox === true || String(current.signature||'').split('|').includes('one-minute-fox');
+  // Regeneration is an explicit request for the current prompt design.  Migrate
+  // old fox-only one-minute records to the now-visible humanization episode.
+  if (legacyOneMinuteFox) {
+    current.oneMinuteFox = false;
+    current.oneMinute = true;
+    current.signature = String(current.signature || '').replace('one-minute-fox', 'one-minute');
+    current.humanDialogue ||= pickHumanDialogue(Boolean(current.storyRoute?.owner));
+    if (current.storyRoute?.owner) current.ownerDialogue ||= pickOwnerEndingDialogue();
+  } else {
+    current.oneMinuteFox = false;
+    current.oneMinute = isOneMinuteItem(current);
+  }
   if (current.oneMinute || current.oneMinuteFox) current.clipPrompts = [];
   const key = storyboardKey(current);
   const cache = readStoryboardCache();
