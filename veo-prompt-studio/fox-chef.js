@@ -121,29 +121,45 @@ function noveCookingPlan(x){
     ['알맞게 익힌 뒤 한 접시에 담을게요.','cooks the same dish visibly and plates one finished serving']
   ];
 }
+function noveOwnerReplies(x,cookCount){
+  const dialogue=x.dialogueSet ||= noveDialogueSet(x.food);
+  x.ownerCookReplies ||= [
+    pick(['손끝이 아주 야무지네. 천천히 해도 괜찮아.','재료 향이 잘 살아나는 것 같아. 계속해 봐.','노베가 집중하는 모습이 정말 귀엽구나.']),
+    pick(['그릇 안에서 색이 예쁘게 어우러지고 있네.','향이 조금씩 달라지는 게 느껴져.','그 단계는 노베가 특히 정성스럽게 하는구나.']),
+    pick(['불 조절도 아주 조심스럽네.','좋은 냄새가 여기까지 오는 것 같아.','서두르지 않아도 돼. 잘하고 있어.']),
+    pick(['마무리도 노베답게 정갈하네.','접시에 담기 전부터 기대되는걸.','마지막 손길까지 참 예쁘다.'])
+  ];
+  x.ownerDeliveryReply ||= pick(['고마워, 노베. 같이 맛보자.','기다렸어. 노베가 만든 음식이 궁금했어.','좋아, 자리에 앉아서 천천히 맛볼게.']);
+  x.noveTasteReply ||= pick(['입맛에 맞으셨다니 기뻐요.','맛있게 드셔서 정말 다행이에요.','주인님이 좋아하시니 저도 기뻐요.']);
+  return {dialogue,cook:x.ownerCookReplies.slice(0,cookCount),delivery:x.ownerDeliveryReply,taste:x.noveTasteReply};
+}
 function noveEpisodeTimeline(x){
-  const opening=noveOpening(x), cook=noveCookingPlan(x), ownerHere=opening.id==='together';
+  const opening=noveOpening(x), cook=noveCookingPlan(x), ownerHere=opening.id==='together', replies=noveOwnerReplies(x,cook.length);
   const intro=ownerHere
-    ? {kind:'intro',line:`오늘은 ${x.food}을 만들 거예요.`,action:'Nove begins arranging raw ingredients while the owner is visibly nearby and quietly attentive.'}
+    ? {kind:'intro',line:`오늘은 ${x.food}을 만들 거예요.`,ownerLine:replies.dialogue.question,action:'Nove begins arranging raw ingredients while the owner is visibly nearby and quietly attentive.'}
     : {kind:'intro',line:`오늘은 ${x.food}을 만들 거예요.`,action:'Nove begins alone by arranging raw ingredients. The owner is not visible, mentioned, or heard yet.'};
-  const prep=cook.map(([line,action])=>({kind:'cook',line,action,ownerHere}));
+  const prep=cook.map(([line,action],index)=>({kind:'cook',line,ownerLine:ownerHere?replies.cook[index]:'',action,ownerHere}));
   const arrival=ownerHere
-    ? {kind:'delivery',line:'다 만들었어요. 같이 맛봐요.',action:'Nove carries the one completed serving along the established route to the nearby owner, without teleporting or changing rooms abruptly.'}
-    : {kind:'delivery',line:'다 만들었어요. 같이 맛봐요.',action:'Only after the serving is complete, Nove follows the already established doorway or path to find the owner. The owner enters or is reached through that same visible route; no teleportation and no earlier off-screen dialogue.'};
+    ? {kind:'delivery',line:'다 만들었어요. 같이 맛봐요.',ownerLine:replies.delivery,action:'Nove carries the one completed serving along the established route to the nearby owner, without teleporting or changing rooms abruptly.'}
+    : {kind:'delivery',line:'다 만들었어요. 같이 맛봐요.',ownerLine:replies.delivery,action:'Only after the serving is complete, Nove follows the already established doorway or path to find the owner. The owner enters or is reached through that same visible route; no teleportation and no earlier off-screen dialogue.'};
   return [intro,...prep,arrival,
-    {kind:'taste',line:x.tasteLine||'정말 맛있어. 노베가 정성껏 만든 게 느껴져.',action:'The owner takes one small real bite from the same serving and gives a specific warm compliment. Nove watches with eager natural motion.'},
-    {kind:'ending',line:x.foxEnd||'맛있게 드셔서 기뻐요.',action:'Nove and the owner share one gentle natural closing interaction beside the same remaining serving; no new dish, pose reset, or abrupt stillness.'}
+    {kind:'taste',line:x.tasteLine||'정말 맛있어. 노베가 정성껏 만든 게 느껴져.',noveReply:replies.taste,action:'The owner takes one small real bite from the same serving and gives a specific warm compliment. Nove watches with eager natural motion.'},
+    {kind:'ending',line:x.foxEnd||'맛있게 드셔서 기뻐요.',ownerLine:x.praise||'노베, 정말 맛있어.',action:'Nove and the owner share one gentle natural closing interaction beside the same remaining serving; no new dish, pose reset, or abrupt stillness.'}
   ];
 }
 function clipPrompt(x,n){
   const plan=noveEpisodeTimeline(x),beat=plan[n-1];
   if(!beat) return '';
   const start=n===1?'Use the generated first image as the only Start Frame.':'Use the saved final frame of the immediately previous clip as the only Start Frame; frame 1 must match it exactly.';
-  const speaker=beat.kind==='taste'?'OWNER':'NOVE';
+  const bothPresent=Boolean(beat.ownerLine||beat.noveReply);
   const speakerRule=beat.kind==='taste'
-    ? `The owner says exactly once in a warm adult Korean woman voice: “${beat.line}” Nove listens silently.`
-    : `Nove says exactly once in her fixed clear young Korean girl voice: “${beat.line}” The owner, if visible, listens silently.`;
-  const mandatorySpeech=`FINAL SPEECH LOCK — This clip must NOT be silent. After the 1.0–1.5 second action lead-in, ${beat.kind==='taste'?'the owner':'Nove'} must audibly speak the quoted Korean line exactly once: “${beat.line}”. Keep the line between seconds 1.5–5.5 with clearly visible lip-sync or muzzle sync. Do not replace the line with cooking sounds, a tail sound, breathing, music, a smile, narration, or silence. No other character speaks.`;
+    ? `The owner says exactly once in a warm adult Korean woman voice: “${beat.line}” Then Nove replies exactly once in her fixed clear young Korean girl voice: “${beat.noveReply}”`
+    : beat.ownerLine
+      ? `The owner says exactly once in a warm adult Korean woman voice: “${beat.ownerLine}” Then Nove answers exactly once in her fixed clear young Korean girl voice: “${beat.line}”`
+      : `Nove says exactly once in her fixed clear young Korean girl voice: “${beat.line}” The owner is absent and has no voice.`;
+  const mandatorySpeech=bothPresent
+    ? `FINAL CONVERSATION LOCK — This clip must contain BOTH visible speakers. After 1.0–1.5 seconds of action, the owner audibly says her quoted Korean line once between seconds 1.5–3.3; Nove then audibly answers her quoted Korean line once between seconds 3.5–6.2. Give each speaker clear matching mouth or muzzle sync. Do not replace either line with cooking sounds, tail sounds, breathing, music, narration, or silence. No overlapping speech and no third speaker.`
+    : `FINAL SPEECH LOCK — This clip must NOT be silent. After the 1.0–1.5 second action lead-in, Nove must audibly speak the quoted Korean line exactly once: “${beat.line}”. Keep the line between seconds 1.5–5.5 with clearly visible muzzle sync. Do not replace the line with cooking sounds, a tail sound, breathing, music, a smile, narration, or silence. No other character speaks.`;
   return `Generate ONE 8-second vertical 9:16 video. ${start}\n\n${clipCore()}\n\nEPISODE BEAT ${n} OF ${plan.length}: ${beat.action}\nFOOD CONTINUITY: prepare exactly one ${x.food} from visible raw ingredients to one finished serving. Ingredients, tools, plate, room geometry, lighting, costume, character scale, and camera axis continue from the Start Frame. No food, utensil, character, outfit, or background object may appear, vanish, duplicate, or change without visible physical movement.\n\nDIALOGUE: ${speakerRule} Start with 1.0–1.5 seconds of natural silent action. During speech, lower the existing BGM and foley well below the voice; do not mute the continuous BGM completely and do not add hiss, static, overlapping dialogue, narration, or a second line. Keep Korean syllables natural, connected, and clearly pronounced.\n\nOWNER PRESENCE RULE: if the owner is not yet visibly in the Start Frame, do not show, mention, or give dialogue to the owner until this beat explicitly brings her in through the established route. If the owner is visible, preserve the same human woman identity without animal features.\n\nThis is clip ${n} of ${plan.length}. Keep active purposeful motion through the final frame for the next saved-frame clip. No jump cut, teleport, completed-food reveal before its cooking steps, duplicate dish, reset, text, logo, watermark, fade, or freeze.\n\n${mandatorySpeech}`;
 }
 function story(x){
