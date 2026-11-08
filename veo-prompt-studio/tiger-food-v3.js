@@ -64,6 +64,38 @@ finalEpisode=function(data){const x=finalTigerEpisodeWithDynamicCookingPlan(data
 const finalTigerEpisodeWithDynamicPostCookingDialogue=finalEpisode;
 finalEpisode=function(data){const x=finalTigerEpisodeWithDynamicPostCookingDialogue(data),start=guestStart(x),count=x.clipCount||episodeClipCount(x.food);const lines=x.mode==='eat'?['같이 맛보니 더 좋아요.','맛있게 드셨다니 기뻐요.','한입 더 나눠 먹어요.','오늘도 행복해요.']:['완성된 음식이에요.','새 음식으로 정성껏 포장할게요.','조심히 가져가세요.','다음에도 맛있게 만들게요.'];x.prompts=x.prompts.map((prompt,index)=>{const clip=index+1;if(clip<start)return prompt;const line=lines[Math.min(clip-start,lines.length-1)];return prompt.replace(/DIALOGUE:[^\n]*/,`DIALOGUE: the baby white tiger speaks exactly one short Korean line, “${line}”.`)+`\n\nPOST-COOKING DIALOGUE LOCK — HIGHEST PRIORITY: This is post-cooking clip ${clip-start+1} of 4. Speak exactly the quoted complete sentence once; never leave dialogue empty, reuse a cooking instruction, repeat the menu name, or use a generic unrelated phrase. Keep the dialogue matched to the visible action.`});return x};
 
+// One coherent story for every post-cooking beat.  The same source is used by
+// both a new episode and regenerated saved episodes.
+function tigerPostCookingBeat(x, postIndex){
+  const eat=[
+    {action:`takes one small believable bite from the same finished ${x.food}, then pauses with the remaining food clearly visible on the same plate while the guest arrives naturally`,line:'제가 먼저 조금 맛볼게요.'},
+    {action:`lets the same guest take one small bite from the visibly remaining food while the tiger watches with a warm, active reaction`,line:'맛있게 드셨다니 기뻐요.'},
+    {action:`shows the same remaining food to the guest and shares the moment naturally without creating a new dish or taking another bite`,line:'남은 것도 함께 나눠 먹어요.'},
+    {action:`waves gently beside the same plate as the guest naturally finishes their reaction and the tiger tidies only the already-established counter`,line:'오늘도 맛있는 시간이었어요.'}
+  ];
+  const sell=[
+    {action:`takes exactly one tiny bite only from a clearly separate tasting sample, then stops; the newly arriving customer sees the finished food but the tasted sample is never sold`,line:'조금 맛을 보고 마무리할게요.'},
+    {action:`prepares one fresh untouched sale portion of the same ${x.food} and packs it carefully; it has never been bitten, licked, or touched by the tiger’s mouth`,line:'새 판매용 음식은 깨끗하게 포장할게요.'},
+    {action:`hands that same sealed fresh package to the established customer, who accepts it naturally; never hand over the tasting sample or leftovers`,line:'주문하신 음식이에요. 조심히 가져가세요.'},
+    {action:`waves goodbye as the customer leaves with the purchased package, then naturally tidies the already-established counter without creating a new food item`,line:'맛있게 드세요. 다음에도 만들게요.'}
+  ];
+  const beats=x.mode==='sell'?sell:eat;
+  return beats[Math.max(0,Math.min(postIndex,beats.length-1))];
+}
+const finalTigerEpisodeWithCoherentPostCookingStory=finalEpisode;
+finalEpisode=function(data){
+  const x=finalTigerEpisodeWithCoherentPostCookingStory(data),start=guestStart(x),count=x.clipCount||episodeClipCount(x.food);
+  x.prompts=x.prompts.map((prompt,index)=>{
+    const clip=index+1;if(clip<start)return prompt;
+    const postIndex=clip-start,beat=tigerPostCookingBeat(x,postIndex);
+    return prompt
+      .replace(/ACTION: the baby tiger [^\n]*/,`ACTION: the baby tiger ${beat.action}.`)
+      .replace(/DIALOGUE:[^\n]*/,`DIALOGUE: the baby white tiger speaks exactly one short Korean line, “${beat.line}”.`)
+      + `\n\nPOST-COOKING STORY CONTINUITY LOCK — HIGHEST PRIORITY: This is story beat ${postIndex+1} of 4 after all cooking is complete. The visible action and the one quoted line must match each other exactly and continue directly from the previous saved frame. Do not jump from cooking to a farewell, skip the customer’s arrival, repeat an earlier reaction, use a watching-only line, or introduce a new dish. The sequence is fixed: finished-food presentation or tasting sample → fresh sale portion packing or guest reaction → handoff or sharing → natural goodbye and tidy.`;
+  });
+  return x;
+};
+
 // The cooking plan can be longer than eight clips.  Build the visible copy controls
 // from the actual plan instead of silently hiding clips 9+ behind the full-copy button.
 var tigerRenderBase = render;
