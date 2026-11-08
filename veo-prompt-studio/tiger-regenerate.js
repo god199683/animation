@@ -9,6 +9,9 @@
     const plan = tigerCookingPlan(current.food);
     const cookingEnd = plan.length + 1;
     const clipCount = cookingEnd + 4;
+    const postCookingLines = current.mode === 'eat'
+      ? ['같이 맛보니 더 좋아요.','맛있게 드셨다니 기뻐요.','한입 더 나눠 먹어요.','오늘도 행복해요.']
+      : ['완성된 음식이에요.','새 음식으로 정성껏 포장할게요.','조심히 가져가세요.','다음에도 맛있게 만들게요.'];
     current.clipCount = clipCount;
     current.prompts = Array.from({length:clipCount}, (_, i) => {
       const clip = i + 1;
@@ -18,6 +21,8 @@
         .replaceAll('맛있다는 말을 들으면 힘이 나요.', '')
         .replaceAll('따뜻할 때 드셔 보세요.', '')
         .replaceAll('손님, 달콤한 하루 되세요!', '')
+        .replaceAll('같이 보면 더 즐거워요!', '')
+        .replaceAll('같이 보면 즐거워요!', '')
         .replaceAll('I made it myself!', '');
       if (clip === 1) {
         prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly this one Korean menu-introduction sentence, “오늘 만들 음식은 ${current.food}예요.”`);
@@ -28,6 +33,11 @@
           .replace(/ACTION: the baby tiger [^\n]*/, `ACTION: the baby tiger ${stage.action}.`)
           .replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean cooking-process line, “${stage.line}”.`);
         prompt += `\n\nCOOKING-STAGE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is cooking step ${clip-1} of ${plan.length}. The baby white tiger alone performs and says the quoted food-specific cooking sentence. Delete and ignore every older dialogue instruction. Never say “맛있다는 말을 들으면 힘이 나요”, “따뜻할 때 드셔 보세요”, “제가 직접 만들었어요”, “예쁘게 담아 드릴게요”, “만들었어요”, a greeting, serving line, invitation, menu introduction, praise, reaction, or any generic dialogue in cooking clips. No guest, tasting, plating, packaging, selling, or ending may appear until all ${plan.length} cooking steps are complete. If wording needs to vary for natural speech, use only a short natural paraphrase of this exact visible cooking step.${tigerDetailedStepLock(stage,clip-2,plan.length,current.food)}`;
+      } else {
+        const postIndex = clip - cookingEnd - 1;
+        const line = postCookingLines[Math.max(0, Math.min(postIndex, postCookingLines.length - 1))];
+        prompt = prompt.replace(/DIALOGUE:[^\n]*/, `DIALOGUE: the baby white tiger speaks exactly one short Korean line, “${line}”.`);
+        prompt += `\n\nPOST-COOKING DIALOGUE OVERRIDE — ABSOLUTE HIGHEST PRIORITY: This is post-cooking step ${postIndex + 1} of 4. Speak only “${line}” exactly once because it must match the visible action. Never say “같이 보면 즐거워요”, “같이 보면 더 즐거워요”, or any watching-only, generic, unrelated, or leftover cooking sentence. Do not repeat the menu name or use an off-screen speaker.`;
       }
       return `${prompt}${identity}`;
     });
