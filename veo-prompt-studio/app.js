@@ -361,20 +361,31 @@ function foxVoiceInstruction(stage){
 }
 function fourClipFoxVocal(stage){const moments={1:'at seconds 2.3–2.8, immediately after the close sniff',2:'at seconds 5.7–6.2, after the second small mouthful and swallow',3:'at seconds 4.4–4.9, at the first surprised reaction to the new physical detail',4:'at seconds 7.1–7.6, as the completed design settles into the final natural reaction'};const characters={1:'cautious curiosity: a quiet questioning lift, then a tiny soft release',2:'gentle satisfaction: relaxed and rounded after swallowing, never needy or whining',3:'bright surprised recognition: a delicate quick lift with a warm release, not a squeak',4:'quiet completion joy: a calm, confident, low-volume airy release that fits a natural ending'};return `REQUIRED AUDIBLE FOX SOUND — 4-CLIP VIDEO, CLIP ${stage}: ${moments[stage]} is this clip’s unique protected foreground audio cue. Its emotional delivery is ${characters[stage]}; do not reuse the delivery, rhythm, or emotional color from any other clip. Its timing must not be moved to the same point as any other clip. For this half-second, lower BGM, ambience, wind, magic effects, and all foley to near silence; the fox call is the only foreground sound. Render exactly one clearly audible, natural nonverbal juvenile fox contact call synchronized to a small muzzle, ear, and breathing reaction. It lasts 0.35–0.50 seconds: a breath-led onset, one gentle brief rise in pitch, then a soft falling release. It must be unmistakably present and may never be omitted or replaced by silence, a mere exhale, ambience, foley, or music. Generate a small fox-only vocal with a light airy, slightly textured fox-kit timbre, no low chest resonance, no dog-like attack, and no dog-like whine. Never use a dog bark, dog yelp, dog whine, howl, growl, pant, cat meow, cat purr, cat trill, kitten squeak, human word, narration, song, or hidden background sound.`}
 
-// Flow often reduces “breath-led” calls to plain breathing.  Keep one clearly voiced,
-// scene-specific cue instead of allowing any second or competing vocal instruction.
+// Keep the sound direction short and attached to the visible beat.  Long technical
+// audio locks made Flow treat the cue as an effect to suppress rather than a reaction.
 fourClipFoxVocal = function(stage){
-  const moments={1:'at seconds 2.3–2.8, immediately after the close sniff',2:'at seconds 5.7–6.2, after the second small mouthful and swallow',3:'at seconds 4.4–4.9, at the first surprised reaction to the new physical detail',4:'at seconds 7.1–7.6, as the completed design settles into the final natural reaction'};
-  const characters={1:'cautious curiosity',2:'gentle satisfaction',3:'bright surprised recognition',4:'quiet completion joy'};
-  return `REQUIRED AUDIBLE FOX VOCAL — 4-CLIP VIDEO, CLIP ${stage}: ${moments[stage]} is the only fox vocal in this clip and is a protected foreground cue. Its emotional delivery is ${characters[stage]}; never reuse another clip’s timing, rhythm, or emotional color. Lower BGM, ambience, wind, magic effects, and foley to near silence for this 0.35–0.50-second cue. Render one real, clearly audible, nonverbal juvenile fox vocal with a distinct PITCH-BEARING VOICED CORE: a tiny quiet onset, one clearly voiced light upward tone, then a separate softer voiced falling tone. It is NOT breathing, a sniff, sigh, inhale, exhale, rustle, chime, or generic sound effect. Synchronize it to a tiny visible muzzle and ear reaction. Never omit it or substitute silence, ambience, music, or foley. Use a light, natural, slightly textured fox-kit timbre with no low chest resonance, dog-like attack, dog-like whine, cat-like quality, or human syllable. Never use a dog bark, dog yelp, dog whine, howl, growl, pant, cat meow, purr, trill, kitten squeak, human word, narration, or song.`;
+  const beats={
+    1:'right after the on-screen sniff, make one soft curious fox-kit chirp with a tiny ear flick',
+    2:'after swallowing the second small mouthful, make one gentle satisfied fox-kit chirp',
+    3:'when noticing the first permanent changed detail, make one small surprised fox-kit chirp',
+    4:'as the final transformation settles, make one quiet happy fox-kit chirp'
+  };
+  return `NATURAL FOX REACTION — CLIP ${stage}: ${beats[stage]}. It is a single short nonverbal vocal reaction, naturally mixed with the nearby scene ambience and clearly audible on close listening. Show a small matching muzzle and ear movement. This is a real young fox sound, not breathing alone, a dog bark or whine, a cat sound, a human word, narration, or music.`;
 };
 requiredFourClipFoxCall = function(stage){
-  return `FINAL AUDIO MIX LOCK — CLIP ${stage}: preserve exactly the one uniquely timed fox vocal stated above; do not add a second call or move it. The cue must contain its clear pitch-bearing voiced core and remain plainly audible above every other sound. Breathing alone, a sniff, sigh, chime, tail rustle, ambience, foley, or music is not an acceptable substitute.`;
+  return `SOUND CONTINUITY — Keep this clip’s one natural fox reaction attached to its stated action. Do not repeat it, turn it into dialogue, or replace it with only a breath, sniff, dog, cat, or human sound.`;
 };
 foxVoiceInstruction = function(stage){
-  const moments={1:'at seconds 2.2–2.7 after the first scenting pause',2:'at seconds 4.8–5.3 while following the scent',3:'at seconds 3.7–4.2 immediately after the food is noticed',4:'at seconds 5.3–5.8 immediately after the first small bite',5:'at seconds 2.8–3.3 when the first transformation light is noticed',6:'at seconds 4.5–5.0 during the first visible humanization reaction',7:'at seconds 5.8–6.3 during the continuing transformation reaction'};
-  const characters={1:'cautious curiosity',2:'an eager trail-following response',3:'brief delighted discovery',4:'gentle post-taste satisfaction',5:'small transformation-start surprise',6:'shy amazement',7:'quiet continuing-change happiness'};
-  return `REQUIRED AUDIBLE FOX VOCAL — 1-MINUTE VIDEO, CLIP ${stage}: ${moments[stage]}. Render exactly one real nonverbal juvenile fox vocal expressing ${characters[stage]}. Its delivery must differ from every other clip. For this protected 0.35–0.50-second cue, lower BGM, ambience, wind, magic effects, and foley to near silence. It must have a distinct PITCH-BEARING VOICED CORE: tiny quiet onset, one clearly voiced light upward tone, then a separate softer voiced falling tone. It is NOT breathing, a sniff, sigh, inhale, exhale, rustle, chime, or generic sound effect. Synchronize it to a tiny visible muzzle and ear reaction. Never omit it or replace it with silence, ambience, foley, or music. Use a light natural slightly textured fox-kit timbre—never dog-like, cat-like, or human-speech-like. Never use bark, yelp, howl, growl, pant, dog whine, cat meow, purr, trill, human word, narration, or song.`;
+  const beats={
+    1:'after the first scent check, a soft cautious curious fox-kit chirp',
+    2:'while following the scent, a small eager fox-kit chirp',
+    3:'when the food is noticed, a brief bright discovery chirp',
+    4:'after the first small bite, a gentle contented chirp',
+    5:'when the first light appears, a short surprised chirp',
+    6:'on noticing the first human change, a shy amazed chirp',
+    7:'while the change continues, a quiet happy chirp'
+  };
+  return `NATURAL FOX REACTION — 1-MINUTE VIDEO, CLIP ${stage}: ${beats[stage]}. Use one short nonverbal young-fox vocal that follows the visible action rather than interrupting it; mix it naturally with the location ambience and show a small matching muzzle and ear movement. It must not be only breathing, and must never sound like a dog, cat, human speech, narration, or song.`;
 };
 const focusedFourthClipPromptSingleAudio = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){
@@ -518,7 +529,9 @@ function oneMinuteClipPrompt(stage){
     8: `FINAL FORM — HIGHEST PRIORITY: complete the transformation into ONE beautiful young-adult HUMAN WOMAN, not an anthropomorphic fox, not an animal girl with a fox head, and not a chibi creature. Her entire face is human female anatomy: luminous milky-pale human skin, feminine human forehead, temples, cheekbones, human eyebrows, normal human nose and nostrils, human lips, human chin and jawline, and human-shaped eyes in the food-inspired eye color. Her body is a fully upright feminine human body with human shoulders, arms, hands, torso, legs, and feet; do not leave paws, a muzzle, fur-covered skin, or animal proportions. The ONLY fox traits allowed are exactly two fox ears and exactly nine fluffy tails, plus the forehead flower marking, necklace, and pendant. Complete the food-inspired hairstyle and fully formed outfit from this design: ${humanDesign}. The transformed woman speaks her short Korean line, then performs this exact final interaction with the referenced owner: ${ownerEndingAction.en}. The owner replies with the selected short Korean line. ${ownerLock} Finish in a natural relaxed pose with a gentle tail movement.`
   };
   const action = (owner ? walk : solo)[stage];
-  const stageTwoAudioLock = stage === 2 ? 'FINAL CLIP-2 AUDIO LOCK: at the already specified 4.8–5.3 second cue, the fox’s pitch-bearing voiced call is mandatory. Do not use breathing, a sniff, walking foley, wind, music, or silence in its place. Do not move this call earlier or later.' : '';
+  // Do not turn this into a separate sound-effect requirement.  Flow follows a
+  // simple on-screen reaction much more reliably than a timed audio lock.
+  const stageTwoAudioLock = stage === 2 ? 'Keep the small fox reaction part of the on-screen scent-following moment, not a separate foreground sound effect.' : '';
   const sound = `${bgmSegmentInstruction(stage, 8)} ${stage === 8 ? `${humanVoiceInstruction(owner)} FINAL-CLIP SINGLE-DIALOGUE LOCK — The transformed woman is the only speaker in this clip. Speak exactly her one quoted Korean line once only, with clear human lip-sync. The owner, if present, listens silently and must not reply, narrate, call out, or make an off-screen voice. Ignore any earlier conflicting instruction for an owner reply.` : foxVoiceInstruction(stage)} ${stageTwoAudioLock} Use only soft synchronized foley and the same ${place} ambience.`;
   return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}`;
 }
@@ -569,8 +582,10 @@ function referenceVideoFoxVocal(stage){
 // Older archived one-minute fox episodes use this path.  Keep their vocal rule
 // aligned with the current audible, voiced-cue requirement as well.
 referenceVideoFoxVocal = function(stage){
-  const moments={1:'at seconds 2.2–2.7 after scenting',2:'at seconds 4.8–5.3 while tracking the scent',3:'at seconds 3.7–4.2 when the food is noticed',4:'at seconds 5.3–5.8 after the first small bite',5:'at seconds 2.8–3.3 when change begins',6:'at seconds 4.5–5.0 during the first visible change',7:'at seconds 5.8–6.3 during the continuing change',8:'at seconds 6.1–6.6 during the final natural reaction'};
-  return `REQUIRED AUDIBLE FOX VOCAL — LEGACY 1-MINUTE VIDEO, CLIP ${stage}: ${moments[stage]}. Render exactly one clearly audible natural juvenile fox vocal with a distinct pitch-bearing voiced core: one small light upward tone followed by a separate softer falling tone. It is not breathing, a sniff, sigh, inhale, exhale, chime, or foley. Lower all BGM and foley to near silence during this 0.35–0.50-second cue, synchronize it to a tiny muzzle and ear reaction, and do not omit it. Use a natural light fox-kit timbre only; never dog-like, cat-like, or human-like sound.`;
+  // Old saved one-minute entries still use this builder.  Keep their sound cue
+  // identical in spirit to a newly generated storyboard: one small reaction
+  // caused by the visible beat, rather than a technical sound-effect command.
+  return foxVoiceInstruction(stage);
 };
 function oneMinuteFoxFirstImagePrompt(){
   const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
