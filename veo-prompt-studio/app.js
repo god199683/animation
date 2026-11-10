@@ -370,7 +370,7 @@ fourClipFoxVocal = function(stage){
     3:'when noticing the first permanent changed detail, make one small surprised fox-kit chirp',
     4:'as the final transformation settles, make one quiet happy fox-kit chirp'
   };
-  return `NATURAL FOX REACTION — CLIP ${stage}: ${beats[stage]}. It is a single short nonverbal vocal reaction, naturally mixed with the nearby scene ambience and clearly audible on close listening. Show a small matching muzzle and ear movement. This is a real young fox sound, not breathing alone, a dog bark or whine, a cat sound, a human word, narration, or music.`;
+  return `AUDIO — CLIP ${stage}: ${beats[stage]}. Include this sound in the generated audio track: one audible, very short, high young-fox contact call, a soft nonverbal “kiyuu”-like call (not a spoken syllable). It must happen immediately after the stated on-screen action, with a small matching muzzle and ear movement. Keep it natural inside the scene ambience, but audible—not breathing alone, a dog bark or whine, a cat sound, human speech, narration, or music.`;
 };
 requiredFourClipFoxCall = function(stage){
   return `SOUND CONTINUITY — Keep this clip’s one natural fox reaction attached to its stated action. Do not repeat it, turn it into dialogue, or replace it with only a breath, sniff, dog, cat, or human sound.`;
@@ -385,7 +385,7 @@ foxVoiceInstruction = function(stage){
     6:'on noticing the first human change, a shy amazed chirp',
     7:'while the change continues, a quiet happy chirp'
   };
-  return `NATURAL FOX REACTION — 1-MINUTE VIDEO, CLIP ${stage}: ${beats[stage]}. Use one short nonverbal young-fox vocal that follows the visible action rather than interrupting it; mix it naturally with the location ambience and show a small matching muzzle and ear movement. It must not be only breathing, and must never sound like a dog, cat, human speech, narration, or song.`;
+  return `AUDIO — 1-MINUTE VIDEO, CLIP ${stage}: ${beats[stage]}. Include this sound in the generated audio track: one audible, very short, high young-fox contact call, a soft nonverbal “kiyuu”-like call (not a spoken syllable). It follows the visible action rather than interrupting it, with a small matching muzzle and ear movement. Keep it natural inside the location ambience, but audible—not breathing alone, a dog or cat sound, human speech, narration, or song.`;
 };
 const focusedFourthClipPromptSingleAudio = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){
