@@ -409,6 +409,16 @@ focusedThirdClipPrompt = function(){ return `${fourClipTailInvariant(3)}\n\n${fo
 const focusedFourthClipPromptTailSafe = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){ return `${fourClipTailInvariant(4)}\n\n${focusedFourthClipPromptTailSafe()}\n\n${fourClipTailFinalCheck(4)}`; };
 
+// The food-derived design is a physical state, not an effect that may turn off.
+// Keep this compact rule at the outermost layer so the final pose cannot reset it.
+const fourClipTransformationPersistence = stage => stage === 3
+  ? `TRANSFORMATION STATE LOCK — CLIP 3: Every food-derived color, texture, ear trim, tail-tip detail, forehead ornament, and pendant detail becomes permanent at the exact instant it first appears. It remains on that same physical location through the final frame. No change may blink, fade, dissolve, turn back to ordinary fur, move to another tail, be hidden by glow, or be replaced by a clean version.`
+  : `TRANSFORMATION HANDOFF LOCK — CLIP 4: The saved clip-3 Start Frame is the permanent design inventory. Every food-derived color, texture, ear trim, changed tail tip, forehead ornament, and pendant detail already visible at frame 1 must remain visibly present in every later frame. Complete the design by ADDING only the unfinished details; never remove, recolor, simplify, clean, relocate, hide, or reset any existing transformed detail. The final pose must show the completed design, not the original fox.`;
+const focusedThirdClipPromptTransformSafe = focusedThirdClipPrompt;
+focusedThirdClipPrompt = function(){ return `${fourClipTransformationPersistence(3)}\n\n${focusedThirdClipPromptTransformSafe()}\n\nFINAL TRANSFORMATION CHECK — CLIP 3: every changed feature still visible, unchanged, and on the same body/tail location in the last frame.`; };
+const focusedFourthClipPromptTransformSafe = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){ return `${fourClipTransformationPersistence(4)}\n\n${focusedFourthClipPromptTransformSafe()}\n\nFINAL TRANSFORMATION CHECK — CLIP 4: keep every clip-3 change plus every completed detail visible in the final pose; never show a clean or earlier version of the character.`; };
+
 // A compact final-clip prompt keeps the previous frame's visual state ahead of every audio request.
 function focusedFourthClipPrompt(){
   const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
