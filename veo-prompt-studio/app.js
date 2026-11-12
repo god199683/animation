@@ -395,6 +395,20 @@ focusedFourthClipPrompt = function(){
   );
 };
 
+// Put the tail inventory at both ends of every short-video prompt.  This is kept
+// deliberately short: it must outrank animation and audio details, without
+// confusing the allowed surface-only tail-tip transformation in clips 3 and 4.
+const fourClipTailInvariant = stage => `NINE-TAIL CONTINUITY — HIGHEST VISUAL PRIORITY (CLIP ${stage}): Frame 1 and every later frame contain the SAME exactly NINE separate full-length fox tails from the Start Frame. Keep their individual attachment points, anatomy, length, thickness, and open-fan order. Only the stated surface detail on a tail tip may change during the planned transformation; a tail itself may never appear, disappear, split, merge, shrink, grow, be cropped, be hidden, be replaced, or become a blurred tail mass.`;
+const fourClipTailFinalCheck = stage => `FINAL FRAME CHECK — CLIP ${stage}: show exactly the same NINE individually readable attached tails, all still present in the same fan order. Never trade a tail for movement, sound, glow, a pose, or a camera crop.`;
+const focusedFirstClipPromptTailSafe = focusedFirstClipPrompt;
+focusedFirstClipPrompt = function(){ return `${fourClipTailInvariant(1)}\n\n${focusedFirstClipPromptTailSafe()}\n\n${fourClipTailFinalCheck(1)}`; };
+const focusedSecondClipPromptTailSafe = focusedSecondClipPrompt;
+focusedSecondClipPrompt = function(){ return `${fourClipTailInvariant(2)}\n\n${focusedSecondClipPromptTailSafe()}\n\n${fourClipTailFinalCheck(2)}`; };
+const focusedThirdClipPromptTailSafe = focusedThirdClipPrompt;
+focusedThirdClipPrompt = function(){ return `${fourClipTailInvariant(3)}\n\n${focusedThirdClipPromptTailSafe()}\n\n${fourClipTailFinalCheck(3)}`; };
+const focusedFourthClipPromptTailSafe = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){ return `${fourClipTailInvariant(4)}\n\n${focusedFourthClipPromptTailSafe()}\n\n${fourClipTailFinalCheck(4)}`; };
+
 // A compact final-clip prompt keeps the previous frame's visual state ahead of every audio request.
 function focusedFourthClipPrompt(){
   const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
