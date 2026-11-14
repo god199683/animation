@@ -431,6 +431,17 @@ const focusedThirdClipPromptAppearanceSafe = focusedThirdClipPrompt;
 focusedThirdClipPrompt = function(){ return `${fourClipAppearanceLock(3)}\n\n${focusedThirdClipPromptAppearanceSafe()}`; };
 const focusedFourthClipPromptAppearanceSafe = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){ return `${fourClipAppearanceLock(4)}\n\n${focusedFourthClipPromptAppearanceSafe()}`; };
+const fourClipAppearanceFinalCheck = stage => stage <= 2
+  ? `FINAL APPEARANCE CHECK — CLIP ${stage}: compare the final frame with the Start Frame. The fox must be the exact same character with no new fur color, markings, ornaments, accessory changes, facial redesign, body resize, or transformation. Only the food’s physical bite state may differ in clip 2.`
+  : `FINAL APPEARANCE CHECK — CLIP ${stage}: compare with the Start Frame. Retain the exact same character and every previously established detail; only the stated cumulative food-derived transformation layers may have been added. Nothing else may change.`;
+const focusedFirstClipPromptFinalAppearanceSafe = focusedFirstClipPrompt;
+focusedFirstClipPrompt = function(){ return `${focusedFirstClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(1)}`; };
+const focusedSecondClipPromptFinalAppearanceSafe = focusedSecondClipPrompt;
+focusedSecondClipPrompt = function(){ return `${focusedSecondClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(2)}`; };
+const focusedThirdClipPromptFinalAppearanceSafe = focusedThirdClipPrompt;
+focusedThirdClipPrompt = function(){ return `${focusedThirdClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(3)}`; };
+const focusedFourthClipPromptFinalAppearanceSafe = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){ return `${focusedFourthClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(4)}`; };
 
 // A compact final-clip prompt keeps the previous frame's visual state ahead of every audio request.
 function focusedFourthClipPrompt(){
@@ -573,7 +584,10 @@ function oneMinuteClipPrompt(stage){
   // simple on-screen reaction much more reliably than a timed audio lock.
   const stageTwoAudioLock = stage === 2 ? 'Keep the small fox reaction part of the on-screen scent-following moment, not a separate foreground sound effect.' : '';
   const sound = `${bgmSegmentInstruction(stage, 8)} ${stage === 8 ? `${humanVoiceInstruction(owner)} FINAL-CLIP SINGLE-DIALOGUE LOCK — The transformed woman is the only speaker in this clip. Speak exactly her one quoted Korean line once only, with clear human lip-sync. The owner, if present, listens silently and must not reply, narrate, call out, or make an off-screen voice. Ignore any earlier conflicting instruction for an owner reply.` : foxVoiceInstruction(stage)} ${stageTwoAudioLock} Use only soft synchronized foley and the same ${place} ambience.`;
-  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}`;
+  const appearanceFinalCheck = stage <= 4
+    ? `FINAL APPEARANCE CHECK: compare the final frame with the Start Frame. The fox must remain exactly the same character: no new fur color, markings, ornament, accessory, face, body-scale, ear, or tail-layout change. Only the food’s bite state may change in clip 4; character transformation is forbidden before clip 5.`
+    : `FINAL APPEARANCE CHECK: preserve every already-established character detail from the Start Frame. The only allowed new appearance change is the exact food-driven humanization step stated for this clip; never redesign, reset, replace, or remove any other detail.`;
+  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}`;
 }
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
