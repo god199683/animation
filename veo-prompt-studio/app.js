@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v2';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v3';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -337,6 +337,7 @@ function characterReferenceRule(stage){
 }
 const referenceVisibleIdentityLock = `REFERENCE IDENTITY LOCK — The user’s supplied character image is an immutable design sheet. Copy its exact visible character as-is: face proportions, eye shape and color, fur markings, tail count and tail fan layout, ear shape, head ornaments, collar or neck jewelry, pendants, and every existing accessory. Do not replace any of these with the older default fox design, a generic white fox, new jewelry, different markings, or a redesigned art style.`;
 const savedFrameIdentityLock = `SAVED-FRAME IDENTITY LOCK — The supplied saved Start Frame is the only identity authority for this continuation. Copy its exact visible character as-is: face, eyes, fur markings, tail count and fan layout, ear shape, head ornaments, collar or neck jewelry, pendants, and accessories. Do not apply any older default character description or redesign a visible feature.`;
+const exactContinuationFrameLock = `ABSOLUTE CONTINUATION MODE — HIGHEST PRIORITY: The supplied saved previous-clip final frame is the ONLY image input and the complete visual ground truth. At video frame 1, reproduce that image exactly before any motion: identical character identity, face, eye design, fur markings, body scale, pose, tail count and individual tail layout, ear shape, all head and neck accessories, clothing or transformation state, art style, crop, lens, lighting, and background. Do not redraw, beautify, simplify, reinterpret, restyle, substitute, or regenerate any visible feature. Do not attach the original character image, a target image, or any alternate reference for this continuation. After frame 1, only the explicitly requested action may move; all unmentioned visual features remain unchanged. If an instruction conflicts with the saved frame, the saved frame wins.`;
 // The historical first-image builder described one older fox design in prose.
 // Keep it from overriding the reference the user actually supplies.
 const oneMinuteFirstImagePromptOriginal = oneMinuteFirstImagePrompt;
@@ -351,11 +352,11 @@ oneMinuteFirstImagePrompt = function(){
 const focusedFirstClipPromptReferenceSafe = focusedFirstClipPrompt;
 focusedFirstClipPrompt = function(){ return `${referenceVisibleIdentityLock}\n\n${focusedFirstClipPromptReferenceSafe()}\n\n${referenceVisibleIdentityLock}`; };
 const focusedSecondClipPromptReferenceSafe = focusedSecondClipPrompt;
-focusedSecondClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedSecondClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
+focusedSecondClipPrompt = function(){ return `${exactContinuationFrameLock}\n\n${savedFrameIdentityLock}\n\n${focusedSecondClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`; };
 const focusedThirdClipPromptReferenceSafe = focusedThirdClipPrompt;
-focusedThirdClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedThirdClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
+focusedThirdClipPrompt = function(){ return `${exactContinuationFrameLock}\n\n${savedFrameIdentityLock}\n\n${focusedThirdClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`; };
 const focusedFourthClipPromptReferenceSafe = focusedFourthClipPrompt;
-focusedFourthClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedFourthClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
+focusedFourthClipPrompt = function(){ return `${exactContinuationFrameLock}\n\n${savedFrameIdentityLock}\n\n${focusedFourthClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`; };
 function bgmSegmentInstruction(stage, total){
   const cue = current?.bgm || bgmCues[0];
   const start = (stage - 1) * 8, end = stage * 8;
@@ -613,7 +614,8 @@ function oneMinuteClipPrompt(stage){
   const appearanceFinalCheck = stage <= 4
     ? `FINAL APPEARANCE CHECK: compare the final frame with the Start Frame. The fox must remain exactly the same character: no new fur color, markings, ornament, accessory, face, body-scale, ear, or tail-layout change. Only the food’s bite state may change in clip 4; character transformation is forbidden before clip 5.`
     : `FINAL APPEARANCE CHECK: preserve every already-established character detail from the Start Frame. The only allowed new appearance change is the exact food-driven humanization step stated for this clip; never redesign, reset, replace, or remove any other detail.`;
-  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the supplied reference or saved frame's exact rendering style. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}\n\n${stage === 1 ? referenceVisibleIdentityLock : savedFrameIdentityLock}`;
+  const finalIdentityLock = stage === 1 ? referenceVisibleIdentityLock : `${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`;
+  return `${stage === 1 ? '' : `${exactContinuationFrameLock}\n\n`}${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the supplied reference or saved frame's exact rendering style. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}\n\n${finalIdentityLock}`;
 }
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -701,11 +703,11 @@ oneMinuteFoxFirstImagePrompt = function(){
 };
 const legacyOneMinuteFoxClipPrompt = oneMinuteFoxClipPrompt;
 oneMinuteFoxClipPrompt = function(stage){
-  const identityLock = stage === 1 ? referenceVisibleIdentityLock : savedFrameIdentityLock;
+  const identityLock = stage === 1 ? referenceVisibleIdentityLock : `${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`;
   const legacy = legacyOneMinuteFoxClipPrompt(stage)
     .replace(/Preserve the same white nine-tailed fox, face, eyes, forehead marking, necklace, pendant,/, 'Preserve the exact visible character identity from the applicable reference or saved frame: same face, eyes, fur markings, tail layout, head ornaments, neck jewelry, pendants, and accessories,')
     .replace(/ART-STYLE LOCK: attach the user’s original fox character image as an additional Reference\/Ingredient in every clip to preserve identity and the exact bright ethereal pastel 3D illustration style only; never use it as a replacement Start Frame\./, 'ART-STYLE LOCK: for clip 1, attach the user’s original fox image only as an additional Reference/Ingredient; for clips 2–8, use only the saved Start Frame and do not attach an alternate fox image. Preserve the exact rendering style already visible in the applicable authority.');
-  return `${identityLock}\n\n${legacy}\n\n${identityLock}`;
+  return `${stage === 1 ? '' : `${exactContinuationFrameLock}\n\n`}${identityLock}\n\n${legacy}\n\n${identityLock}`;
 };
 function stagePrompt(storyboard, stage){
   if ((current?.oneMinute || current?.oneMinuteFox) && current.clipPrompts?.[stage]) return current.clipPrompts[stage];
