@@ -186,7 +186,7 @@ const FOOD_CONTINUITY_SUFFIXES = [
   'Food continuity lock: begin with the same final 20–25% remaining food from clip 2. Keep that same bitten remainder visible in the same plate or wrapper position throughout this clip; do not eat more, restore it, regenerate it, replace it, or introduce any other food.',
   'Food continuity lock: keep the same 20–25% bitten food remainder, same plate or wrapper, and same crumbs in the same position through the final frame. Never restore it to whole, regenerate it, replace it, or introduce another food.'
 ];
-const STORY_COMMON_SUFFIX = `NON-NEGOTIABLE COMMON LOCK FOR THIS CLIP: Use the user's original supplied character image as a Reference/Ingredient whenever Flow provides that option. For clips 2–4, the supplied Start Frame must be the saved final frame of the immediately previous clip; it is not a newly generated reference image. Preserve the exact original character, not a lookalike: small quadruped white nine-tailed fox; oversized round lavender-to-ice-blue eyes with long lashes; tiny pink nose; pale blue-and-lilac flower-shaped forehead marking; white fur with soft blush-pink tail tips; exactly nine large fluffy tails; delicate blue flower necklace and one round aqua pendant. Preserve the reference image's bright ethereal pastel 3D illustration rendering across character and background: soft creamy fur, luminous airy bloom, powder-blue and blush-pink highlights, gentle shallow depth of field, and dreamy spring-fantasy color grading. Never make a cat-like replacement, a different face, different eye color, missing necklace, missing pendant, different forehead marking, fewer or extra tails, photorealistic background, dark realistic background, cel shading, rough game rendering, extra animal, fairy, sprite, ghost, floating creature, winged light being, or companion. Any magical transformation light must remain abstract non-sentient light only.`;
+const STORY_COMMON_SUFFIX = `NON-NEGOTIABLE COMMON LOCK FOR THIS CLIP: The user-supplied original character image is the only character design authority. Copy every visible feature from that image exactly—not a generic fox interpretation—including face proportions, eye shape and color, fur markings, tail count and layout, ear shape, head ornaments, collar or neck jewelry, pendants, and existing accessories. Never add, remove, recolor, substitute, or reinterpret a visible feature. For clips 2–4, the supplied Start Frame must be the saved final frame of the immediately previous clip; it is not a newly generated reference image. Preserve the reference image's exact illustration medium across character and background; do not restyle it or introduce a different character.`;
 const FIRST_IMAGE_REFERENCE_LOCK = `FIRST-IMAGE OUTPUT AND REFERENCE LOCK — HIGHEST PRIORITY: Generate exactly ONE single full-frame vertical 9:16 image: one composition, one scene, and one instance of each requested character. Never create a diptych, collage, split screen, character sheet, alternate version, duplicate character, duplicate fox, side-by-side comparison, inset, or second image inside the image. Treat the supplied character reference as an immutable visual design sheet, not loose inspiration. Match its exact character identity and its exact illustration style: face proportions, eye design, fur rendering, line/edge treatment, material texture, palette, lighting behavior, shading, depth of field, and overall rendering medium. Do not restyle it into generic 3D, anime, photorealism, cel shading, or any other visual language. The new background must be rendered in that same reference-image style so character and environment look like one original illustration.`;
 const TRANSFORMATION_VISIBILITY_SUFFIXES = [
   '', '', '',
@@ -272,7 +272,7 @@ function focusedSecondClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const eating = foodEatingPlan(food);
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that saved frame as the only Start Frame. ${characterReferenceRule(2)} Preserve the same fox, nine tails, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, ${place}, lighting, camera axis, and the single prepared serving of ${food}.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 1. Use that saved frame as the only Start Frame. ${characterReferenceRule(2)} Preserve the exact character visible in the saved frame—same face, eyes, fur markings, tail layout, head ornaments, neck jewelry, pendants, and accessories—plus ${place}, lighting, camera axis, and the single prepared serving of ${food}.
 
 Show one continuous natural eating action. ${eating} Keep exactly one physical ${food}; do not duplicate, replace, dissolve, or make it suddenly disappear. Do not finish the food or show an empty plate. INGESTION DIRECTION LOCK — every bite moves only from the same food directly into the fox’s mouth and is swallowed. Once food enters the mouth, it never comes back out: no spitting, dropping, coughing, gagging, retching, regurgitating, food in the air, chewed food on the paw, or residue returned to the plate. Between bites, the mouth is empty and closes naturally while swallowing.
 
@@ -281,7 +281,7 @@ In the final second, keep that remainder visible and begin only a tiny faint lig
 function focusedFirstClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} Preserve the same white nine-tailed fox, face, lavender-blue eyes, forehead flower marking, necklace, aqua pendant, exactly nine tails, ${place}, lighting, camera axis, and one whole ${food}.
+  return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} ${referenceVisibleIdentityLock} Preserve that exact visible character, its exact tail count, ${place}, lighting, camera axis, and one whole ${food}.
 
 The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. ${bgmSegmentInstruction(1, 4)} ${fourClipFoxVocal(1)} ${fourClipVisualInventoryLock(1)} Use only soft paw steps and a sniff besides this required fox vocal. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
 }
@@ -290,7 +290,7 @@ function focusedThirdClipPrompt(){
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
   const [, feature, colors] = foodProfile(food);
   const design = foodTransformationPrompt(food, feature, colors);
-  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Use that saved frame as the only Start Frame. ${characterReferenceRule(3)} Preserve the fox identity only: same face, eyes, forehead flower marking, necklace, aqua pendant, body shape, exactly nine tails, ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder. Do NOT preserve clean original white fur on any area that becomes transformed.
+  return `Generate one 8-second vertical 9:16 video from the supplied saved final frame of clip 2. Use that saved frame as the only Start Frame. ${characterReferenceRule(3)} Preserve the exact character identity already visible in that frame: same face, eyes, fur markings, head ornaments, neck jewelry, pendants, accessories, body shape, and tail anatomy/layout, plus ${place}, camera axis, lighting, and the same 20–25% bitten ${food} remainder. Do NOT preserve clean original fur on any area that becomes transformed.
 
 Create ONE stable 50–70% food-derived physical design, deliberately incomplete for clip 4. Seconds 0–2: continue only the tiny existing light. Seconds 2–4: permanently reveal this exact unified partial design: ${design} Change only a partial chest and upper-back area, both ear edges, exactly three-to-five separated visible tail tips, one half-formed ornament beside the existing forehead flower, and the beginning of matching pendant filigree. Leave the remaining tail tips and the rest of the ornament and pendant visibly unfinished for clip 4. At second 4, lock these partial changes as real physical fur and ornament materials, not light effects.
 
@@ -332,6 +332,27 @@ function characterReferenceRule(stage){
     ? 'In Google Flow, attach the user’s original character image directly to this prompt as a Reference/Ingredient. Use it to lock the fox identity and illustration style; do not replace the supplied first image.'
     : 'For this continuation, use ONLY the saved previous-clip final frame as the Start Frame and visual character source. Do NOT attach the original character image or any alternate fox image: a second fox image can overwrite the saved frame’s exact nine-tail layout. The saved frame alone is the complete identity, tail-layout, and transformation reference.';
 }
+const referenceVisibleIdentityLock = `REFERENCE IDENTITY LOCK — The user’s supplied character image is an immutable design sheet. Copy its exact visible character as-is: face proportions, eye shape and color, fur markings, tail count and tail fan layout, ear shape, head ornaments, collar or neck jewelry, pendants, and every existing accessory. Do not replace any of these with the older default fox design, a generic white fox, new jewelry, different markings, or a redesigned art style.`;
+const savedFrameIdentityLock = `SAVED-FRAME IDENTITY LOCK — The supplied saved Start Frame is the only identity authority for this continuation. Copy its exact visible character as-is: face, eyes, fur markings, tail count and fan layout, ear shape, head ornaments, collar or neck jewelry, pendants, and accessories. Do not apply any older default character description or redesign a visible feature.`;
+// The historical first-image builder described one older fox design in prose.
+// Keep it from overriding the reference the user actually supplies.
+const oneMinuteFirstImagePromptOriginal = oneMinuteFirstImagePrompt;
+oneMinuteFirstImagePrompt = function(){
+  return oneMinuteFirstImagePromptOriginal().replace(
+    /Show the exact same small white nine-tailed fox:[\s\S]*?exactly nine large fluffy tails\./,
+    `${referenceVisibleIdentityLock} Show the exact same character from the supplied image, with its exact visible tail count and layout.`
+  );
+};
+// The four short clips must likewise prefer the user's actual visible character
+// over legacy descriptive defaults that existed before custom reference images.
+const focusedFirstClipPromptReferenceSafe = focusedFirstClipPrompt;
+focusedFirstClipPrompt = function(){ return `${referenceVisibleIdentityLock}\n\n${focusedFirstClipPromptReferenceSafe()}\n\n${referenceVisibleIdentityLock}`; };
+const focusedSecondClipPromptReferenceSafe = focusedSecondClipPrompt;
+focusedSecondClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedSecondClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
+const focusedThirdClipPromptReferenceSafe = focusedThirdClipPrompt;
+focusedThirdClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedThirdClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
+const focusedFourthClipPromptReferenceSafe = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedFourthClipPromptReferenceSafe()}\n\n${savedFrameIdentityLock}`; };
 function bgmSegmentInstruction(stage, total){
   const cue = current?.bgm || bgmCues[0];
   const start = (stage - 1) * 8, end = stage * 8;
@@ -442,6 +463,8 @@ const focusedThirdClipPromptFinalAppearanceSafe = focusedThirdClipPrompt;
 focusedThirdClipPrompt = function(){ return `${focusedThirdClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(3)}`; };
 const focusedFourthClipPromptFinalAppearanceSafe = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){ return `${focusedFourthClipPromptFinalAppearanceSafe()}\n\n${fourClipAppearanceFinalCheck(4)}`; };
+const focusedFourthClipPromptReferenceFinal = focusedFourthClipPrompt;
+focusedFourthClipPrompt = function(){ return `${savedFrameIdentityLock}\n\n${focusedFourthClipPromptReferenceFinal()}\n\n${savedFrameIdentityLock}`; };
 
 // A compact final-clip prompt keeps the previous frame's visual state ahead of every audio request.
 function focusedFourthClipPrompt(){
@@ -587,7 +610,7 @@ function oneMinuteClipPrompt(stage){
   const appearanceFinalCheck = stage <= 4
     ? `FINAL APPEARANCE CHECK: compare the final frame with the Start Frame. The fox must remain exactly the same character: no new fur color, markings, ornament, accessory, face, body-scale, ear, or tail-layout change. Only the food’s bite state may change in clip 4; character transformation is forbidden before clip 5.`
     : `FINAL APPEARANCE CHECK: preserve every already-established character detail from the Start Frame. The only allowed new appearance change is the exact food-driven humanization step stated for this clip; never redesign, reset, replace, or remove any other detail.`;
-  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}`;
+  return `${common}\n\n${action}\n\n${sound}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the original pastel 3D storybook rendering. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}\n\n${stage === 1 ? referenceVisibleIdentityLock : ''}`;
 }
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
