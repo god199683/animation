@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v4';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v5';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -284,9 +284,9 @@ In the final second, keep that remainder visible and begin only a tiny faint lig
 function focusedFirstClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} ${referenceVisibleIdentityLock} Preserve that exact visible character, its exact tail count, ${place}, lighting, camera axis, and one whole ${food}.
+  return `Generate one 8-second vertical 9:16 video from the supplied first image. ${characterReferenceRule(1)} ${referenceVisibleIdentityLock} Preserve that exact visible character, its exact tail count, ${place}, lighting, and camera axis. The supplied first image contains no food.
 
-The fox only discovers and explores the food: take two small curious steps, sniff near it, react with one ear twitch, and make a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. ${bgmSegmentInstruction(1, 4)} ${fourClipFoxVocal(1)} ${fourClipVisualInventoryLock(1)} Use only soft paw steps and a sniff besides this required fox vocal. End while the nose is still moving toward the food and the tail is still in motion; do not pose or freeze.`;
+The fox only begins discovery and exploration. Seconds 0–3: take two small curious steps while tracking an off-screen scent; do not show food yet. Seconds 3–8: the fox and camera make one continuous small curved move around an already visible foreground object. Exactly one whole ${food} gradually comes into view from behind that same existing object—first an edge of its dish or wrapper, then the same complete serving. Only after it has naturally entered the frame, approach and sniff near it with one ear twitch and a gentle tail swing. Do not bite, eat, transform, add characters, text, logos, or magical creatures. Keep one stable medium shot. ${bgmSegmentInstruction(1, 4)} ${fourClipFoxVocal(1)} ${fourClipVisualInventoryLock(1)} Use only soft paw steps and a sniff besides this required fox vocal. End while the nose is still moving toward the one visible food and the tail is still in motion; do not pose or freeze.`;
 }
 function focusedThirdClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -342,7 +342,7 @@ function continuousFoodEntryLock(stage, oneMinute=false){
   if(oneMinute && stage===1) return 'FOOD INVENTORY LOCK: no food, plate, wrapper, crumb, bag, or food-like prop exists anywhere in this clip; do not reveal food early.';
   if(oneMinute && stage===2) return 'FOOD ENTRY LOCK — HIGHEST PRIORITY: exactly ONE prepared serving may first become visible only through an uninterrupted physical reveal already described in the action (from behind an existing foreground object, from the owner’s opened pouch and hand, or from a continuously approaching passerby’s hand). It must never pop into empty space, fade in, materialize, replace a prop, duplicate, or arrive by a cut.';
   if(oneMinute) return 'FOOD INVENTORY LOCK — HIGHEST PRIORITY: exactly ONE same food serving already visible in the saved Start Frame exists. At frame 1 it must match that frame exactly, then remain the same physical prop and move only when explicitly touched. Never pop in, materialize, fade in, duplicate, split, swap, replace another object, restore, or create another plate, wrapper, or serving.';
-  if(stage===1) return 'FOOD INVENTORY LOCK: exactly ONE whole food serving already exists in the supplied first image. Keep that same prop continuously visible; it must not pop into empty space, materialize, fade in, duplicate, split, swap, or be replaced.';
+  if(stage===1) return 'FOOD ENTRY LOCK — HIGHEST PRIORITY: the supplied first image contains NO food, plate, wrapper, crumb, or food prop. During seconds 0–3, no food is visible. During seconds 3–8, exactly ONE prepared serving may gradually enter view only because the fox and camera make one continuous movement around an already visible foreground rock, tree root, planter, counter edge, or similar fixed object. Reveal its edge first, then the same whole serving by parallax. Never pop it into empty space, materialize it, fade it in, duplicate it, swap another prop, or use a cut.';
   return 'FOOD INVENTORY LOCK — HIGHEST PRIORITY: exactly ONE same food serving already visible in the saved Start Frame exists. Frame 1 must show that exact prop in the exact same position. It may never pop in, materialize, fade in, duplicate, split, swap, replace another object, restore, or become a new plate, wrapper, or serving.';
 }
 // The historical first-image builder described one older fox design in prose.
@@ -716,6 +716,11 @@ oneMinuteFoxClipPrompt = function(stage){
     .replace(/ART-STYLE LOCK: attach the user’s original fox character image as an additional Reference\/Ingredient in every clip to preserve identity and the exact bright ethereal pastel 3D illustration style only; never use it as a replacement Start Frame\./, 'ART-STYLE LOCK: for clip 1, attach the user’s original fox image only as an additional Reference/Ingredient; for clips 2–8, use only the saved Start Frame and do not attach an alternate fox image. Preserve the exact rendering style already visible in the applicable authority.');
   return `${stage === 1 ? '' : `${exactContinuationFrameLock}\n\n`}${identityLock}\n\n${legacy}\n\n${identityLock}`;
 };
+function fourClipFirstImagePrompt(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the selected food';
+  const place=current?.title?.split(' · ')[1]||'the established setting';
+  return `Create exactly ONE vertical 9:16 still first-keyframe image for clip 1. In Google Flow, attach the user's original character image as a Reference/Ingredient. ${FIRST_IMAGE_REFERENCE_LOCK} ${referenceVisibleIdentityLock}\n\nSet the scene in ${place}. Show the exact supplied character naturally exploring an established path or area in a medium-wide eye-level composition, with a clearly visible foreground object such as a rock, tree root, planter, counter edge, or other fixed part of the setting positioned near one edge of the frame. The character is looking toward an off-screen scent path and has room to move around that foreground object in clip 1.\n\nABSOLUTE FOOD ABSENCE FOR THE FIRST IMAGE: do not show ${food}, any other food, plate, wrapper, crumbs, bag, food prop, food-like shape, or hidden food edge anywhere in this still image. The single ${food} will be revealed later in clip 1 only by natural parallax from behind the already visible foreground object. No transformation, glow, bite mark, duplicate character, text, logo, title lettering, watermark, extra animal, fairy, sprite, or unwanted person. Render the whole background in the exact same illustration style as the supplied character reference.`;
+}
 function stagePrompt(storyboard, stage){
   if ((current?.oneMinute || current?.oneMinuteFox) && current.clipPrompts?.[stage]) return current.clipPrompts[stage];
   if (current?.oneMinuteFox && stage === 0) return oneMinuteFoxFirstImagePrompt();
@@ -727,10 +732,7 @@ function stagePrompt(storyboard, stage){
   if (start < 0) return '';
   const next = stage < 4 ? storyboard.indexOf(labels[stage + 1], start + 1) : storyboard.indexOf('[32초 쇼츠 길이]', start + 1);
   const section = storyboard.slice(start, next > start ? next : undefined);
-  if (stage === 0) {
-    const imagePrompt = (section.match(/이미지 프롬프트\s*:\s*([\s\S]*?)\n이미지 체크/) || [])[1]?.trim() || '';
-    return [imagePrompt, FIRST_IMAGE_REFERENCE_LOCK, STORY_COMMON_SUFFIX, FOOD_CONTINUITY_SUFFIXES[0]].filter(Boolean).join('\n\n');
-  }
+  if (stage === 0) return fourClipFirstImagePrompt();
   if (stage === 1) return focusedFirstClipPrompt();
   if (stage === 2) return focusedSecondClipPrompt();
   if (stage === 3) return focusedThirdClipPrompt();
