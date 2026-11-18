@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v10';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v11';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -316,14 +316,17 @@ focusedSecondClipPrompt = function(){
   return `Generate ONE 8-second vertical 9:16 continuation video from the supplied saved final frame of clip 1. Use that frame as the ONLY Start Frame and do not attach the original character image or any other reference image.\n\n${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\nACTION ONLY: continue the exact ongoing motion already present in the saved frame. Keep exactly ONE same ${food} and its same dish or wrapper in the exact saved location. ${eating} Every bite goes directly into the mouth and is swallowed; no spitting, dropping, duplicate food, separate bite piece, food in the air, disappearance, empty plate, or food restoration. Leave the visible 20–25% remainder attached to the same vessel at the end. No body transformation, light, new marking, new accessory, or appearance change in this clip.\n\nKeep the same camera axis, crop, lens, background, ${place}, and lighting; use only natural head, ear, breathing, and tiny tail-root movement. Never change tail count, tail fan order, character scale, pose continuity, illustration style, or background rendering. ${bgmSegmentInstruction(2,4)} ${fourClipFoxVocal(2)}\n\nFINAL FRAME CHECK: the character must still be recognizably identical to the supplied clip-1 frame in the same art style, with every original accessory intact and exactly nine separate tails. ${continuousFoodEntryLock(2)}`;
 };
 
-// The one-minute episode's second clip also begins from clip 1. Add the same
-// concise identity/style lock around its route-specific action without changing
-// whether that particular episode reveals food in clip 2.
+// Every continuation must preserve the visual language from its immediately
+// previous frame.  Clips 5–8 may add only their explicitly planned humanization;
+// that must never become an excuse to replace the rendering style or identity.
 const oneMinuteClipPromptWithClip2StyleLock = oneMinuteClipPrompt;
 oneMinuteClipPrompt = function(stage){
   const prompt=oneMinuteClipPromptWithClip2StyleLock(stage);
-  if(stage!==2) return prompt;
-  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact clip-1 character and illustration style; no redesign, no new forehead mark, no jewelry change, and no tail or accessory change.`;
+  if(stage===1) return prompt;
+  const laterHumanization = stage>=5
+    ? 'PLANNED-CHANGE LIMIT: only the specific humanization step written for this stage may be added. Preserve the saved frame’s exact rendering style, camera, lighting, world texture, tail inventory, and every unmentioned character feature. Do not use the planned change to redraw the entire character or switch illustration style.'
+    : 'NO-REDESIGN LIMIT: no new forehead mark, jewelry change, tail/accessory change, body redesign, or illustration-style change is allowed in this stage.';
+  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${laterHumanization}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact immediately previous character and illustration style. Any permitted action or transformation must occur inside that same rendering, never as a new illustration.`;
 };
 function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -1128,11 +1131,15 @@ $('storyboard').onclick = async () => {
     if (!current.foodIntroduction) current.foodIntroduction = introduction;
     const cue = current.bgm || bgmCues[0];
     const longStoryboard = `[Google Flow · 약 1분 애니메이션 에피소드 · 8클립]\n\n[이번 에피소드]\n${route.setup}. 음식 등장 방식: ${introduction.label}. 음식 발견 → 자연스러운 섭취 → 음식 특성 기반 여우 인간화 → 자연스러운 결말의 작은 이야기입니다.${route.owner ? ' 첨부한 사람 기준 이미지의 주인 캐릭터가 여우와 함께 등장합니다.' : introduction.id === 'passerby-gives' ? ' 행인이 음식 전달 장면에서 자연스럽게 등장합니다.' : ' 캐릭터는 혼자 탐험합니다.'}\n\n[선택된 BGM 한 곡]\n“${cue.title}” — ${cue.prompt}. 64초짜리 한 곡으로 만들고, 클립 1~8은 각각 0–8초부터 56–64초까지의 연속 구간으로 나눕니다. 최종 편집에서 이 BGM 파일을 전체 타임라인에 한 번만 올리세요.\n\n[제작 방법]\n0 첫 이미지를 만든 뒤, 클립 1~8을 순서대로 만듭니다. 모든 클립은 8초·세로 9:16입니다. 다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.\n\n[복사 순서]\n클립 1~8 버튼을 순서대로 누르세요. 각 프롬프트에는 해당 장면의 행동·효과음·여우 울음·BGM 구간이 포함됩니다. 클립 5~7은 중간 인간화, 클립 8은 음식별 머리색·눈색·의상이 완성된 인간형 결말입니다.`;
-    current.storyboard = longStoryboard;
+    const safeLongStoryboard = longStoryboard.replace(
+      '다음 클립에는 직전 클립의 아직 움직이는 마지막 프레임을 Start Frame으로 넣고, 원본 여우 이미지는 Ingredient로 유지합니다.',
+      '원본 여우 이미지는 0번 첫 이미지와 클립 1에만 Reference/Ingredient로 첨부합니다. 클립 2~8에는 직전 클립의 아직 움직이는 마지막 프레임만 유일한 Start Frame 및 유일한 여우 시각 기준으로 넣고, 원본 여우 이미지나 다른 여우 이미지는 추가하지 않습니다. 그래야 외형과 그림체가 덮어써지지 않습니다.'
+    );
+    current.storyboard = safeLongStoryboard;
     $('result-title').textContent = `${current.title} · 약 1분 애니메이션 스토리보드`;
-    $('output').textContent = longStoryboard;
+    $('output').textContent = safeLongStoryboard;
     setStageCopyActions(true);
-    await saveStoryboard(current, longStoryboard);
+    await saveStoryboard(current, safeLongStoryboard);
     $('regenerate-storyboard').disabled = false;
     $('copy').disabled = false;
     return;
