@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v9';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v10';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -302,6 +302,28 @@ CRITICAL STATE LOCK FROM SECOND 4 THROUGH THE FINAL FRAME: the clip must show th
 const focusedThirdClipPromptBase = focusedThirdClipPrompt;
 focusedThirdClipPrompt = function(){
   return `${focusedThirdClipPromptBase()}\n\nCLIP 3 PHYSICAL-REVEAL RULE — ABSOLUTE HIGHEST PRIORITY: The tiny existing light may be only a brief local surface cue during seconds 0–1. It must NEVER become a beam, ribbon, strand, spiral, coil, band, ring, stream, vine, or glowing thread that wraps around the fox, chest, ears, legs, neck, or tails. Do not show a light-only transformation. Starting at second 2, the light is immediately replaced by the stated physical chest/back material, ear trim, tail-tip details, half-formed forehead ornament, and pendant filigree; those physical changes—not a surrounding light effect—must be plainly visible and remain unchanged through the final frame. No wrapping light may conceal, erase, undo, or substitute for a transformed detail. If any physical change has appeared, it remains visible in every later frame.`;
+};
+
+const clip2ExactAppearanceLock = `CLIP-2 APPEARANCE AND STYLE LOCK — ABSOLUTE HIGHEST PRIORITY: At every frame, keep the character and world as an exact continuation of the saved clip-1 final frame. Preserve the exact face proportions, eye shape/color, muzzle, fur length and markings, body proportions, all NINE individually positioned tails, ear shape and inner color, every head ornament, collar, bow, bell, pendant, jewelry detail, and accessory already visible. Do not add a forehead mark, remove or replace a pendant, redesign a bow, change jewelry, beautify the face, alter the body, or reinterpret the character. Preserve the exact same illustration medium: same line weight, painted texture, edge softness, fur rendering, shading, bloom, saturation, contrast, depth of field, snow/forest treatment, and lighting. Do not switch toward a different anime, chibi, 3D, painterly, photorealistic, or simplified style.`;
+
+// Clip 2 is a continuation shot, so keep its prompt deliberately shorter than
+// the old stacked rules. This prevents the model from treating the eating action
+// as a request to generate a new illustration of the character.
+focusedSecondClipPrompt = function(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the same established setting';
+  const eating=foodEatingPlan(food);
+  return `Generate ONE 8-second vertical 9:16 continuation video from the supplied saved final frame of clip 1. Use that frame as the ONLY Start Frame and do not attach the original character image or any other reference image.\n\n${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\nACTION ONLY: continue the exact ongoing motion already present in the saved frame. Keep exactly ONE same ${food} and its same dish or wrapper in the exact saved location. ${eating} Every bite goes directly into the mouth and is swallowed; no spitting, dropping, duplicate food, separate bite piece, food in the air, disappearance, empty plate, or food restoration. Leave the visible 20–25% remainder attached to the same vessel at the end. No body transformation, light, new marking, new accessory, or appearance change in this clip.\n\nKeep the same camera axis, crop, lens, background, ${place}, and lighting; use only natural head, ear, breathing, and tiny tail-root movement. Never change tail count, tail fan order, character scale, pose continuity, illustration style, or background rendering. ${bgmSegmentInstruction(2,4)} ${fourClipFoxVocal(2)}\n\nFINAL FRAME CHECK: the character must still be recognizably identical to the supplied clip-1 frame in the same art style, with every original accessory intact and exactly nine separate tails. ${continuousFoodEntryLock(2)}`;
+};
+
+// The one-minute episode's second clip also begins from clip 1. Add the same
+// concise identity/style lock around its route-specific action without changing
+// whether that particular episode reveals food in clip 2.
+const oneMinuteClipPromptWithClip2StyleLock = oneMinuteClipPrompt;
+oneMinuteClipPrompt = function(stage){
+  const prompt=oneMinuteClipPromptWithClip2StyleLock(stage);
+  if(stage!==2) return prompt;
+  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact clip-1 character and illustration style; no redesign, no new forehead mark, no jewelry change, and no tail or accessory change.`;
 };
 function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
