@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v8';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v9';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -411,15 +411,15 @@ requiredFourClipFoxCall = function(stage){
 };
 foxVoiceInstruction = function(stage){
   const beats={
-    1:'after the first scent check, a soft cautious curious fox-kit chirp',
-    2:'while following the scent, a small eager fox-kit chirp',
-    3:'when the food is noticed, a brief bright discovery chirp',
-    4:'after the first small bite, a gentle contented chirp',
-    5:'when the first light appears, a short surprised chirp',
-    6:'on noticing the first human change, a shy amazed chirp',
-    7:'while the change continues, a quiet happy chirp'
+    1:'after the first scent check, a tiny playful curiosity call with a light upward lilt',
+    2:'while following the scent, a bright eager little call with a small bouncing lilt',
+    3:'when the food is noticed, a delighted discovery call with a quick sparkling lift',
+    4:'after the first small bite, a soft pleased little call with a rounded warm release',
+    5:'when the first light appears, a cute surprised little call with one brief high lift',
+    6:'on noticing the first human change, a shy amazed little call that softens at the end',
+    7:'while the change continues, a gentle happy little call with a warm upward-then-downward curve'
   };
-  return `AUDIO — 1-MINUTE VIDEO, CLIP ${stage}: ${beats[stage]}. Include this sound in the generated audio track: one audible, very short, high young-fox contact call, a soft nonverbal “kiyuu”-like call (not a spoken syllable). It follows the visible action rather than interrupting it, with a small matching muzzle and ear movement. AUDIO NEVER CHANGES THE IMAGE: throughout this sound, keep exactly the same NINE separate tails, their count, attachment points, open-fan layout, body scale, and any already-visible tail details; do not grow, lose, merge, crop, hide, replace, or redesign a tail. Keep it natural inside the location ambience, but audible—not breathing alone, a dog or cat sound, human speech, narration, or song.`;
+  return `AUDIO — 1-MINUTE VIDEO, CLIP ${stage}: ${beats[stage]}. REQUIRED CUTE FOX VOCAL: include exactly ONE clearly audible, short juvenile fox contact call, 0.35–0.50 seconds long. It must sound endearingly small and lively—not a breath, sniff, or generic sound effect—with a soft airy onset, one light high playful lift, and a gentle warm falling finish. Make it feel like a real young fox reacting happily or curiously, never like a spoken syllable. Synchronize it to a tiny matching muzzle movement and ear flick. For this protected half-second, lower BGM, ambience, wind, magic effects, and foley so the call is easy to hear. Do not use a dog bark, dog yelp, dog whine, howl, growl, pant, cat meow, purr, trill, kitten squeak, human word, narration, song, or exaggerated cartoon squeal. AUDIO NEVER CHANGES THE IMAGE: throughout this sound, keep exactly the same NINE separate tails, their count, attachment points, open-fan layout, body scale, and any already-visible tail details; do not grow, lose, merge, crop, hide, replace, or redesign a tail.`;
 };
 const focusedFourthClipPromptSingleAudio = focusedFourthClipPrompt;
 focusedFourthClipPrompt = function(){
