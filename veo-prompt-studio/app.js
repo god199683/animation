@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v6';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v8';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -485,19 +485,38 @@ function focusedFourthClipPrompt(){
   const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
   const place=current?.title?.split(' · ')[1]||'the same established setting';
   const [,feature,colors]=foodProfile(food);
-  const finalPose=current.finalClipPose ||= pick(finalPoses);
   return `Generate ONE 8-second vertical 9:16 video from the supplied saved final frame of clip 3. This supplied frame is the ONLY Start Frame and the complete visual ground truth. Do not attach the original character image or any other image for this clip.
 
-FRAME-1 MATCH — HIGHEST PRIORITY: frame 1 must exactly reproduce the supplied clip-3 final frame: same white nine-tailed fox, same face, lavender-blue eyes, forehead flower marking, blue flower necklace, aqua pendant, body size, ground position, paw positions, body angle, head direction, all NINE separate tail positions, bitten ${food} remainder, ${place}, background objects, lighting, lens, and camera axis. Nothing may be cleaned, redrawn, simplified, restored, or replaced at frame 1.
+FRAME-1 MATCH — HIGHEST PRIORITY: frame 1 must exactly reproduce the supplied clip-3 final frame: the same exact visible character identity, face, eyes, fur markings, body size, ground position, paw positions, body angle, head direction, all NINE separate tail positions, every visible head/neck accessory, bitten ${food} remainder, ${place}, background objects, lighting, lens, and camera axis. Nothing may be cleaned, redrawn, simplified, restored, or replaced at frame 1.
 
-TRANSFORMATION HANDOFF — ABSOLUTE PRIORITY: every food-derived material or ornament already visible in the Start Frame is permanent physical design. Keep it visible in every frame: chest/upper-back texture, both ear trims, each already changed tail tip, forehead-side ornament, and pendant filigree. Completion is additive only. During seconds 1–6, finish ONLY the visibly unfinished edges with the same ${feature}-inspired ${colors} material. Never restart the transformation, show original clean fur, make a before/after reveal, erase a detail, move a detail to another tail, fade it into light, or let any tail/ornament disappear. By second 6, show one completed unified design with all nine tails, face, chest, forehead ornament, and pendant simultaneously visible.
+TRANSFORMATION HANDOFF — ABSOLUTE PRIORITY: every food-derived material or ornament already visible in the Start Frame is permanent physical design. Keep every one visible in every frame, in the same exact body or tail location. Completion is additive only. During seconds 1–6, complete ONLY edges that are visibly unfinished in the supplied Start Frame, using the same ${feature}-inspired ${colors} material already present there. Do NOT invent a new costume, new ornament category, new facial feature, new fur pattern, new accessory, new tail design, or a second transformation. Never restart the transformation, show clean original fur, make a before/after reveal, erase a detail, move a detail to another tail, fade it into light, or let any tail or ornament disappear. By second 6, show one unified completed version of the same Start-Frame design, with all nine tails and every pre-existing detail simultaneously visible.
 
-MOTION AND CAMERA: keep the exact Start Frame location and composition. Use only a tiny eye-line shift, calm breathing, and a small in-place root sway of the separated tail fan; no step, turn, sit, stand, new pose, camera cut, zoom, orbit, backdrop change, or food movement. In seconds 7–8, reach this final pose through one continuous small motion only: ${finalPose}. Do not change body scale or tail count.
+MOTION AND CAMERA: keep the exact Start Frame location and composition. Use only a tiny eye-line shift, calm breathing, and a small in-place root sway of the separated tail fan; no step, turn, sit, stand, new pose, camera cut, zoom, orbit, backdrop change, or food movement. In seconds 7–8, settle only through the same small ongoing motion already visible in the Start Frame—one gentle breath, eye-line shift, or tail-root sway. Do not force a new pose or an unrelated expression. Do not change body scale or tail count.
 
 AUDIO IS SECONDARY TO THE VISUAL HANDOFF: preserve the same quiet ambience. At about second 6, include one very short 0.15–0.25-second warm natural juvenile fox contact call: a soft breath-led onset, one light brief rise in pitch, then an immediate softer falling release. Let it arise organically from a gentle breath, ear response, and barely visible tiny muzzle movement; mix it softly into the same ambience, audible but not isolated or louder than nearby foley. Do not alter the fox’s pose, face, transformation, camera, or any visual state to make the sound. Never use dog, wolf, cat, human, spoken, sung, barking, yelping, howling, growling, panting, dog-like whining, purring, trilling, or sustained sounds.
 
 No new food, character, clothing, fairy, text, logo, watermark instruction, fade, freeze, visual reset, or repeated transformation.`;
 }
+
+// Keep clip 3 deliberately simple.  Earlier versions asked the model to keep
+// "progressing" while also holding details, which encouraged a glow/reset loop.
+// Here the physical mid-state is established once and then held for handoff.
+focusedThirdClipPrompt = function(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the same established setting';
+  const [,feature,colors]=foodProfile(food);
+  return `Generate ONE 8-second vertical 9:16 video from the supplied saved final frame of clip 2. This supplied frame is the ONLY Start Frame and complete visual ground truth. Do not attach the original character image or any alternate reference image.
+
+FRAME-1 MATCH — HIGHEST PRIORITY: reproduce the saved clip-2 final frame exactly at frame 1: same character identity, face, eyes, fur markings, body scale, exact NINE separate tail positions, every visible accessory, the same 20–25% bitten ${food} remainder and vessel, ${place}, camera, lighting, and background. Do not redraw, restore, restyle, or replace anything at frame 1.
+
+ONE-WAY PHYSICAL MID-TRANSFORMATION ONLY: seconds 0–1 continue only the tiny existing light from the Start Frame. Seconds 1–4 reveal ONE unified, clearly physical, food-derived ${feature}-inspired material in ${colors}: a partial chest and upper-back texture, matching narrow trim on both ear edges, and matching detail on exactly three to five individually visible tail tips. This is a solid physical surface design, not light, particles, a beam, a ribbon, or an effect. At second 4, stop transforming completely. Seconds 4–8: hold that exact same 50–70% transformed design continuously and visibly with no further spread or replacement.
+
+STATE HOLD — ABSOLUTE HIGHEST PRIORITY: every changed chest/back area, both ear trims, and each changed tail tip must remain visible in the same exact location at seconds 4, 5, 6, 7, and 8. Do not blink, pulse, fade, dissolve, cover with glow, revert to clean fur, change back to ordinary tail tips, jump to another tail, create a different design, or make a new version of the fox. Do not add clothing, a new ornament category, a new face feature, or any unrelated accessory in clip 3. The food does not move or change further. Keep all nine tails in the same readable fan; never hide, crop, merge, add, or lose a tail.
+
+CAMERA AND HANDOFF: use one locked medium three-quarter composition. No step, turn, sit, stand, camera orbit, zoom, cut, backdrop change, or pose reset. After second 4, only calm breathing, a tiny eye-line shift, and a very small in-place tail-root sway may move. Frame 8 is the direct handoff for clip 4 and must still show every partial physical change simultaneously. ${bgmSegmentInstruction(3,4)} ${fourClipFoxVocal(3)} ${finalPoseKeepsTransformationLock}
+
+No eating, food restoration, new food, new character, fairy, text, logo, watermark instruction, fade, freeze, or visual reset.`;
+};
 function pickHumanDialogue(owner){
   const lines = owner
     ? [
