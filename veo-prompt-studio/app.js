@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v12';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v13';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -323,7 +323,12 @@ oneMinuteClipPrompt = function(stage){
   const laterHumanization = stage>=5
     ? 'PLANNED-CHANGE LIMIT: only the specific humanization step written for this stage may be added. Preserve the saved frame’s exact rendering style, camera, lighting, world texture, tail inventory, and every unmentioned character feature. Do not use the planned change to redraw the entire character or switch illustration style.'
     : 'NO-REDESIGN LIMIT: no new forehead mark, jewelry change, tail/accessory change, body redesign, or illustration-style change is allowed in this stage.';
-  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${laterHumanization}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact immediately previous character and illustration style. Any permitted action or transformation must occur inside that same rendering, never as a new illustration.`;
+  const foodDiscoveryStop = stage===2
+    ? 'FOOD DISCOVERY STOP — HIGHEST PRIORITY: before the food is fully visible, the fox may follow the scent. The instant the single food serving becomes fully visible, the fox MUST stop walking immediately. Keep all four paws planted before it, turn the head, eyes, nose, and body orientation toward it, and maintain it in view. Do not walk past it, step over it, leave it behind, cross the frame away from it, or treat it as background. End clip 2 with the fox still stopped and actively looking or scenting toward that one food.'
+    : stage===3
+      ? 'FOOD INSPECTION STOP — HIGHEST PRIORITY: begin with the fox already stopped in front of the same food from clip 2. The fox may make only a small approach or head movement toward it, then keeps its body facing it and sniffs. Never walk past, turn away from, ignore, abandon, or leave the food behind. End with the nose close to the same food, ready for the eating clip.'
+      : '';
+  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${foodDiscoveryStop}\n\n${laterHumanization}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact immediately previous character and illustration style. Any permitted action or transformation must occur inside that same rendering, never as a new illustration.`;
 };
 function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
