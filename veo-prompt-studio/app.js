@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v11';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v12';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -125,24 +125,21 @@ const humanCameos = [
   { stage: 2, ko: '캐릭터가 먹기 시작할 때 얼굴과 몸이 보이지 않는 사람 손 하나가 접시가 밀리지 않게 잠깐 잡아 주고, 화면 밖에서 “맛있어?”라고 짧게 묻는다.', en: 'OPTIONAL HUMAN CAMEO FOR THIS CLIP: For less than one second at the beginning, show only one anonymous human hand from the bottom edge lightly steadying the existing plate while the fox begins eating. Never show a human face, head, torso, body, reflection, shadow, or a second person. One quiet off-screen adult voice says exactly one short Korean line, “맛있어?” The hand exits before the first bite is complete; preserve physically believable fox, food, paw, and plate contact.' }
 ];
 const oneMinuteRoutes = [
-  { id: 'owner-walk', owner: true, setup: 'a leisurely walk with an unseen owner', scent: 'a sweet scent drifting from a hedge', discovery: 'beside a small park bench' },
-  { id: 'owner-garden', owner: true, setup: 'helping an unseen owner in a rooftop garden', scent: 'a scent carried from a planter after watering', discovery: 'beside a low flowerpot' },
-  { id: 'owner-market', owner: true, setup: 'walking home with an unseen owner after a quiet market visit', scent: 'a tempting scent near a folded paper bag', discovery: 'at the edge of a calm side street' },
   { id: 'solo-forest', owner: false, setup: 'exploring a quiet forest trail alone', scent: 'an unfamiliar sweet scent between mossy stones', discovery: 'under a fern beside the path' },
   { id: 'solo-rain', owner: false, setup: 'wandering through a garden just after rain alone', scent: 'a warm dessert scent rising from a sheltered step', discovery: 'beneath a broad leaf' },
   { id: 'solo-greenhouse', owner: false, setup: 'exploring a sunlit abandoned glasshouse alone', scent: 'a sweet scent near an old potting table', discovery: 'beside a fallen watering can' },
   { id: 'solo-lantern', owner: false, setup: 'following lantern light along a twilight path alone', scent: 'a gentle scent carried on the evening breeze', discovery: 'near a small stone lantern' }
 ];
+function soloOneMinuteRoute(route){
+  // Older archive entries can contain an owner route.  Convert them instead of
+  // letting a person reappear when the entry is opened or regenerated.
+  return route?.owner ? oneMinuteRoutes[0] : (route || oneMinuteRoutes[0]);
+}
 function episodeFoodIntroduction(route){
-  if(!route?.owner) return { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
-  return pick([
-    { id: 'found', label: '길가에 놓여 있던 음식을 발견' },
-    { id: 'owner-gives', label: '주인이 자연스럽게 음식을 꺼내 건넴' }
-  ]);
+  return { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
 }
 function introductionForRoute(route, savedIntroduction){
-  // A solo episode must remain solo even when an older saved record used a passerby route.
-  return route?.owner ? (savedIntroduction || episodeFoodIntroduction(route)) : { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
+  return { id: 'found', label: '향기를 따라 혼자 음식을 발견' };
 }
 // Keep this distinct from the Supabase CDN's global `window.supabase` namespace.
 let dbClient = null, userId = null, archive = [], current = null;
@@ -224,7 +221,7 @@ function episodePreviewText(){
   if(!current.oneMinute && !current.oneMinuteFox){
     return `[영상 흐름 미리보기 · 32초 / 4클립]\n\n이 버전은 음식을 발견하고, 자연스럽게 먹은 뒤, 음식에서 얻은 장식·색·질감으로 같은 아홉꼬리 여우가 변화하는 짧은 이야기입니다.\n\n1. 0–8초 — ${place}에서 ${food}을(를) 발견하고 냄새를 탐색합니다.\n2. 8–16초 — 같은 음식 한 개를 자연스럽게 먹고, 마지막에 작은 변화 빛이 시작됩니다.\n3. 16–24초 — 빛이 털·귀·꼬리로 번지며 중간 변화 상태가 됩니다.\n4. 24–32초 — 앞 단계의 변화를 유지한 채 남은 디자인을 완성하고, 자연스러운 마지막 행동으로 마무리합니다.\n\n연결 방식: 첫 이미지를 만든 뒤 클립 1을 만들고, 매번 바로 전 클립의 마지막 저장 프레임만 다음 클립 Start Frame으로 사용합니다.`;
   }
-  const route=current.storyRoute||oneMinuteRoutes[3];
+  const route=soloOneMinuteRoute(current.storyRoute||oneMinuteRoutes[0]);
   const introduction=introductionForRoute(route,current.foodIntroduction);
   if(!current.foodIntroduction) current.foodIntroduction=introduction;
   const [,feature,colors]=foodProfile(food);
@@ -610,7 +607,7 @@ function oneMinuteClipPrompt(stage){
   const [, feature, colors] = foodProfile(food);
   const foodVisual = foodVisualDescription(food);
   const humanDesign = foodHumanizationDesign(food, feature, colors);
-  const route = current?.storyRoute || oneMinuteRoutes[3];
+  const route = soloOneMinuteRoute(current?.storyRoute || oneMinuteRoutes[0]);
   const owner = Boolean(route.owner);
   const start = stage === 1 ? 'the supplied first image' : `the supplied saved final frame of clip ${stage - 1}`;
   const startRule = stage === 1 ? 'Use the supplied first image as the Start Frame.' : 'Use that saved frame as the only Start Frame.';
@@ -669,7 +666,8 @@ function oneMinuteClipPrompt(stage){
     ? `FINAL APPEARANCE CHECK: compare the final frame with the Start Frame. The fox must remain exactly the same character: no new fur color, markings, ornament, accessory, face, body-scale, ear, or tail-layout change. Only the food’s bite state may change in clip 4; character transformation is forbidden before clip 5.`
     : `FINAL APPEARANCE CHECK: preserve every already-established character detail from the Start Frame. The only allowed new appearance change is the exact food-driven humanization step stated for this clip; never redesign, reset, replace, or remove any other detail.`;
   const finalIdentityLock = stage === 1 ? referenceVisibleIdentityLock : `${savedFrameIdentityLock}\n\n${exactContinuationFrameLock}`;
-  return `${stage === 1 ? '' : `${exactContinuationFrameLock}\n\n`}${common}\n\n${action}\n\n${sound}\n\n${continuousFoodEntryLock(stage, true)}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the supplied reference or saved frame's exact rendering style. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}\n\n${stage === 8 ? finalPoseKeepsTransformationLock : ''}\n\n${finalIdentityLock}`;
+  const noOtherHumans = 'NO-OTHER-HUMAN RULE: This is a solo fox episode. Do not show, imply, hear, reflect, silhouette, or cast the shadow of an owner, passerby, human hand, human face, human body, companion, or off-screen human voice. In clips 1–4 the fox is the only character. In clips 5–8, the transforming fox itself may become the planned fox-woman form, but no separate human person may appear.';
+  return `${stage === 1 ? '' : `${exactContinuationFrameLock}\n\n`}${common}\n\n${action}\n\n${sound}\n\n${noOtherHumans}\n\n${continuousFoodEntryLock(stage, true)}\n\nNo reset, fade, frozen pose, food duplication, food restoration, new animal, fairy, sprite, text, logo, or camera-axis change. Preserve the supplied reference or saved frame's exact rendering style. ${stage < 8 ? 'End mid-motion for the next saved Start Frame.' : 'Keep face and all nine tails visible in the final frame.'}\n\n${appearanceFinalCheck}\n\n${stage === 8 ? finalPoseKeepsTransformationLock : ''}\n\n${finalIdentityLock}`;
 }
 function simpleFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
@@ -693,14 +691,10 @@ Use a stable medium three-quarter view with face, forehead ornament, chest textu
 function oneMinuteFirstImagePrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
   const place = current?.title?.split(' · ')[1] || 'the same established setting';
-  const route = current?.storyRoute || oneMinuteRoutes[3];
+  const route = soloOneMinuteRoute(current?.storyRoute || oneMinuteRoutes[0]);
   const introduction = introductionForRoute(route,current?.foodIntroduction);
   if (current && !current.foodIntroduction) current.foodIntroduction = introduction;
-  const humanSetup = route.owner
-    ? `Also attach the user’s separate human reference image as a Reference/Ingredient. Show only the single referenced owner walking naturally beside the fox; preserve the person’s face, hairstyle, hair ornaments, and costume. ${introduction.id === 'owner-gives' ? 'Include one small CLOSED carry pouch held by the owner; it contains nothing visible yet and is not a food prop.' : ''}`
-    : introduction.id === 'passerby-gives'
-      ? 'Show one single friendly passerby far in the background on the same path, small but visible enough to remain the same person in the next clip. The passerby carries no visible food yet.'
-      : 'The fox is alone; do not show any person, hand, reflection, shadow, or companion.';
+  const humanSetup = 'The fox is completely alone; do not show any person, human hand, human silhouette, face, body, reflection, shadow, voice source, owner, passerby, companion, or extra animal.';
   return `Create ONE vertical 9:16 still first-keyframe image for a one-minute animated episode. In Google Flow, attach the user’s original fox image as a Reference/Ingredient. If that reference image is horizontal, do NOT crop or stretch it; use it only to preserve the exact fox identity and exact original illustration style while creating a new vertical composition. ${FIRST_IMAGE_REFERENCE_LOCK} Show the exact same small white nine-tailed fox: oversized lavender-to-ice-blue eyes, pale blue-and-lilac flower forehead marking, soft blush-pink tail tips, delicate blue flower necklace, round aqua pendant, and exactly nine large fluffy tails.\n\nSet the scene in ${place}. The fox is ${route.setup}, naturally alert and curious, in a stable medium-wide eye-level shot with room to walk forward. The food has NOT been discovered yet: do not show any food, plate, wrapper, crumbs, or food-like prop in this first image. The fox must be looking ahead as if it is about to notice a scent, not walking past something it has already seen. ${humanSetup}\n\nRender both character and background in the exact same medium, line treatment, material detail, palette, lighting, and shading language as the supplied fox reference. No transformation, no glow on the body, no bite mark, no food, no plate, no wrapper, no duplicate prop, no text, no logo, no title lettering, no watermark, no extra animal, no fairy, no sprite, no extra person beyond any person explicitly requested above, no photorealism, and no dark style.`;
 }
 function referenceVideoFoxVocal(stage){
@@ -926,7 +920,7 @@ function buildPrompt(data){
   if (requestedFood && usedFoods.has(normalize(requestedFood))) throw new Error(`“${requestedFood}”는 이미 보관함에 있는 음식입니다. 보관된 음식은 다시 생성할 수 없습니다.`);
   const foodData = requestedFood ? [requestedFood, `${requestedFood}의 실제 식감과 향`, '음식 고유 색감'] : randomFoodData(usedFoods);
   const place = data.place && !/랜덤/i.test(data.place) ? data.place : pick(places);
-  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes), bgm = pick(bgmCues);
+  const method = pick(mechanisms), ending = pick(endings), voice = pick(sounds), storyRoute = pick(oneMinuteRoutes.filter(route => !route.owner)), bgm = pick(bgmCues);
   const foodIntroduction = episodeFoodIntroduction(storyRoute);
   const humanCameo = Math.random() < 0.4 ? pick(humanCameos) : null;
   const eating = data.action || pick(['앞발로 조심스럽게 집어 한 입 베어 문다','고개를 기울여 향을 맡은 뒤 천천히 깨문다','바닥에 놓인 조각을 코로 밀어 가까이 끌어온 뒤 먹는다','음식을 한 번 굴려 본 뒤 바삭한 가장자리를 깨문다']);
@@ -1126,7 +1120,7 @@ $('storyboard').onclick = async () => {
     return;
   }
   if (current.oneMinute) {
-    const route = current.storyRoute || oneMinuteRoutes[3];
+    const route = soloOneMinuteRoute(current.storyRoute || oneMinuteRoutes[0]);
     const introduction = introductionForRoute(route,current.foodIntroduction);
     if (!current.foodIntroduction) current.foodIntroduction = introduction;
     const cue = current.bgm || bgmCues[0];
