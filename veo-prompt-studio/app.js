@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v13';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v14';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -299,6 +299,22 @@ CRITICAL STATE LOCK FROM SECOND 4 THROUGH THE FINAL FRAME: the clip must show th
 const focusedThirdClipPromptBase = focusedThirdClipPrompt;
 focusedThirdClipPrompt = function(){
   return `${focusedThirdClipPromptBase()}\n\nCLIP 3 PHYSICAL-REVEAL RULE — ABSOLUTE HIGHEST PRIORITY: The tiny existing light may be only a brief local surface cue during seconds 0–1. It must NEVER become a beam, ribbon, strand, spiral, coil, band, ring, stream, vine, or glowing thread that wraps around the fox, chest, ears, legs, neck, or tails. Do not show a light-only transformation. Starting at second 2, the light is immediately replaced by the stated physical chest/back material, ear trim, tail-tip details, half-formed forehead ornament, and pendant filigree; those physical changes—not a surrounding light effect—must be plainly visible and remain unchanged through the final frame. No wrapping light may conceal, erase, undo, or substitute for a transformed detail. If any physical change has appeared, it remains visible in every later frame.`;
+};
+
+// Short-video food continuity is intentionally self-contained.  These two
+// prompts replace old stacked wording so Flow receives one unambiguous reveal
+// and one unambiguous physical food prop for the whole four-clip story.
+focusedFirstClipPrompt = function(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the selected food';
+  const place=current?.title?.split(' · ')[1]||'the established setting';
+  return `Generate ONE 8-second vertical 9:16 video from the supplied first image. Attach the user’s original character image only as an additional Reference/Ingredient for this first clip. ${referenceVisibleIdentityLock}\n\nThe supplied first image contains NO food. FOOD REVEAL — HIGHEST PRIORITY: seconds 0–3 show no food, plate, wrapper, crumbs, bag, or food-like prop anywhere. The fox follows a scent with two small natural steps. During seconds 3–8, the fox and camera make one continuous small curved movement around one already visible fixed foreground object in ${place} (a rock, root, planter, counter edge, or similar). Exactly ONE whole ${food}, with one dish or wrapper only if appropriate, becomes visible gradually from behind that same existing object: first a small edge, then the same full single serving. It must be revealed only by occlusion and parallax—never pop into empty space, materialize, fade in, replace a prop, duplicate, split, or appear through a cut.\n\nOnce the food is fully visible, the fox stops before it, keeps it in view, and begins a close curious sniff. Do not bite, eat, transform, add a person, add an animal, or create another food. Keep the supplied character’s exact identity, style, tail inventory, accessories, lighting, and camera axis. ${bgmSegmentInstruction(1,4)} ${fourClipFoxVocal(1)}\n\nFINAL FRAME CHECK: exactly ONE whole ${food} is visibly present; the fox is stopped facing it with the nose still moving toward it. No duplicate food, no hidden second serving, no new plate, and no food that suddenly appeared.`;
+};
+
+focusedSecondClipPrompt = function(){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  const place=current?.title?.split(' · ')[1]||'the established setting';
+  const eating=foodEatingPlan(food);
+  return `Generate ONE 8-second vertical 9:16 continuation video from the supplied saved final frame of clip 1. That saved frame is the ONLY Start Frame and the ONLY food/character visual authority. Do not attach the original character image or any other reference image. ${exactContinuationFrameLock}\n\nSINGLE-FOOD INVENTORY — ABSOLUTE PRIORITY: frame 1 contains exactly ONE same ${food} and its one same dish or wrapper. Preserve its exact size, shape, toppings, color, vessel, and location before the first bite. ${eating} Every bite travels directly from that same food into the mouth and is swallowed. Never create a second food, second plate, separate bite piece, food in the air, food in a paw, food pop-in, dissolve, swap, restoration, or empty plate. End with the same 20–25% bitten remainder visibly attached to the same vessel.\n\nThe fox remains beside and facing the food; use only natural eating, chewing, swallowing, ear reaction, breathing, and a tiny tail-root sway. No body transformation, light, new ornament, art-style change, camera cut, background change, or new character. Preserve the exact face, all accessories, exact NINE tail inventory, and ${place}. ${bgmSegmentInstruction(2,4)} ${fourClipFoxVocal(2)}\n\nFINAL FRAME CHECK: exactly ONE partially eaten ${food} remains in the same vessel. Nothing else food-like exists in the frame.`;
 };
 
 const clip2ExactAppearanceLock = `CLIP-2 APPEARANCE AND STYLE LOCK — ABSOLUTE HIGHEST PRIORITY: At every frame, keep the character and world as an exact continuation of the saved clip-1 final frame. Preserve the exact face proportions, eye shape/color, muzzle, fur length and markings, body proportions, all NINE individually positioned tails, ear shape and inner color, every head ornament, collar, bow, bell, pendant, jewelry detail, and accessory already visible. Do not add a forehead mark, remove or replace a pendant, redesign a bow, change jewelry, beautify the face, alter the body, or reinterpret the character. Preserve the exact same illustration medium: same line weight, painted texture, edge softness, fur rendering, shading, bloom, saturation, contrast, depth of field, snow/forest treatment, and lighting. Do not switch toward a different anime, chibi, 3D, painterly, photorealistic, or simplified style.`;
