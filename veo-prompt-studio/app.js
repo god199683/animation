@@ -5,7 +5,7 @@ const CONFIG = {
 };
 // Increment this whenever identity rules change so opened/archive episodes cannot
 // silently keep copying an older conflicting clip-prompt cache.
-const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v14';
+const FOX_CLIP_PROMPT_VERSION = 'reference-identity-v15';
 // Supabase project's current public anon key.
 CONFIG.anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4emVyaGFybXBieHZtdW9tc2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NDAyNDAsImV4cCI6MjEwNjQxNjI0MH0.9O5gSipGaZ66XSnp9FjI9tkIvcir3XZnvp6JBNyPV4A';
 // The supplied legacy anon key is intentionally public client configuration; never put a service-role key here.
@@ -333,6 +333,14 @@ focusedSecondClipPrompt = function(){
 // previous frame.  Clips 5–8 may add only their explicitly planned humanization;
 // that must never become an excuse to replace the rendering style or identity.
 const oneMinuteClipPromptWithClip2StyleLock = oneMinuteClipPrompt;
+function oneMinuteFoodStateLock(stage){
+  const food=current?.food||current?.title?.split(' · ')[0]||'the same food';
+  if(stage===1) return `FOOD STATE TIMELINE — CLIP 1: ${food} does not exist anywhere in this clip. No food, dish, wrapper, crumb, bite mark, or food-like prop may appear.`;
+  if(stage===2) return `FOOD STATE TIMELINE — CLIP 2: exactly ONE whole, untouched ${food} may be revealed naturally. It has 100% of its original volume and has no bite mark, missing piece, mouth contact, lick mark, chew mark, or eaten state. The fox does not eat, lick, bite, paw, or reduce it in this clip.`;
+  if(stage===3) return `FOOD STATE TIMELINE — CLIP 3: exactly ONE same whole, untouched 100% ${food} remains visible in the same position. This is inspection only: the fox sniffs near it but does not bite, lick, chew, swallow, touch it with a paw, create a bite mark, or reduce any portion. Do not make it look pre-eaten.`;
+  if(stage===4) return `FOOD STATE TIMELINE — CLIP 4: begin with exactly ONE same whole untouched ${food}. This is the FIRST and ONLY clip where eating may start. After one or two small direct physical bites, leave 75–80% of that same single food visibly attached to the same dish or wrapper. Never duplicate, split, swap, vanish, or make it look already eaten at frame 1.`;
+  return `FOOD STATE TIMELINE — CLIPS 5–8: exactly ONE same 75–80% bitten remainder of ${food} stays visibly attached to the same dish or wrapper in the exact saved location. Do not eat more, restore it, duplicate it, move it, make it vanish, or create another serving.`;
+}
 oneMinuteClipPrompt = function(stage){
   const prompt=oneMinuteClipPromptWithClip2StyleLock(stage);
   if(stage===1) return prompt;
@@ -344,7 +352,7 @@ oneMinuteClipPrompt = function(stage){
     : stage===3
       ? 'FOOD INSPECTION STOP — HIGHEST PRIORITY: begin with the fox already stopped in front of the same food from clip 2. The fox may make only a small approach or head movement toward it, then keeps its body facing it and sniffs. Never walk past, turn away from, ignore, abandon, or leave the food behind. End with the nose close to the same food, ready for the eating clip.'
       : '';
-  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${foodDiscoveryStop}\n\n${laterHumanization}\n\n${clip2ExactAppearanceLock}\n\nFINAL FRAME CHECK: preserve the exact immediately previous character and illustration style. Any permitted action or transformation must occur inside that same rendering, never as a new illustration.`;
+  return `${exactContinuationFrameLock}\n\n${clip2ExactAppearanceLock}\n\n${prompt}\n\n${foodDiscoveryStop}\n\n${laterHumanization}\n\n${oneMinuteFoodStateLock(stage)}\n\n${clip2ExactAppearanceLock}\n\nFINAL FOOD CHECK: follow the food state for this exact clip; never show multiple foods or an eaten state before clip 4.\n\nFINAL FRAME CHECK: preserve the exact immediately previous character and illustration style. Any permitted action or transformation must occur inside that same rendering, never as a new illustration.`;
 };
 function focusedFourthClipPrompt(){
   const food = current?.food || current?.title?.split(' · ')[0] || 'the same food';
