@@ -907,6 +907,33 @@ async function copyStage(stage){
     alert(`클립 프롬프트 복사에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
   }
 }
+async function copyAllClipPrompts(){
+  const button=$('copy-all-clips');
+  const originalLabel=button.textContent;
+  try{
+    if(!current) throw new Error('먼저 프롬프트를 생성해 주세요.');
+    button.textContent='묶는 중…';
+    if(current.oneMinute||current.oneMinuteFox) cacheEpisodeClipPrompts();
+    const lastStage=(current.oneMinute||current.oneMinuteFox)?8:4;
+    const storyboard=current.storyboard||savedStoryboard(current);
+    const clips=[];
+    for(let stage=1;stage<=lastStage;stage++){
+      const prompt=(current.oneMinute||current.oneMinuteFox)
+        ? current.clipPrompts?.[stage]
+        : stagePrompt(storyboard,stage);
+      if(!prompt) throw new Error(`${stage}클립 프롬프트를 만들지 못했습니다.`);
+      clips.push(`━━━━━━━━━━━━━━━━━━\n[클립 ${stage}]\n${prompt}`);
+    }
+    await copyText(`[Google Flow 클립 전체 프롬프트 · ${lastStage}클립]\n\n${clips.join('\n\n')}`);
+    button.textContent='클립 전체 복사됨';
+    setTimeout(()=>button.textContent=originalLabel,1400);
+  }catch(error){
+    console.error('클립 전체 복사 실패:',error);
+    button.textContent='복사 실패';
+    setTimeout(()=>button.textContent=originalLabel,1600);
+    alert(`클립 전체 복사에 실패했습니다: ${error?.message||'알 수 없는 오류'}`);
+  }
+}
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 function foodProfile(food){
   const saved = foods.find(item => item[0] === food);
@@ -1340,7 +1367,8 @@ $('episode-preview').onclick = () => {
 $('archive').onclick = archiveCurrent;
 $('sync-local').onclick = uploadLocalArchive;
 $('copy').onclick = async () => { try{await copyText($('output').textContent);$('copy').textContent='복사됨';setTimeout(()=>$('copy').textContent='복사',1300)}catch{alert('복사에 실패했습니다. 다시 눌러 주세요.')}};
-$('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current) || $('output').textContent; const button = $('copy-full-storyboard'); try{await copyText(storyboard);button.textContent='전체 복사됨';setTimeout(()=>button.textContent='전체 스토리보드',1200)}catch{alert('전체 스토리보드 복사에 실패했습니다. 다시 눌러 주세요.')}};
+$('copy-full-storyboard').onclick = async () => { const storyboard = current?.storyboard || savedStoryboard(current); const button = $('copy-full-storyboard'); try{if(!storyboard) throw new Error('생성된 스토리보드가 없습니다. 먼저 스토리보드를 열어 주세요.'); await copyText(storyboard);button.textContent='스토리보드 복사됨';setTimeout(()=>button.textContent='전체 스토리보드',1200)}catch(error){alert(`전체 스토리보드 복사에 실패했습니다: ${error?.message || '다시 눌러 주세요.'}`)}};
+$('copy-all-clips').onclick = copyAllClipPrompts;
 document.querySelectorAll('#stage-copy-actions [data-stage]').forEach(button => { button.onclick = () => copyStage(Number(button.dataset.stage)); });
 function restoreOpenedArchive(){
   try {
